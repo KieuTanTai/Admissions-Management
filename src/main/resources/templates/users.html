@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Quản lý người dùng</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 16px; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        .actions button, .actions a { margin-right: 8px; }
+        .status-active { color: green; font-weight: bold; }
+        .status-disabled { color: red; font-weight: bold; }
+        .message { padding: 12px; border-radius: 4px; margin-bottom: 16px; }
+        .success { background: #e6f6ea; border: 1px solid #b2d8b4; color: #1a5f2a; }
+        .error { background: #fbeaea; border: 1px solid #f1c0c0; color: #8b1919; }
+    </style>
+</head>
+<body>
+    <h1>Quản lý người dùng</h1>
+    <p><a href="/users/edit/0">Tạo tài khoản mới</a></p>
+
+    <div th:if="${successMessage}" class="message success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}"></div>
+
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Họ tên</th>
+                <th>Quyền</th>
+                <th>Trạng thái</th>
+                <th>Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="user : ${users}">
+                <td th:text="${user.id}"></td>
+                <td th:text="${user.username}"></td>
+                <td th:text="${user.fullName}"></td>
+                <td th:text="${user.role}"></td>
+                <td th:text="${user.enabled} ? 'Active' : 'Disabled'" th:classappend="${user.enabled} ? 'status-active' : 'status-disabled'"></td>
+                <td class="actions">
+                    <a th:href="@{/users/edit/{id}(id=${user.id})}">Sửa</a>
+                    <form th:action="@{/users/toggle-role/{id}(id=${user.id})}" method="post" style="display:inline;">
+                        <button type="submit">Đổi quyền</button>
+                    </form>
+                    <form th:action="@{/users/set-enabled/{id}(id=${user.id})}" method="post" style="display:inline;">
+                        <input type="hidden" name="enabled" th:value="${!user.enabled}" />
+                        <button type="submit" th:text="${user.enabled} ? 'Disable' : 'Enable'"></button>
+                    </form>
+                </td>
+            </tr>
+            <tr th:if="${users.empty}">
+                <td colspan="6">Chưa có người dùng nào.</td>
+            </tr>
+        </tbody>
+    </table>
+</body>
+</html>

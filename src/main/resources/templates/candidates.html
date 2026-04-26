@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý thí sinh</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        .toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 16px; }
+        .toolbar .btn { padding: 10px 16px; background: #2d6cdf; color: white; text-decoration: none; border-radius: 4px; }
+        .card { border: 1px solid #d7d7d7; border-radius: 8px; padding: 18px; margin-bottom: 18px; }
+        .field { display: flex; flex-direction: column; margin-bottom: 12px; }
+        label { font-weight: 600; margin-bottom: 5px; }
+        input[type=text], input[type=file], select { width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #c1c1c1; }
+        .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+        button { cursor: pointer; padding: 10px 16px; border: none; border-radius: 4px; background: #2d6cdf; color: white; }
+        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+        th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; }
+        th { background: #f5f7fb; }
+        .message { padding: 12px 14px; border-radius: 4px; margin-bottom: 16px; }
+        .success { background: #e6f4ea; color: #1f6f3c; }
+        .error { background: #fbe9e9; color: #a72f2f; }
+        .pagination { list-style: none; padding: 0; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 14px; }
+        .pagination li a { display: block; padding: 8px 12px; border: 1px solid #c1c1c1; border-radius: 4px; text-decoration: none; color: #333; }
+        .pagination li a.active { background: #2d6cdf; color: white; border-color: #2d6cdf; }
+    </style>
+</head>
+
+<body>
+    <h1>Quản lý thí sinh</h1>
+
+    <div th:if="${successMessage}" class="message success" th:text="${successMessage}"></div>
+    <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}"></div>
+
+    <div class="toolbar">
+        <a th:href="@{/admin/candidates/new}" class="btn">Tạo mới thí sinh</a>
+        <span>Hiển thị 20 dòng / trang.</span>
+    </div>
+
+    <div class="card">
+        <h2>Tìm kiếm</h2>
+        <form th:action="@{/admin/candidates}" method="get" style="display: grid; gap: 14px;">
+            <div class="field">
+                <label for="q">CCCD hoặc họ tên</label>
+                <input id="q" type="text" name="q" th:value="${query}" placeholder="Nhập CCCD, họ hoặc tên">
+            </div>
+            <div class="actions">
+                <button type="submit">Tìm kiếm</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="card">
+        <h2>Import danh sách thí sinh</h2>
+        <form th:action="@{/admin/candidates/import}" method="post" enctype="multipart/form-data">
+            <div class="field">
+                <label for="file">Chọn file CSV</label>
+                <input id="file" type="file" name="file" accept=".csv" required>
+            </div>
+            <div class="actions">
+                <button type="submit">Import</button>
+            </div>
+        </form>
+        <p style="margin-top: 12px; color: #555;">File CSV cần có header: cccd, soBaoDanh, ho, ten, ngaySinh, dienThoai, gioiTinh, email, noiSinh, doiTuong, khuVuc, password.</p>
+    </div>
+
+    <div class="card">
+        <h2>Danh sách thí sinh</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>CCCD</th>
+                    <th>Họ</th>
+                    <th>Tên</th>
+                    <th>Ngày sinh</th>
+                    <th>Điện thoại</th>
+                    <th>Email</th>
+                    <th>Khu vực</th>
+                    <th>Đối tượng</th>
+                    <th>Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="candidate, iterStat : ${candidates.content}">
+                    <td th:text="${candidates.number * 20 + iterStat.index + 1}"></td>
+                    <td th:text="${candidate.cccd}"></td>
+                    <td th:text="${candidate.ho}"></td>
+                    <td th:text="${candidate.ten}"></td>
+                    <td th:text="${candidate.ngaySinh}"></td>
+                    <td th:text="${candidate.dienThoai}"></td>
+                    <td th:text="${candidate.email}"></td>
+                    <td th:text="${candidate.khuVuc}"></td>
+                    <td th:text="${candidate.doiTuong}"></td>
+                    <td><a th:href="@{'/admin/candidates/' + ${candidate.id} + '/edit'}">Sửa</a></td>
+                </tr>
+                <tr th:if="${candidates.content.empty}">
+                    <td colspan="10">Không có thí sinh phù hợp.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
+            <div>
+                Trang <span th:text="${candidates.number + 1}"></span> / <span th:text="${candidates.totalPages}"></span>
+            </div>
+            <ul class="pagination">
+                <li th:if="${candidates.hasPrevious()}"><a th:href="@{/admin/candidates(q=${query}, page=${candidates.number - 1})}">Trước</a></li>
+                <li th:each="i : ${#numbers.sequence(0, candidates.totalPages - 1)}">
+                    <a th:href="@{/admin/candidates(q=${query}, page=${i})}"
+                       th:text="${i + 1}"
+                       th:classappend="${i == candidates.number} ? ' active' : ''"></a>
+                </li>
+                <li th:if="${candidates.hasNext()}"><a th:href="@{/admin/candidates(q=${query}, page=${candidates.number + 1})}">Sau</a></li>
+            </ul>
+        </div>
+    </div>
+</body>
+
+</html>

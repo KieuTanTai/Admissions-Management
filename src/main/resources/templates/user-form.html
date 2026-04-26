@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <title>Chỉnh sửa người dùng</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 24px; }
+        label { display: block; margin: 12px 0 4px; }
+        input, select { width: 100%; padding: 8px; box-sizing: border-box; }
+        button { margin-top: 16px; padding: 10px 16px; }
+        .actions { margin-top: 24px; }
+        .help { margin-top: 16px; color: #555; }
+    </style>
+</head>
+<body>
+    <h1 th:text="${userForm.id != null} ? 'Chỉnh sửa người dùng' : 'Tạo người dùng mới'"></h1>
+    <p><a href="/users">← Quay về danh sách</a></p>
+
+    <form th:action="@{/users/save}" th:object="${userForm}" method="post">
+        <input type="hidden" th:field="*{id}" />
+
+        <label for="username">Username</label>
+        <input type="text" id="username" th:field="*{username}" placeholder="Tên đăng nhập" th:readonly="${userForm.id != null}" />
+
+        <label for="fullName">Họ tên</label>
+        <input type="text" id="fullName" th:field="*{fullName}" placeholder="Họ tên" />
+
+        <label for="password">Mật khẩu</label>
+        <input type="password" id="password" th:field="*{password}" placeholder="Đổi mật khẩu nếu cần" />
+        <p class="help">Để trống nếu không muốn thay đổi mật khẩu.</p>
+
+        <label for="role">Quyền</label>
+        <select id="role" th:field="*{role}">
+            <option th:each="role : ${roleOptions}" th:value="${role}" th:text="${role}"></option>
+        </select>
+
+        <label>
+            <input type="checkbox" th:field="*{enabled}" /> Active
+        </label>
+
+        <div class="actions">
+            <button type="submit">Lưu thông tin</button>
+        </div>
+    </form>
+</body>
+</html>
