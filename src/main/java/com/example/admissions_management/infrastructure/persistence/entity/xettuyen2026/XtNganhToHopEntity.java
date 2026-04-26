@@ -51,7 +51,7 @@ public class XtNganhToHopEntity {
     @Column(name = "N1")
     private Boolean n1;
 
-    @Column(name = "TO")
+    @Column(name = "TOAN")
     private Boolean to;
 
     @Column(name = "LI")

@@ -30,7 +30,7 @@ public class XtDiemThiXetTuyenEntity {
     @Column(name = "d_phuongthuc", length = 10)
     private String dPhuongThuc;
 
-    @Column(name = "TO", precision = 8, scale = 2)
+    @Column(name = "TOAN", precision = 8, scale = 2)
     private BigDecimal to;
 
     @Column(name = "LI", precision = 8, scale = 2)
