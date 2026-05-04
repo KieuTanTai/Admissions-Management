@@ -28,7 +28,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.util.Map;
-import java.util.List;
+import java.util.List; 
 
 @Component
 @ConditionalOnProperty(prefix = "app.swing", name = "enabled", havingValue = "true")
@@ -39,7 +39,7 @@ public class CombinationForm extends JFrame {
 	private final CombinationTableModel tableModel = new CombinationTableModel();
 	private final JTable table = new JTable(tableModel);
 	private final JTextField searchField = new JTextField(20);
-	private JFrame motherFrame = null;
+	private JFrame parentFrame = null;
 	private int currentPage = 0;
 	private int totalPages = 0;
 	private String currentSearchQuery = "";
@@ -115,7 +115,7 @@ public class CombinationForm extends JFrame {
 			loadPageData(controller.findPaged(currentSearchQuery, currentPage));
 		}
 	}
-
+	
 	private void loadPageData(Map<String, Object> pageData) {
 		java.util.List<CombinationResponse> content = (List<CombinationResponse>) pageData.get("content");
 		currentPage = (Integer) pageData.get("page");
@@ -129,20 +129,20 @@ public class CombinationForm extends JFrame {
 		nextButton.setEnabled(currentPage < totalPages - 1);
 	}
 
-	public void setTrackingEnableForMotherFrame() {
+	public void setTrackingEnableForParentFrame() {
 		this.addWindowListener(new WindowAdapter() {
 			@Override
 			public void windowClosed(WindowEvent event) {
-				if (motherFrame != null) {
-					motherFrame.setEnabled(true);
-					motherFrame.toFront();
+				if (parentFrame != null) {
+					parentFrame.setEnabled(true);
+					parentFrame.toFront();
 				}
 				super.windowClosed(event);
 			}
 		});
 	}
-	public void setMotherFrame(JFrame motherFrame) {
-		this.motherFrame = motherFrame;
+	public void setParentFrame(JFrame parentFrame) {
+		this.parentFrame = parentFrame;
 	}
 
 	private JPanel buildHeaderPanel() {
