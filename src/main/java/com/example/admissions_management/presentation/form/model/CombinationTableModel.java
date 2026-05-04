@@ -30,7 +30,7 @@ public class CombinationTableModel extends AbstractTableModel {
             "TI",
             "KHAC",
             "KTPL",
-            "dolech"
+            "Độ lệch"
     };
 
     private List<CombinationResponse> rows = new ArrayList<>();

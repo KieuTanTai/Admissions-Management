@@ -1,22 +1,18 @@
-package com.example.admissions_management.application.dto.response;
+package com.example.admissions_management.domain.model;
 
 import java.math.BigDecimal;
 
-public class CombinationResponse {
-
+public class Combination {
     private Integer id;
     private String maNganh;
     private String maToHop;
-
     private String thMon1;
     private Byte hsMon1;
     private String thMon2;
     private Byte hsMon2;
     private String thMon3;
     private Byte hsMon3;
-
     private String tbKeys;
-
     private Boolean n1;
     private Boolean to;
     private Boolean li;
@@ -28,13 +24,12 @@ public class CombinationResponse {
     private Boolean ti;
     private Boolean khac;
     private Boolean ktpl;
-
     private BigDecimal doLech;
 
-    public CombinationResponse() {
+    public Combination() {
     }
 
-    public CombinationResponse(
+    public Combination(
             Integer id,
             String maNganh,
             String maToHop,
@@ -258,4 +253,3 @@ public class CombinationResponse {
         this.doLech = doLech;
     }
 }
-

@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
 
-public interface SpringDataApplicantRepository extends JpaRepository<ApplicantEntity, Long> {
+public interface ISpringDataApplicantRepository extends JpaRepository<ApplicantEntity, Long> {
 
     Optional<ApplicantEntity> findByEmail(String email);
 }

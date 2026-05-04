@@ -3,7 +3,7 @@ package com.example.admissions_management.application.service;
 import com.example.admissions_management.application.dto.request.RegisterApplicantRequest;
 import com.example.admissions_management.application.dto.response.ApplicantResponse;
 import com.example.admissions_management.domain.model.Applicant;
-import com.example.admissions_management.domain.repository.ApplicantRepository;
+import com.example.admissions_management.domain.repository.IApplicantRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +11,9 @@ import java.util.List;
 @Service
 public class AdminApplicantService {
 
-    private final ApplicantRepository applicantRepository;
+    private final IApplicantRepository applicantRepository;
 
-    public AdminApplicantService(ApplicantRepository applicantRepository) {
+    public AdminApplicantService(IApplicantRepository applicantRepository) {
         this.applicantRepository = applicantRepository;
     }
 

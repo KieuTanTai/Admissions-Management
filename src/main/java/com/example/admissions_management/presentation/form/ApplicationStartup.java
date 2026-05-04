@@ -25,17 +25,9 @@ public class ApplicationStartup {
 
     private final ObjectProvider<AdminConsole> adminConsoleProvider;
     private final ApplicationConfig applicationConfig;
-    private final ObjectProvider<CombinationForm> combinationFormProvider;
-
-//    public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider, ApplicationConfig applicationConfig) {
-//        this.adminConsoleProvider = adminConsoleProvider;
-//        this.applicationConfig = applicationConfig;
-//    }
-
-    public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider, ApplicationConfig applicationConfig, ObjectProvider<CombinationForm> combinationFormProvider) {
-        this.adminConsoleProvider = adminConsoleProvider;
+    public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider, ApplicationConfig applicationConfig) {
         this.applicationConfig = applicationConfig;
-        this.combinationFormProvider = combinationFormProvider;
+        this.adminConsoleProvider = adminConsoleProvider;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -46,14 +38,14 @@ public class ApplicationStartup {
         logger.info("================================");
 
         if (applicationConfig.getSwing().isEnabled()) {
-            CombinationForm combinationForm = combinationFormProvider.getIfAvailable();
-            if (combinationForm == null) {
+            AdminConsole adminConsole = adminConsoleProvider.getIfAvailable();
+            if (adminConsole == null) {
                 logger.warning("Swing UI được bật nhưng không tìm thấy bean CombinationForm (có thể chạy ở chế độ headless).");
                 return;
             }
             logger.info("Đang khởi động Swing Combination Form...");
             SwingUtilities.invokeLater(() -> {
-                combinationForm.setVisible(true);
+                adminConsole.setVisible(true);
                 logger.info("✓ Combination Form đã được hiển thị");
             });
 
@@ -61,24 +53,6 @@ public class ApplicationStartup {
             logger.info("Swing UI bị vô hiệu hóa. Chỉ chạy Web Server.");
             logger.info("Để bật Swing UI, thiết lập: app.swing.enabled=true");
         }
-//        // Nếu Swing được bật, khởi động UI trên EDT
-//        if (applicationConfig.getSwing().isEnabled()) {
-//            AdminConsole adminConsole = adminConsoleProvider.getIfAvailable();
-//            if (adminConsole == null) {
-//                logger.warning("Swing UI được bật nhưng không tìm thấy bean AdminConsole (có thể chạy ở chế độ headless).");
-//                return;
-//            }
-//
-//            logger.info("Đang khởi động Swing Admin Console...");
-//
-//            SwingUtilities.invokeLater(() -> {
-//                adminConsole.setVisible(true);
-//                logger.info("✓ Admin Console Swing Form đã được hiển thị");
-//            });
-//        } else {
-//            logger.info("Swing UI bị vô hiệu hóa. Chỉ chạy Web Server.");
-//            logger.info("Để bật Swing UI, thiết lập: app.swing.enabled=true");
-//        }
     }
 }
 

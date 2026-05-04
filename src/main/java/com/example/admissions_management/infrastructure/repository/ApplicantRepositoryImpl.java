@@ -1,20 +1,20 @@
 package com.example.admissions_management.infrastructure.repository;
 
 import com.example.admissions_management.domain.model.Applicant;
-import com.example.admissions_management.domain.repository.ApplicantRepository;
+import com.example.admissions_management.domain.repository.IApplicantRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.ApplicantEntity;
-import com.example.admissions_management.infrastructure.persistence.repository.SpringDataApplicantRepository;
+import com.example.admissions_management.infrastructure.persistence.repository.ISpringDataApplicantRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class ApplicantRepositoryImpl implements ApplicantRepository {
+public class ApplicantRepositoryImpl implements IApplicantRepository {
 
-    private final SpringDataApplicantRepository springDataApplicantRepository;
+    private final ISpringDataApplicantRepository springDataApplicantRepository;
 
-    public ApplicantRepositoryImpl(SpringDataApplicantRepository springDataApplicantRepository) {
+    public ApplicantRepositoryImpl(ISpringDataApplicantRepository springDataApplicantRepository) {
         this.springDataApplicantRepository = springDataApplicantRepository;
     }
 

@@ -3,6 +3,7 @@ package com.example.admissions_management.presentation.form.view.combination;
 import com.example.admissions_management.application.dto.response.CombinationResponse;
 import com.example.admissions_management.presentation.form.controller.CombinationFormController;
 import com.example.admissions_management.presentation.form.model.CombinationTableModel;
+import org.jspecify.annotations.NonNull;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -16,12 +17,18 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.JSeparator;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
+import java.util.Map;
+import java.util.List;
 
 @Component
 @ConditionalOnProperty(prefix = "app.swing", name = "enabled", havingValue = "true")
@@ -31,87 +38,205 @@ public class CombinationForm extends JFrame {
 	private final CombinationFormController controller;
 	private final CombinationTableModel tableModel = new CombinationTableModel();
 	private final JTable table = new JTable(tableModel);
+	private final JTextField searchField = new JTextField(20);
+	private JFrame motherFrame = null;
+	private int currentPage = 0;
+	private int totalPages = 0;
+	private String currentSearchQuery = "";
+	private JLabel pageInfoLabel;
+	private JButton prevButton;
+	private JButton nextButton;
+
 
 	public CombinationForm(CombinationFormController controller) {
 		this.controller = controller;
 
-		setTitle("Combination Manager (Mock)");
+		setTitle("Xét tuyển ngành - tổ hợp");
 		setSize(1400, 650);
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setLocationRelativeTo(null);
 
-		setLayout(new BorderLayout(12, 12));
-		add(buildActionPanel(), BorderLayout.NORTH);
+		setLayout(new BorderLayout(0, 0));
 
-		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		add(new JScrollPane(table), BorderLayout.CENTER);
+		JPanel topPanel = new JPanel(new BorderLayout());
+		topPanel.add(buildHeaderPanel(), BorderLayout.NORTH);
+		topPanel.add(new JSeparator(), BorderLayout.SOUTH);
+		add(topPanel, BorderLayout.NORTH);
+
+		table.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
+		JScrollPane scrollPane = new JScrollPane(table);
+		add(scrollPane, BorderLayout.CENTER);
+
+		add(buildFooterPanel(), BorderLayout.SOUTH);
 
 		refreshAll();
 	}
 
-	private JPanel buildActionPanel() {
-		JPanel panel = new JPanel();
+	private JPanel buildFooterPanel() {
+		JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
+		footerPanel.add(new JSeparator());
 
-		JButton insertButton = new JButton("Insert");
-		JButton updateButton = new JButton("Update");
-		JButton deleteButton = new JButton("Delete");
-		JButton findButton = new JButton("Find");
-		JButton refreshButton = new JButton("Refresh");
+		prevButton = new JButton("<- Trước");
+		prevButton.setFocusPainted(false);
+		prevButton.addActionListener(_ -> previousPage());
 
-		insertButton.addActionListener(e -> onInsert());
-		updateButton.addActionListener(e -> onUpdateSelected());
-		deleteButton.addActionListener(e -> onDeleteSelected());
-		findButton.addActionListener(e -> onFind());
-		refreshButton.addActionListener(e -> refreshAll());
+		pageInfoLabel = new JLabel("Trang 1 / 1");
+		pageInfoLabel.setPreferredSize(new Dimension(200, 20));
 
-		panel.add(insertButton);
-		panel.add(updateButton);
-		panel.add(deleteButton);
-		panel.add(findButton);
-		panel.add(refreshButton);
+		nextButton = new JButton("Tiếp ->");
+		nextButton.setFocusPainted(false);
+		nextButton.addActionListener(_ -> nextPage());
+
+		footerPanel.add(prevButton);
+		footerPanel.add(pageInfoLabel);
+		footerPanel.add(nextButton);
+
+		return footerPanel;
+	}
+
+	private void previousPage() {
+		if (currentPage > 0) {
+			currentPage--;
+			loadPage();
+		}
+	}
+
+	private void nextPage() {
+		if (currentPage < totalPages - 1) {
+			currentPage++;
+			loadPage();
+		}
+	}
+
+	private void loadPage() {
+		if (currentSearchQuery.isEmpty()) {
+			loadPageData(controller.loadAllPaged(currentPage));
+		} else {
+			loadPageData(controller.findPaged(currentSearchQuery, currentPage));
+		}
+	}
+
+	private void loadPageData(Map<String, Object> pageData) {
+		java.util.List<CombinationResponse> content = (List<CombinationResponse>) pageData.get("content");
+		currentPage = (Integer) pageData.get("page");
+		totalPages = (Integer) pageData.get("totalPages");
+
+		tableModel.setRows(content);
+		pageInfoLabel.setText(String.format("Trang %d / %d (Tổng: %d)",
+			currentPage + 1, totalPages, (Long) pageData.get("totalElements")));
+
+		prevButton.setEnabled(currentPage > 0);
+		nextButton.setEnabled(currentPage < totalPages - 1);
+	}
+
+	public void setTrackingEnableForMotherFrame() {
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent event) {
+				if (motherFrame != null) {
+					motherFrame.setEnabled(true);
+					motherFrame.toFront();
+				}
+				super.windowClosed(event);
+			}
+		});
+	}
+	public void setMotherFrame(JFrame motherFrame) {
+		this.motherFrame = motherFrame;
+	}
+
+	private JPanel buildHeaderPanel() {
+		JPanel panel = new JPanel(new BorderLayout(10, 8));
+
+		// Left panel: Search controls only
+		JPanel leftPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 8));
+
+		JButton searchButton = new JButton("Tìm kiếm");
+		searchButton.setFocusPainted(false);
+		searchButton.addActionListener(_ -> onSearch());
+
+		leftPanel.add(new JLabel("Tìm kiếm bằng mã ngành:"));
+		leftPanel.add(searchField);
+		leftPanel.add(searchButton);
+
+		// Right panel: Action buttons (Insert, Update, Refresh, Back)
+		JPanel rightPanel = getJPanel();
+
+
+		panel.add(leftPanel, BorderLayout.WEST);
+		panel.add(rightPanel, BorderLayout.EAST);
+
 		return panel;
 	}
 
-	private void refreshAll() {
-		tableModel.setRows(controller.loadAll());
+	private @NonNull JPanel getJPanel() {
+		JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 8));
+
+		JButton insertButton = new JButton("Thêm");
+		insertButton.setFocusPainted(false);
+
+		JButton updateButton = new JButton("Sửa");
+		updateButton.setFocusPainted(false);
+
+		JButton refreshButton = new JButton("Làm mới");
+		refreshButton.setFocusPainted(false);
+
+		insertButton.addActionListener(_ -> onInsert());
+		updateButton.addActionListener(_ -> onUpdateSelected());
+		refreshButton.addActionListener(_ -> refreshAll());
+
+		rightPanel.add(insertButton);
+		rightPanel.add(updateButton);
+		rightPanel.add(refreshButton);
+		return rightPanel;
 	}
 
-	private void onFind() {
-		String query = JOptionPane.showInputDialog(this, "Find by id / manganh / matohop / tb_keys:", "Find", JOptionPane.QUESTION_MESSAGE);
-		if (query == null) {
-			return;
+	private void refreshAll() {
+		searchField.setText("");
+		currentPage = 0;
+		currentSearchQuery = "";
+		loadPageData(controller.loadAllPaged(0));
+	}
+
+	private void onSearch() {
+		String query = searchField.getText().trim();
+		currentSearchQuery = query;
+		currentPage = 0;
+		if (query.isEmpty()) {
+			loadPageData(controller.loadAllPaged(0));
+		} else {
+			loadPageData(controller.findPaged(query, 0));
 		}
-		tableModel.setRows(controller.find(query));
 	}
 
 	private void onInsert() {
 		try {
-			CombinationResponse input = showEditorDialog("Insert Combination", null);
+			CombinationResponse input = showEditorDialog("Thêm ngành - tổ hợp", null);
 			if (input == null) {
 				return;
 			}
 			controller.insert(input);
 			refreshAll();
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, ex.getMessage(), "Insert Failed", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, ex.getMessage(), "Thêm thất bại!", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
 	private void onUpdateSelected() {
 		int viewRow = table.getSelectedRow();
 		if (viewRow < 0) {
-			JOptionPane.showMessageDialog(this, "Please select a row to update.", "No Selection", JOptionPane.WARNING_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Vui lòng chọn ngành - tổ hợp muốn sửa.", "Không có ngành - tổ hợp được chọn", JOptionPane.WARNING_MESSAGE);
 			return;
 		}
 		int modelRow = table.convertRowIndexToModel(viewRow);
 		CombinationResponse selected = tableModel.getRowAt(modelRow);
 		if (selected == null || selected.getId() == null) {
-			JOptionPane.showMessageDialog(this, "Invalid selected row.", "Update Failed", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "Số dòng lựa chọn không hợp lệ.", "Cập nhật thất bại", JOptionPane.ERROR_MESSAGE);
 			return;
 		}
 
 		try {
-			CombinationResponse input = showEditorDialog("Update Combination (id=" + selected.getId() + ")", selected);
+			CombinationResponse input = showEditorDialog("Cập nhật ngành - tổ hợp (id=" + selected.getId() + ")", selected);
 			if (input == null) {
 				return;
 			}
@@ -119,38 +244,6 @@ public class CombinationForm extends JFrame {
 			refreshAll();
 		} catch (Exception ex) {
 			JOptionPane.showMessageDialog(this, ex.getMessage(), "Update Failed", JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	private void onDeleteSelected() {
-		int viewRow = table.getSelectedRow();
-		if (viewRow < 0) {
-			JOptionPane.showMessageDialog(this, "Please select a row to delete.", "No Selection", JOptionPane.WARNING_MESSAGE);
-			return;
-		}
-		int modelRow = table.convertRowIndexToModel(viewRow);
-		CombinationResponse selected = tableModel.getRowAt(modelRow);
-		if (selected == null || selected.getId() == null) {
-			JOptionPane.showMessageDialog(this, "Invalid selected row.", "Delete Failed", JOptionPane.ERROR_MESSAGE);
-			return;
-		}
-
-		int confirm = JOptionPane.showConfirmDialog(
-				this,
-				"Delete combination id=" + selected.getId() + " ?",
-				"Confirm Delete",
-				JOptionPane.YES_NO_OPTION,
-				JOptionPane.WARNING_MESSAGE
-		);
-		if (confirm != JOptionPane.YES_OPTION) {
-			return;
-		}
-
-		try {
-			controller.delete(selected.getId());
-			refreshAll();
-		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -231,7 +324,7 @@ public class CombinationForm extends JFrame {
 		row = addRow(form, gbc, row, "DI", diBox);
 		row = addRow(form, gbc, row, "TI", tiBox);
 		row = addRow(form, gbc, row, "KHAC", khacBox);
-		row = addRow(form, gbc, row, "KTPL", ktplBox);
+		addRow(form, gbc, row, "KTPL", ktplBox);
 
 		JScrollPane scrollPane = new JScrollPane(form);
 		scrollPane.setPreferredSize(new Dimension(520, 520));

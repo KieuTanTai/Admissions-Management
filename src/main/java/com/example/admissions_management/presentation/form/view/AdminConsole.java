@@ -5,6 +5,7 @@ import com.example.admissions_management.presentation.form.view.combination.Comb
 import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import javax.swing.JButton;
@@ -17,9 +18,12 @@ import javax.swing.JTable;
 import javax.swing.JTextField;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 @Component
-@ConditionalOnProperty(prefix = "app.swing", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "app.swing.admin-console", name = "enabled", havingValue = "true")
+@Lazy
 public class AdminConsole extends JFrame {
 
 	private final AdminConsoleController controller;
@@ -36,9 +40,10 @@ public class AdminConsole extends JFrame {
 		this.tableModel = new AdminConsoleTableModel();
 
 		setTitle("Admissions Admin Console");
-		setSize(860, 520);
+		setSize(1280, 980);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		setLocationRelativeTo(null);
+		setVisible(false); // Not visible by default
 
 		setLayout(new BorderLayout(12, 12));
 		add(buildFormPanel(), BorderLayout.NORTH);
@@ -63,9 +68,9 @@ public class AdminConsole extends JFrame {
 		JButton refreshButton = new JButton("Refresh");
 		JButton combinationsButton = new JButton("Combinations");
 
-		saveButton.addActionListener(e -> saveApplicant());
-		refreshButton.addActionListener(e -> refreshTable());
-		combinationsButton.addActionListener(e -> openCombinationManager());
+		saveButton.addActionListener(_ -> saveApplicant());
+		refreshButton.addActionListener(_ -> refreshTable());
+		combinationsButton.addActionListener(_ -> openCombinationManager());
 
 		actionPanel.add(saveButton);
 		actionPanel.add(refreshButton);
@@ -95,10 +100,12 @@ public class AdminConsole extends JFrame {
 	private void refreshTable() {
 		tableModel.setRows(controller.loadApplicants());
 	}
-
 	private void openCombinationManager() {
 		CombinationForm form = combinationFormProvider.getObject();
 		form.setVisible(true);
+		this.setEnabled(false);
+		form.setMotherFrame(this);
+		form.setTrackingEnableForMotherFrame();
 		form.toFront();
 	}
 }

@@ -1,8 +1,5 @@
 package com.example.admissions_management;
 
-import com.example.admissions_management.presentation.form.view.AdminConsole;
-import org.hibernate.query.criteria.JpaWindowFrame;
-import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 
