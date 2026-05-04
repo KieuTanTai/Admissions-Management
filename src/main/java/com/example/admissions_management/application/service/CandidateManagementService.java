@@ -4,6 +4,10 @@ import com.example.admissions_management.infrastructure.persistence.entity.xettu
 import com.example.admissions_management.infrastructure.persistence.repository.CandidateRepository;
 import com.example.admissions_management.presentation.web.model.CandidateForm;
 import com.example.admissions_management.presentation.web.model.CandidateImportResult;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -59,12 +63,91 @@ public class CandidateManagementService {
         return candidateRepository.save(entity);
     }
 
+    public void deleteCandidate(Integer id) {
+        candidateRepository.deleteById(id);
+    }
+
+    public void deleteAllCandidates() {
+        candidateRepository.deleteAll();
+    }
+
     public CandidateImportResult importCandidates(MultipartFile file) {
-        CandidateImportResult result = new CandidateImportResult();
         if (file == null || file.isEmpty()) {
+            CandidateImportResult result = new CandidateImportResult();
             result.addError("File nhap khong duoc de trong.");
             return result;
         }
+
+        String fileName = file.getOriginalFilename();
+        if (fileName != null && fileName.toLowerCase().endsWith(".xlsx")) {
+            return importFromExcel(file);
+        } else {
+            return importFromCsv(file);
+        }
+    }
+
+    private CandidateImportResult importFromExcel(MultipartFile file) {
+        CandidateImportResult result = new CandidateImportResult();
+        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
+            Sheet sheet = workbook.getSheetAt(0);
+            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
+                result.addError("File Excel khong co du lieu.");
+                return result;
+            }
+
+            Row headerRow = sheet.getRow(0);
+            if (headerRow == null) {
+                result.addError("File Excel khong co dong header.");
+                return result;
+            }
+
+            Map<String, Integer> headerIndex = parseExcelHeader(headerRow);
+            if (!headerIndex.containsKey("cccd")) {
+                result.addError("File Excel phai co cot 'cccd'.");
+                return result;
+            }
+
+            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+                Row row = sheet.getRow(i);
+                if (row == null) {
+                    continue;
+                }
+
+                String cccd = getExcelCell(row, headerIndex.get("cccd"));
+                if (!StringUtils.hasText(cccd)) {
+                    result.addError("Dong " + (i + 1) + ": CCCD khong duoc de trong.");
+                    continue;
+                }
+
+                try {
+                    XtThiSinhXetTuyen25Entity entity = candidateRepository.findByCccd(cccd.trim())
+                            .orElse(new XtThiSinhXetTuyen25Entity());
+                    applyExcelRowToEntity(row, headerIndex, entity);
+                    entity.setUpdatedAt(LocalDate.now());
+                    boolean existed = entity.getId() != null;
+                    candidateRepository.save(entity);
+                    if (existed) {
+                        result.incrementUpdatedCount();
+                    } else {
+                        result.incrementImportedCount();
+                    }
+                } catch (DataIntegrityViolationException ex) {
+                    result.addError("Dong " + (i + 1) + ": loi du lieu khong hop le hoac trung CCCD.");
+                } catch (Exception ex) {
+                    result.addError("Dong " + (i + 1) + ": loi khi xu ly du lieu - " + ex.getMessage());
+                }
+            }
+
+            result.setMessage("Import hoan tat. " + result.getImportedCount() + " dong moi, "
+                    + result.getUpdatedCount() + " dong cap nhat.");
+        } catch (IOException ex) {
+            result.addError("Khong the doc file Excel: " + ex.getMessage());
+        }
+        return result;
+    }
+
+    private CandidateImportResult importFromCsv(MultipartFile file) {
+        CandidateImportResult result = new CandidateImportResult();
 
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
             String headerLine = reader.readLine();
@@ -117,6 +200,49 @@ public class CandidateManagementService {
             result.addError("Khong the doc file: " + ex.getMessage());
         }
         return result;
+    }
+
+    private Map<String, Integer> parseExcelHeader(Row headerRow) {
+        Map<String, Integer> headerIndex = new HashMap<>();
+        for (int i = 0; i < headerRow.getLastCellNum(); i++) {
+            String header = getExcelCell(headerRow, i);
+            if (header != null) {
+                String canonical = normalizeHeader(header);
+                String field = mapHeaderToField(canonical);
+                if (field != null) {
+                    headerIndex.put(field, i);
+                }
+            }
+        }
+        return headerIndex;
+    }
+
+    private String getExcelCell(Row row, Integer cellIndex) {
+        if (cellIndex == null || cellIndex < 0 || cellIndex >= row.getLastCellNum()) {
+            return null;
+        }
+        try {
+            String value = row.getCell(cellIndex).getStringCellValue();
+            return value != null ? value.trim() : null;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void applyExcelRowToEntity(Row row, Map<String, Integer> headerIndex,
+                                       XtThiSinhXetTuyen25Entity entity) {
+        entity.setCccd(trim(getExcelCell(row, headerIndex.get("cccd"))));
+        entity.setSoBaoDanh(trim(getExcelCell(row, headerIndex.get("soBaoDanh"))));
+        entity.setHo(trim(getExcelCell(row, headerIndex.get("ho"))));
+        entity.setTen(trim(getExcelCell(row, headerIndex.get("ten"))));
+        entity.setNgaySinh(trim(getExcelCell(row, headerIndex.get("ngaySinh"))));
+        entity.setDienThoai(trim(getExcelCell(row, headerIndex.get("dienThoai"))));
+        entity.setGioiTinh(trim(getExcelCell(row, headerIndex.get("gioiTinh"))));
+        entity.setEmail(trim(getExcelCell(row, headerIndex.get("email"))));
+        entity.setNoiSinh(trim(getExcelCell(row, headerIndex.get("noiSinh"))));
+        entity.setDoiTuong(trim(getExcelCell(row, headerIndex.get("doiTuong"))));
+        entity.setKhuVuc(trim(getExcelCell(row, headerIndex.get("khuVuc"))));
+        entity.setPassword(trim(getExcelCell(row, headerIndex.get("password"))));
     }
 
     private Map<String, Integer> parseHeader(String headerLine) {

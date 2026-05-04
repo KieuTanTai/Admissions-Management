@@ -15,9 +15,10 @@
         input[type=text], input[type=file], select { width: 100%; padding: 8px 10px; border-radius: 4px; border: 1px solid #c1c1c1; }
         .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
         button { cursor: pointer; padding: 10px 16px; border: none; border-radius: 4px; background: #2d6cdf; color: white; }
-        table { width: 100%; border-collapse: collapse; margin-top: 12px; }
-        th, td { border: 1px solid #e0e0e0; padding: 10px; text-align: left; }
-        th { background: #f5f7fb; }
+        .table-container { overflow-x: auto; margin-top: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #e0e0e0; padding: 8px; text-align: left; font-size: 13px; }
+        th { background: #f5f7fb; font-weight: 600; }
         .message { padding: 12px 14px; border-radius: 4px; margin-bottom: 16px; }
         .success { background: #e6f4ea; color: #1f6f3c; }
         .error { background: #fbe9e9; color: #a72f2f; }
@@ -35,6 +36,9 @@
 
     <div class="toolbar">
         <a th:href="@{/admin/candidates/new}" class="btn">Tạo mới thí sinh</a>
+        <form th:action="@{/admin/candidates/delete-all}" method="post" style="display: inline; margin: 0;">
+            <button type="submit" onclick="return confirm('Bạn chắc chắn muốn xóa tất cả thí sinh?');" style="background: #d32f2f;">Xóa tất cả</button>
+        </form>
         <span>Hiển thị 20 dòng / trang.</span>
     </div>
 
@@ -55,51 +59,68 @@
         <h2>Import danh sách thí sinh</h2>
         <form th:action="@{/admin/candidates/import}" method="post" enctype="multipart/form-data">
             <div class="field">
-                <label for="file">Chọn file CSV</label>
-                <input id="file" type="file" name="file" accept=".csv" required>
+                <label for="file">Chọn file CSV hoặc Excel (.csv, .xlsx)</label>
+                <input id="file" type="file" name="file" accept=".csv,.xlsx" required>
             </div>
             <div class="actions">
                 <button type="submit">Import</button>
             </div>
         </form>
-        <p style="margin-top: 12px; color: #555;">File CSV cần có header: cccd, soBaoDanh, ho, ten, ngaySinh, dienThoai, gioiTinh, email, noiSinh, doiTuong, khuVuc, password.</p>
+        <p style="margin-top: 12px; color: #555;">File CSV/Excel cần có header: cccd, soBaoDanh, ho, ten, ngaySinh, dienThoai, gioiTinh, email, noiSinh, doiTuong, khuVuc, password.</p>
     </div>
 
     <div class="card">
         <h2>Danh sách thí sinh</h2>
-        <table>
-            <thead>
-                <tr>
-                    <th>#</th>
-                    <th>CCCD</th>
-                    <th>Họ</th>
-                    <th>Tên</th>
-                    <th>Ngày sinh</th>
-                    <th>Điện thoại</th>
-                    <th>Email</th>
-                    <th>Khu vực</th>
-                    <th>Đối tượng</th>
-                    <th>Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="candidate, iterStat : ${candidates.content}">
-                    <td th:text="${candidates.number * 20 + iterStat.index + 1}"></td>
-                    <td th:text="${candidate.cccd}"></td>
-                    <td th:text="${candidate.ho}"></td>
-                    <td th:text="${candidate.ten}"></td>
-                    <td th:text="${candidate.ngaySinh}"></td>
-                    <td th:text="${candidate.dienThoai}"></td>
-                    <td th:text="${candidate.email}"></td>
-                    <td th:text="${candidate.khuVuc}"></td>
-                    <td th:text="${candidate.doiTuong}"></td>
-                    <td><a th:href="@{'/admin/candidates/' + ${candidate.id} + '/edit'}">Sửa</a></td>
-                </tr>
-                <tr th:if="${candidates.content.empty}">
-                    <td colspan="10">Không có thí sinh phù hợp.</td>
-                </tr>
-            </tbody>
-        </table>
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>CCCD</th>
+                        <th>Số báo danh</th>
+                        <th>Họ</th>
+                        <th>Tên</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
+                        <th>Điện thoại</th>
+                        <th>Email</th>
+                        <th>Nơi sinh</th>
+                        <th>Khu vực</th>
+                        <th>Đối tượng</th>
+                        <th>Mật khẩu</th>
+                        <th>Cập nhật</th>
+                        <th>Hành động</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="candidate, iterStat : ${candidates.content}">
+                        <td th:text="${candidates.number * 20 + iterStat.index + 1}"></td>
+                        <td th:text="${candidate.cccd}"></td>
+                        <td th:text="${candidate.soBaoDanh}"></td>
+                        <td th:text="${candidate.ho}"></td>
+                        <td th:text="${candidate.ten}"></td>
+                        <td th:text="${candidate.ngaySinh}"></td>
+                        <td th:text="${candidate.gioiTinh}"></td>
+                        <td th:text="${candidate.dienThoai}"></td>
+                        <td th:text="${candidate.email}"></td>
+                        <td th:text="${candidate.noiSinh}"></td>
+                        <td th:text="${candidate.khuVuc}"></td>
+                        <td th:text="${candidate.doiTuong}"></td>
+                        <td th:text="${candidate.password}"></td>
+                        <td th:text="${candidate.updatedAt}"></td>
+                        <td>
+                            <a th:href="@{'/admin/candidates/' + ${candidate.id} + '/edit'}">Sửa</a>
+                            <form th:action="@{'/admin/candidates/' + ${candidate.id} + '/delete'}" method="post" style="display: inline; margin: 0;">
+                                <button type="submit" onclick="return confirm('Bạn chắc chắn muốn xóa thí sinh này?');" style="background: #d32f2f; padding: 4px 8px; margin-left: 6px;">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                    <tr th:if="${candidates.content.empty}">
+                        <td colspan="15">Không có thí sinh phù hợp.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 16px;">
             <div>

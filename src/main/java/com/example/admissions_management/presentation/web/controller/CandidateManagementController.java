@@ -79,6 +79,20 @@ public class CandidateManagementController {
         return "redirect:/admin/candidates";
     }
 
+    @PostMapping("/{id}/delete")
+    public String deleteCandidate(@PathVariable Integer id, RedirectAttributes redirectAttributes) {
+        candidateManagementService.deleteCandidate(id);
+        redirectAttributes.addFlashAttribute("successMessage", "Xoa thi sinh thanh cong.");
+        return "redirect:/admin/candidates";
+    }
+
+    @PostMapping("/delete-all")
+    public String deleteAllCandidates(RedirectAttributes redirectAttributes) {
+        candidateManagementService.deleteAllCandidates();
+        redirectAttributes.addFlashAttribute("successMessage", "Da xoa tat ca thi sinh.");
+        return "redirect:/admin/candidates";
+    }
+
     private CandidateForm toForm(XtThiSinhXetTuyen25Entity entity) {
         CandidateForm form = new CandidateForm();
         form.setId(entity.getId());

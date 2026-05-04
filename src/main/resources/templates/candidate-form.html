@@ -54,10 +54,12 @@
                 <div class="field">
                     <label for="gioiTinh">Giới tính</label>
                     <select id="gioiTinh" th:field="*{gioiTinh}">
-                        <option value="">Chọn</option>
-                        <option value="Nam">Nam</option>
-                        <option value="Nu">Nữ</option>
-                        <option value="Khac">Khác</option>
+                        <option value="">-- Chọn giới tính --</option>
+                        <option value="Nam" th:selected="${candidateForm.gioiTinh == 'Nam'}">Nam</option>
+                        <option value="Nữ" th:selected="${candidateForm.gioiTinh == 'Nữ'}">Nữ</option>
+                        <option value="Nu" th:selected="${candidateForm.gioiTinh == 'Nu'}">Nu (Nữ)</option>
+                        <option value="Khác" th:selected="${candidateForm.gioiTinh == 'Khác'}">Khác</option>
+                        <option value="Khac" th:selected="${candidateForm.gioiTinh == 'Khac'}">Khac (Khác)</option>
                     </select>
                 </div>
                 <div class="field">
@@ -87,7 +89,7 @@
             </div>
 
             <div class="actions">
-                <button type="submit">Lưu thí sinh</button>
+                <button type="submit" onclick="return confirm('Bạn chắc chắn muốn lưu thí sinh này?');">Lưu thí sinh</button>
                 <a th:href="@{/admin/candidates}" class="btn-link">Quay về danh sách</a>
             </div>
         </form>
