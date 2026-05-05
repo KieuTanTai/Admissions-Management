@@ -14,9 +14,9 @@
 </head>
 <body>
     <h1 th:text="${userForm.id != null} ? 'Chỉnh sửa người dùng' : 'Tạo người dùng mới'"></h1>
-    <p><a href="/users">← Quay về danh sách</a></p>
+    <p><a href="/admin/users">← Quay về danh sách</a></p>
 
-    <form th:action="@{/users/save}" th:object="${userForm}" method="post">
+    <form th:action="@{/admin/users/save}" th:object="${userForm}" method="post">
         <input type="hidden" th:field="*{id}" />
 
         <label for="username">Username</label>

@@ -18,7 +18,7 @@
 </head>
 <body>
     <h1>Quản lý người dùng</h1>
-    <p><a href="/users/edit/0">Tạo tài khoản mới</a></p>
+    <p><a href="/admin/users/edit/0">Tạo tài khoản mới</a></p>
 
     <div th:if="${successMessage}" class="message success" th:text="${successMessage}"></div>
     <div th:if="${errorMessage}" class="message error" th:text="${errorMessage}"></div>
@@ -42,11 +42,11 @@
                 <td th:text="${user.role}"></td>
                 <td th:text="${user.enabled} ? 'Active' : 'Disabled'" th:classappend="${user.enabled} ? 'status-active' : 'status-disabled'"></td>
                 <td class="actions">
-                    <a th:href="@{/users/edit/{id}(id=${user.id})}">Sửa</a>
-                    <form th:action="@{/users/toggle-role/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <a th:href="@{/admin/users/edit/{id}(id=${user.id})}">Sửa</a>
+                    <form th:action="@{/admin/users/toggle-role/{id}(id=${user.id})}" method="post" style="display:inline;">
                         <button type="submit">Đổi quyền</button>
                     </form>
-                    <form th:action="@{/users/set-enabled/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <form th:action="@{/admin/users/set-enabled/{id}(id=${user.id})}" method="post" style="display:inline;">
                         <input type="hidden" name="enabled" th:value="${!user.enabled}" />
                         <button type="submit" th:text="${user.enabled} ? 'Disable' : 'Enable'"></button>
                     </form>

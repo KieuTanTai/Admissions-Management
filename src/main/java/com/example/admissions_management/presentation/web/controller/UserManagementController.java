@@ -7,17 +7,11 @@ import com.example.admissions_management.domain.model.UserRole;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-
 @Controller
-@RequestMapping({"/users", "/admin/users"})
+@RequestMapping("/admin/users") // Chỉ sử dụng một tiền tố duy nhất
 public class UserManagementController {
 
     private final UserAccountService userAccountService;
@@ -45,8 +39,9 @@ public class UserManagementController {
         UserAccountResponse user = userAccountService.getUserById(id).orElse(null);
         if (user == null) {
             redirectAttributes.addFlashAttribute("errorMessage", "Người dùng không tồn tại.");
-            return "redirect:/users";
+            return "redirect:/admin/users"; // Redirect về /admin/users
         }
+        
         UserAccountRequest request = new UserAccountRequest();
         request.setId(user.getId());
         request.setUsername(user.getUsername());
@@ -59,6 +54,7 @@ public class UserManagementController {
 
     @PostMapping("/save")
     public String save(@ModelAttribute("userForm") UserAccountRequest request, BindingResult result, RedirectAttributes redirectAttributes) {
+        // Validation logic
         if (request.getUsername() == null || request.getUsername().isBlank()) {
             result.rejectValue("username", "username.empty", "Username không được để trống.");
         }
@@ -68,14 +64,15 @@ public class UserManagementController {
         if (request.getId() == null && (request.getPassword() == null || request.getPassword().isBlank())) {
             result.rejectValue("password", "password.empty", "Mật khẩu bắt buộc khi tạo tài khoản mới.");
         }
+
         if (result.hasErrors()) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Dữ liệu nhập không hợp lệ.");
-            return "redirect:/users";
+            // Khi có lỗi, nên trả về trang form thay vì redirect để hiện lỗi validation
+            return "user-form"; 
         }
 
         userAccountService.save(request);
-        redirectAttributes.addFlashAttribute("successMessage", "Đã lưu người dùng.");
-        return "redirect:/users";
+        redirectAttributes.addFlashAttribute("successMessage", "Đã lưu người dùng thành công.");
+        return "redirect:/admin/users"; // Luôn redirect về /admin/users
     }
 
     @PostMapping("/change-password/{id}")
@@ -86,7 +83,7 @@ public class UserManagementController {
             userAccountService.changePassword(id, request.getPassword());
             redirectAttributes.addFlashAttribute("successMessage", "Đổi mật khẩu thành công.");
         }
-        return "redirect:/users/edit/" + id;
+        return "redirect:/admin/users/edit/" + id; // Giữ đúng tiền tố /admin
     }
 
     @PostMapping("/toggle-role/{id}")
@@ -96,16 +93,16 @@ public class UserManagementController {
             redirectAttributes.addFlashAttribute("errorMessage", "Người dùng không tồn tại.");
         } else {
             userAccountService.setRole(id, user.getRole() == UserRole.ADMIN ? UserRole.USER : UserRole.ADMIN);
-            redirectAttributes.addFlashAttribute("successMessage", "Đã đổi quyền.");
+            redirectAttributes.addFlashAttribute("successMessage", "Đã đổi quyền thành công.");
         }
-        return "redirect:/users";
+        return "redirect:/admin/users"; // Redirect về /admin/users
     }
 
     @PostMapping("/set-enabled/{id}")
-    public String setEnabled(@PathVariable("id") Long id, Boolean enabled, RedirectAttributes redirectAttributes) {
+    public String setEnabled(@PathVariable("id") Long id, @RequestParam(value = "enabled", required = false) Boolean enabled, RedirectAttributes redirectAttributes) {
         userAccountService.setEnabled(id, enabled != null && enabled);
-        redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái người dùng thành công.");
-        return "redirect:/users";
+        redirectAttributes.addFlashAttribute("successMessage", "Cập nhật trạng thái thành công.");
+        return "redirect:/admin/users"; // Redirect về /admin/users
     }
 
     @ModelAttribute("roleOptions")

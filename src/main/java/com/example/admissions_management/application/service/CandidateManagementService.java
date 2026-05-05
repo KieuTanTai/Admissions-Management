@@ -8,24 +8,17 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.text.Normalizer;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class CandidateManagementService {
@@ -38,27 +31,30 @@ public class CandidateManagementService {
         this.candidateRepository = candidateRepository;
     }
 
+    // ================= SEARCH =================
+
     public Page<XtThiSinhXetTuyen25Entity> searchCandidates(String query, int page) {
         Pageable pageable = PageRequest.of(page, DEFAULT_PAGE_SIZE, Sort.by(Sort.Direction.DESC, "id"));
         if (!StringUtils.hasText(query)) {
             return candidateRepository.findAll(pageable);
         }
-        String normalized = query.trim();
-        return candidateRepository.findByCccdContainingIgnoreCaseOrHoContainingIgnoreCaseOrTenContainingIgnoreCase(
-                normalized, normalized, normalized, pageable);
+        String q = query.trim();
+        return candidateRepository
+                .findByCccdContainingIgnoreCaseOrHoContainingIgnoreCaseOrTenContainingIgnoreCase(q, q, q, pageable);
     }
 
     public Optional<XtThiSinhXetTuyen25Entity> findById(Integer id) {
         return candidateRepository.findById(id);
     }
 
+    // ================= SAVE =================
+
     public XtThiSinhXetTuyen25Entity saveCandidate(CandidateForm form) {
-        XtThiSinhXetTuyen25Entity entity;
-        if (form.getId() != null) {
-            entity = candidateRepository.findById(form.getId()).orElse(new XtThiSinhXetTuyen25Entity());
-        } else {
-            entity = candidateRepository.findByCccd(form.getCccd()).orElse(new XtThiSinhXetTuyen25Entity());
-        }
+        XtThiSinhXetTuyen25Entity entity =
+                form.getId() != null
+                        ? candidateRepository.findById(form.getId()).orElse(new XtThiSinhXetTuyen25Entity())
+                        : candidateRepository.findByCccd(form.getCccd()).orElse(new XtThiSinhXetTuyen25Entity());
+
         applyFormToEntity(form, entity);
         return candidateRepository.save(entity);
     }
@@ -71,191 +67,203 @@ public class CandidateManagementService {
         candidateRepository.deleteAll();
     }
 
-    public CandidateImportResult importCandidates(MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            CandidateImportResult result = new CandidateImportResult();
-            result.addError("File nhap khong duoc de trong.");
-            return result;
-        }
+    // ================= IMPORT (TỐI ƯU) =================
 
-        String fileName = file.getOriginalFilename();
-        if (fileName != null && fileName.toLowerCase().endsWith(".xlsx")) {
-            return importFromExcel(file);
-        } else {
-            return importFromCsv(file);
-        }
-    }
+    public CandidateImportResult importMultipleFiles(MultipartFile[] files) {
 
-    private CandidateImportResult importFromExcel(MultipartFile file) {
         CandidateImportResult result = new CandidateImportResult();
-        try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
-            Sheet sheet = workbook.getSheetAt(0);
-            if (sheet == null || sheet.getPhysicalNumberOfRows() == 0) {
-                result.addError("File Excel khong co du lieu.");
-                return result;
-            }
+        Map<String, XtThiSinhXetTuyen25Entity> map = new HashMap<>();
 
-            Row headerRow = sheet.getRow(0);
-            if (headerRow == null) {
-                result.addError("File Excel khong co dong header.");
-                return result;
-            }
+        // 1. Đọc file → đưa vào map
+        for (MultipartFile file : files) {
+            if (file == null || file.isEmpty()) continue;
 
-            Map<String, Integer> headerIndex = parseExcelHeader(headerRow);
-            if (!headerIndex.containsKey("cccd")) {
-                result.addError("File Excel phai co cot 'cccd'.");
-                return result;
-            }
-
-            for (int i = 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-                if (row == null) {
-                    continue;
+            try {
+                if (file.getOriginalFilename().toLowerCase().endsWith(".xlsx")) {
+                    readExcelToMap(file, map, result);
+                } else {
+                    readCsvToMap(file, map, result);
                 }
-
-                String cccd = getExcelCell(row, headerIndex.get("cccd"));
-                if (!StringUtils.hasText(cccd)) {
-                    result.addError("Dong " + (i + 1) + ": CCCD khong duoc de trong.");
-                    continue;
-                }
-
-                try {
-                    XtThiSinhXetTuyen25Entity entity = candidateRepository.findByCccd(cccd.trim())
-                            .orElse(new XtThiSinhXetTuyen25Entity());
-                    applyExcelRowToEntity(row, headerIndex, entity);
-                    entity.setUpdatedAt(LocalDate.now());
-                    boolean existed = entity.getId() != null;
-                    candidateRepository.save(entity);
-                    if (existed) {
-                        result.incrementUpdatedCount();
-                    } else {
-                        result.incrementImportedCount();
-                    }
-                } catch (DataIntegrityViolationException ex) {
-                    result.addError("Dong " + (i + 1) + ": loi du lieu khong hop le hoac trung CCCD.");
-                } catch (Exception ex) {
-                    result.addError("Dong " + (i + 1) + ": loi khi xu ly du lieu - " + ex.getMessage());
-                }
+            } catch (Exception e) {
+                result.addError("Lỗi file " + file.getOriginalFilename() + ": " + e.getMessage());
             }
-
-            result.setMessage("Import hoan tat. " + result.getImportedCount() + " dong moi, "
-                    + result.getUpdatedCount() + " dong cap nhat.");
-        } catch (IOException ex) {
-            result.addError("Khong the doc file Excel: " + ex.getMessage());
         }
+
+        // 2. Query DB 1 lần duy nhất
+        List<String> cccdList = new ArrayList<>(map.keySet());
+
+        Map<String, XtThiSinhXetTuyen25Entity> dbMap = new HashMap<>();
+        candidateRepository.findByCccdIn(cccdList)
+                .forEach(e -> dbMap.put(e.getCccd(), e));
+
+        // 3. Chuẩn bị batch save
+        List<XtThiSinhXetTuyen25Entity> toSave = new ArrayList<>();
+
+        for (XtThiSinhXetTuyen25Entity entity : map.values()) {
+            XtThiSinhXetTuyen25Entity existing = dbMap.get(entity.getCccd());
+
+            if (existing != null) {
+                mergeEntity(existing, entity);
+                existing.setUpdatedAt(LocalDate.now());
+                toSave.add(existing);
+                result.incrementUpdatedCount();
+            } else {
+                entity.setUpdatedAt(LocalDate.now());
+                toSave.add(entity);
+                result.incrementImportedCount();
+            }
+        }
+
+        // 4. SAVE 1 LẦN (QUAN TRỌNG)
+        candidateRepository.saveAll(toSave);
+
+        result.setMessage("Import hoàn tất: "
+                + result.getImportedCount() + " mới, "
+                + result.getUpdatedCount() + " cập nhật.");
+
         return result;
     }
 
-    private CandidateImportResult importFromCsv(MultipartFile file) {
-        CandidateImportResult result = new CandidateImportResult();
+    // ================= READ FILE =================
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8))) {
-            String headerLine = reader.readLine();
-            if (!StringUtils.hasText(headerLine)) {
-                result.addError("Tap tin khong co dong header.");
-                return result;
-            }
+    private void readExcelToMap(MultipartFile file,
+                           Map<String, XtThiSinhXetTuyen25Entity> map,
+                           CandidateImportResult result) throws Exception {
 
-            Map<String, Integer> headerIndex = parseHeader(headerLine);
-            if (!headerIndex.containsKey("cccd")) {
-                result.addError("Tap tin phai co cot 'cccd'.");
-                return result;
-            }
+    try (Workbook workbook = new XSSFWorkbook(file.getInputStream())) {
 
-            String line;
-            int row = 1;
-            while ((line = reader.readLine()) != null) {
-                row++;
-                if (!StringUtils.hasText(line)) {
-                    continue;
-                }
-                String[] cells = splitCsvLine(line);
-                String cccd = getCell(cells, headerIndex.get("cccd"));
-                if (!StringUtils.hasText(cccd)) {
-                    result.addError("Dong " + row + ": CCCD khong duoc de trong.");
-                    continue;
-                }
-                try {
-                    XtThiSinhXetTuyen25Entity entity = candidateRepository.findByCccd(cccd.trim())
-                            .orElse(new XtThiSinhXetTuyen25Entity());
-                    applyCsvCellsToEntity(cells, headerIndex, entity);
-                    entity.setUpdatedAt(LocalDate.now());
-                    boolean existed = entity.getId() != null;
-                    candidateRepository.save(entity);
-                    if (existed) {
-                        result.incrementUpdatedCount();
-                    } else {
-                        result.incrementImportedCount();
-                    }
-                } catch (DataIntegrityViolationException ex) {
-                    result.addError("Dong " + row + ": loi du lieu khong hop le hoac trung CCCD.");
-                } catch (Exception ex) {
-                    result.addError("Dong " + row + ": loi khi xu ly du lieu - " + ex.getMessage());
-                }
-            }
+        Sheet sheet = workbook.getSheetAt(0);
+        Row headerRow = sheet.getRow(0);
+        Map<String, Integer> headerIndex = parseExcelHeader(headerRow);
 
-            result.setMessage("Import hoan tat. " + result.getImportedCount() + " dong moi, "
-                    + result.getUpdatedCount() + " dong cap nhat.");
-        } catch (IOException ex) {
-            result.addError("Khong the doc file: " + ex.getMessage());
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null) continue;
+
+            String cccd = getExcelCell(row, headerIndex.get("cccd"));
+            if (!StringUtils.hasText(cccd)) continue;
+
+            XtThiSinhXetTuyen25Entity temp = new XtThiSinhXetTuyen25Entity();
+            applyExcelRowToEntity(row, headerIndex, temp);
+
+            map.put(cccd, temp);
         }
-        return result;
     }
+}
+
+    private void readCsvToMap(MultipartFile file,
+                             Map<String, XtThiSinhXetTuyen25Entity> map,
+                             CandidateImportResult result) throws Exception {
+
+        BufferedReader reader = new BufferedReader(
+                new InputStreamReader(file.getInputStream(), StandardCharsets.UTF_8));
+
+        String headerLine = reader.readLine();
+        Map<String, Integer> headerIndex = parseHeader(headerLine);
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] cells = splitCsvLine(line);
+            String cccd = getCell(cells, headerIndex.get("cccd"));
+            if (!StringUtils.hasText(cccd)) continue;
+
+            XtThiSinhXetTuyen25Entity temp = new XtThiSinhXetTuyen25Entity();
+            applyCsvCellsToEntity(cells, headerIndex, temp);
+
+            map.put(cccd, temp);
+        }
+    }
+    private String safe(String s, int max) {
+    if (s == null) return null;
+    return s.length() <= max ? s : s.substring(0, max);
+}
+
+    // ================= MERGE =================
+
+    private void mergeEntity(XtThiSinhXetTuyen25Entity target,
+                         XtThiSinhXetTuyen25Entity source) {
+
+    if (isNotEmpty(source.getHo()))
+        target.setHo(safe(source.getHo(), 100));
+
+    if (isNotEmpty(source.getTen()))
+        target.setTen(safe(source.getTen(), 50));
+
+    if (isNotEmpty(source.getSoBaoDanh()))
+        target.setSoBaoDanh(source.getSoBaoDanh());
+
+    if (isNotEmpty(source.getNgaySinh()))
+        target.setNgaySinh(source.getNgaySinh());
+
+    if (isNotEmpty(source.getDienThoai()))
+        target.setDienThoai(source.getDienThoai());
+
+    if (isNotEmpty(source.getEmail()))
+        target.setEmail(safe(source.getEmail(), 100));
+
+    if (isNotEmpty(source.getGioiTinh()))
+        target.setGioiTinh(source.getGioiTinh());
+
+    if (isNotEmpty(source.getNoiSinh()))
+        target.setNoiSinh(safe(source.getNoiSinh(), 100)); // ✅ FIX
+
+    if (isNotEmpty(source.getKhuVuc()))
+        target.setKhuVuc(source.getKhuVuc());
+
+    if (isNotEmpty(source.getDoiTuong()))
+        target.setDoiTuong(source.getDoiTuong());
+
+    if (isNotEmpty(source.getPassword()))
+        target.setPassword(source.getPassword());
+}
+
+    private boolean isNotEmpty(String s) {
+        return s != null && !s.trim().isEmpty();
+    }
+
+    // ================= PARSE =================
 
     private Map<String, Integer> parseExcelHeader(Row headerRow) {
-        Map<String, Integer> headerIndex = new HashMap<>();
+        Map<String, Integer> map = new HashMap<>();
         for (int i = 0; i < headerRow.getLastCellNum(); i++) {
-            String header = getExcelCell(headerRow, i);
-            if (header != null) {
-                String canonical = normalizeHeader(header);
-                String field = mapHeaderToField(canonical);
-                if (field != null) {
-                    headerIndex.put(field, i);
-                }
-            }
+            String key = normalizeHeader(getExcelCell(headerRow, i));
+            String field = mapHeaderToField(key);
+            if (field != null) map.put(field, i);
         }
-        return headerIndex;
+        return map;
     }
 
     private String getExcelCell(Row row, Integer cellIndex) {
-        if (cellIndex == null || cellIndex < 0 || cellIndex >= row.getLastCellNum()) {
-            return null;
-        }
-        try {
-            String value = row.getCell(cellIndex).getStringCellValue();
-            return value != null ? value.trim() : null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    if (cellIndex == null) return null;
 
-    private void applyExcelRowToEntity(Row row, Map<String, Integer> headerIndex,
-                                       XtThiSinhXetTuyen25Entity entity) {
-        entity.setCccd(trim(getExcelCell(row, headerIndex.get("cccd"))));
-        entity.setSoBaoDanh(trim(getExcelCell(row, headerIndex.get("soBaoDanh"))));
-        entity.setHo(trim(getExcelCell(row, headerIndex.get("ho"))));
-        entity.setTen(trim(getExcelCell(row, headerIndex.get("ten"))));
-        entity.setNgaySinh(trim(getExcelCell(row, headerIndex.get("ngaySinh"))));
-        entity.setDienThoai(trim(getExcelCell(row, headerIndex.get("dienThoai"))));
-        entity.setGioiTinh(trim(getExcelCell(row, headerIndex.get("gioiTinh"))));
-        entity.setEmail(trim(getExcelCell(row, headerIndex.get("email"))));
-        entity.setNoiSinh(trim(getExcelCell(row, headerIndex.get("noiSinh"))));
-        entity.setDoiTuong(trim(getExcelCell(row, headerIndex.get("doiTuong"))));
-        entity.setKhuVuc(trim(getExcelCell(row, headerIndex.get("khuVuc"))));
-        entity.setPassword(trim(getExcelCell(row, headerIndex.get("password"))));
+    try {
+        var cell = row.getCell(cellIndex);
+        if (cell == null) return null;
+
+        switch (cell.getCellType()) {
+            case STRING:
+                return cell.getStringCellValue().trim();
+            case NUMERIC:
+    return new java.text.DecimalFormat("0")
+            .format(cell.getNumericCellValue());
+            case BOOLEAN:
+                return String.valueOf(cell.getBooleanCellValue());
+            default:
+                return null;
+        }
+    } catch (Exception e) {
+        return null;
     }
+}
 
     private Map<String, Integer> parseHeader(String headerLine) {
-        Map<String, Integer> headerIndex = new HashMap<>();
+        Map<String, Integer> map = new HashMap<>();
         String[] headers = splitCsvLine(headerLine);
         for (int i = 0; i < headers.length; i++) {
-            String canonical = normalizeHeader(headers[i]);
-            String field = mapHeaderToField(canonical);
-            if (field != null) {
-                headerIndex.put(field, i);
-            }
+            String field = mapHeaderToField(normalizeHeader(headers[i]));
+            if (field != null) map.put(field, i);
         }
-        return headerIndex;
+        return map;
     }
 
     private String[] splitCsvLine(String line) {
@@ -263,74 +271,121 @@ public class CandidateManagementService {
     }
 
     private String getCell(String[] cells, Integer index) {
-        if (index == null || index < 0 || index >= cells.length) {
-            return null;
-        }
-        String value = cells[index].trim();
-        if (value.startsWith("\"") && value.endsWith("\"")) {
-            value = value.substring(1, value.length() - 1);
-        }
-        return value.trim();
+        if (index == null || index >= cells.length) return null;
+        return cells[index].replace("\"", "").trim();
     }
 
     private String mapHeaderToField(String normalized) {
-        return switch (normalized) {
-            case "cccd" -> "cccd";
-            case "sobaodanh", "sobd", "sbd" -> "soBaoDanh";
-            case "ho" -> "ho";
-            case "ten" -> "ten";
-            case "ngaysinh" -> "ngaySinh";
-            case "dienthoai", "sodienthoai", "phone" -> "dienThoai";
-            case "gioitinh" -> "gioiTinh";
-            case "email" -> "email";
-            case "noisinh" -> "noiSinh";
-            case "doituong" -> "doiTuong";
-            case "khuvuc" -> "khuVuc";
-            case "password" -> "password";
-            default -> null;
-        };
-    }
+    return switch (normalized) {
+        case "cccd" -> "cccd";
 
-    private String normalizeHeader(String header) {
-        if (header == null) {
-            return "";
+        case "hoten" -> "hoTen";
+
+        case "sobaodanh", "sobd", "sbd" -> "soBaoDanh";
+
+        case "ngaysinh" -> "ngaySinh";
+
+        case "gioitinh" -> "gioiTinh";
+
+        case "dtut", "doituong" -> "doiTuong";
+        case "kvut", "khuvuc" -> "khuVuc";
+
+        case "noisinh" -> "noiSinh";
+
+        // ⚠️ QUAN TRỌNG: bỏ qua STT (không map)
+        case "stt" -> null;
+
+        default -> null;
+    };
+}
+
+    private String normalizeHeader(String s) {
+    if (s == null) return "";
+
+    String noAccent = Normalizer.normalize(s, Normalizer.Form.NFD)
+            .replaceAll("\\p{InCombiningDiacriticalMarks}+", "");
+
+    return noAccent.toLowerCase().replaceAll("[^a-z0-9]", "");
+}
+
+    private void applyExcelRowToEntity(Row row, Map<String, Integer> h,
+                                   XtThiSinhXetTuyen25Entity e) {
+
+    // ✅ CCCD
+    e.setCccd(trim(getExcelCell(row, h.get("cccd"))));
+
+    // ✅ HỌ TÊN GỘP
+    String hoTen = trim(getExcelCell(row, h.get("hoTen")));
+    if (hoTen != null) {
+        String[] parts = hoTen.split("\\s+");
+        if (parts.length > 1) {
+            e.setTen(parts[parts.length - 1]);
+            e.setHo(String.join(" ", Arrays.copyOf(parts, parts.length - 1)));
+        } else {
+            e.setTen(hoTen);
         }
-        return header.toLowerCase(Locale.ROOT).replaceAll("[^a-z0-9]", "");
     }
 
-    private void applyCsvCellsToEntity(String[] cells, Map<String, Integer> headerIndex,
-                                       XtThiSinhXetTuyen25Entity entity) {
-        entity.setCccd(trim(getCell(cells, headerIndex.get("cccd"))));
-        entity.setSoBaoDanh(trim(getCell(cells, headerIndex.get("soBaoDanh"))));
-        entity.setHo(trim(getCell(cells, headerIndex.get("ho"))));
-        entity.setTen(trim(getCell(cells, headerIndex.get("ten"))));
-        entity.setNgaySinh(trim(getCell(cells, headerIndex.get("ngaySinh"))));
-        entity.setDienThoai(trim(getCell(cells, headerIndex.get("dienThoai"))));
-        entity.setGioiTinh(trim(getCell(cells, headerIndex.get("gioiTinh"))));
-        entity.setEmail(trim(getCell(cells, headerIndex.get("email"))));
-        entity.setNoiSinh(trim(getCell(cells, headerIndex.get("noiSinh"))));
-        entity.setDoiTuong(trim(getCell(cells, headerIndex.get("doiTuong"))));
-        entity.setKhuVuc(trim(getCell(cells, headerIndex.get("khuVuc"))));
-        entity.setPassword(trim(getCell(cells, headerIndex.get("password"))));
+    // ❌ KHÔNG set lại ho/ten nữa
+
+    e.setSoBaoDanh(trim(getExcelCell(row, h.get("soBaoDanh"))));
+    e.setNgaySinh(trim(getExcelCell(row, h.get("ngaySinh"))));
+    e.setDienThoai(trim(getExcelCell(row, h.get("dienThoai"))));
+    e.setGioiTinh(trim(getExcelCell(row, h.get("gioiTinh"))));
+    e.setEmail(trim(getExcelCell(row, h.get("email"))));
+    e.setNoiSinh(safe(trim(getExcelCell(row, h.get("noiSinh"))), 100));
+    e.setDoiTuong(trim(getExcelCell(row, h.get("doiTuong"))));
+    e.setKhuVuc(trim(getExcelCell(row, h.get("khuVuc"))));
+    e.setPassword(trim(getExcelCell(row, h.get("password"))));
+}
+
+    private void applyCsvCellsToEntity(String[] c, Map<String, Integer> h,
+                                   XtThiSinhXetTuyen25Entity e) {
+
+    e.setCccd(trim(getCell(c, h.get("cccd"))));
+
+    String hoTen = trim(getCell(c, h.get("hoTen")));
+    if (hoTen != null) {
+        String[] parts = hoTen.split("\\s+");
+        if (parts.length > 1) {
+            e.setTen(parts[parts.length - 1]);
+            e.setHo(String.join(" ", Arrays.copyOf(parts, parts.length - 1)));
+        } else {
+            e.setTen(hoTen);
+        }
     }
 
-    private void applyFormToEntity(CandidateForm form, XtThiSinhXetTuyen25Entity entity) {
-        entity.setCccd(trim(form.getCccd()));
-        entity.setSoBaoDanh(trim(form.getSoBaoDanh()));
-        entity.setHo(trim(form.getHo()));
-        entity.setTen(trim(form.getTen()));
-        entity.setNgaySinh(trim(form.getNgaySinh()));
-        entity.setDienThoai(trim(form.getDienThoai()));
-        entity.setGioiTinh(trim(form.getGioiTinh()));
-        entity.setEmail(trim(form.getEmail()));
-        entity.setNoiSinh(trim(form.getNoiSinh()));
-        entity.setDoiTuong(trim(form.getDoiTuong()));
-        entity.setKhuVuc(trim(form.getKhuVuc()));
-        entity.setPassword(trim(form.getPassword()));
-        entity.setUpdatedAt(LocalDate.now());
+    e.setSoBaoDanh(trim(getCell(c, h.get("soBaoDanh"))));
+    e.setNgaySinh(trim(getCell(c, h.get("ngaySinh"))));
+    e.setDienThoai(trim(getCell(c, h.get("dienThoai"))));
+    e.setGioiTinh(trim(getCell(c, h.get("gioiTinh"))));
+    e.setEmail(trim(getCell(c, h.get("email"))));
+
+    // ✅ FIX CHÍNH Ở ĐÂY
+    e.setNoiSinh(safe(trim(getCell(c, h.get("noiSinh"))), 100));
+
+    e.setDoiTuong(trim(getCell(c, h.get("doiTuong"))));
+    e.setKhuVuc(trim(getCell(c, h.get("khuVuc"))));
+    e.setPassword(trim(getCell(c, h.get("password"))));
+}
+
+    private void applyFormToEntity(CandidateForm f, XtThiSinhXetTuyen25Entity e) {
+        e.setCccd(trim(f.getCccd()));
+        e.setSoBaoDanh(trim(f.getSoBaoDanh()));
+        e.setHo(trim(f.getHo()));
+        e.setTen(trim(f.getTen()));
+        e.setNgaySinh(trim(f.getNgaySinh()));
+        e.setDienThoai(trim(f.getDienThoai()));
+        e.setGioiTinh(trim(f.getGioiTinh()));
+        e.setEmail(trim(f.getEmail()));
+        e.setNoiSinh(trim(f.getNoiSinh()));
+        e.setDoiTuong(trim(f.getDoiTuong()));
+        e.setKhuVuc(trim(f.getKhuVuc()));
+        e.setPassword(trim(f.getPassword()));
+        e.setUpdatedAt(LocalDate.now());
     }
 
-    private String trim(String value) {
-        return value == null ? null : value.trim();
+    private String trim(String s) {
+        return s == null ? null : s.trim();
     }
 }

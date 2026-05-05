@@ -59,8 +59,8 @@
         <h2>Import danh sách thí sinh</h2>
         <form th:action="@{/admin/candidates/import}" method="post" enctype="multipart/form-data">
             <div class="field">
-                <label for="file">Chọn file CSV hoặc Excel (.csv, .xlsx)</label>
-                <input id="file" type="file" name="file" accept=".csv,.xlsx" required>
+                <label for="file">Chọn nhiều file CSV hoặc Excel (.csv, .xlsx)</label>
+                <input id="file" type="file" name="files" accept=".csv,.xlsx" multiple required>
             </div>
             <div class="actions">
                 <button type="submit">Import</button>

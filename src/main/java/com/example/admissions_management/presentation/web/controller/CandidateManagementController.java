@@ -69,9 +69,11 @@ public class CandidateManagementController {
     }
 
     @PostMapping("/import")
-    public String importCandidates(@RequestParam("file") MultipartFile file,
-                                   RedirectAttributes redirectAttributes) {
-        CandidateImportResult result = candidateManagementService.importCandidates(file);
+    public String importCandidates(@RequestParam("files") MultipartFile[] files,
+                                RedirectAttributes redirectAttributes) {
+
+        CandidateImportResult result = candidateManagementService.importMultipleFiles(files);
+
         if (result.hasErrors()) {
             redirectAttributes.addFlashAttribute("errorMessage", String.join("; ", result.getErrors()));
         }
