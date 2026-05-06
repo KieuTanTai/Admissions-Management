@@ -1,8 +1,7 @@
 package com.example.admissions_management.presentation.form.view;
 
-import com.example.admissions_management.presentation.form.controller.AdminConsoleController;
-import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
-import org.springframework.stereotype.Component;
+import java.awt.BorderLayout;
+import java.awt.GridLayout;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -12,8 +11,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
+
+import org.springframework.stereotype.Component;
+
+import com.example.admissions_management.presentation.form.controller.AdminConsoleController;
+import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
 
 @Component
 public class AdminConsole extends JFrame {

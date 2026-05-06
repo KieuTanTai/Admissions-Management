@@ -1,13 +1,16 @@
 package com.example.admissions_management.presentation.form;
 
-import com.example.admissions_management.config.ApplicationConfig;
-import com.example.admissions_management.presentation.form.view.AdminConsole;
+import java.util.logging.Logger;
+
+import javax.swing.SwingUtilities;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.swing.SwingUtilities;
-import java.util.logging.Logger;
+import com.example.admissions_management.config.ApplicationConfig;
+import com.example.admissions_management.presentation.form.view.AdminConsole;
+import com.example.admissions_management.presentation.form.view.AdminPanel;
 
 /**
  * Component để khởi động Swing Form khi Spring Boot application sẵn sàng
@@ -22,10 +25,12 @@ public class ApplicationStartup {
     private static final Logger logger = Logger.getLogger(ApplicationStartup.class.getName());
 
     private final AdminConsole adminConsole;
+    private final AdminPanel adminPanel;
     private final ApplicationConfig applicationConfig;
 
-    public ApplicationStartup(AdminConsole adminConsole, ApplicationConfig applicationConfig) {
+    public ApplicationStartup(AdminConsole adminConsole,AdminPanel adminPanel, ApplicationConfig applicationConfig) {
         this.adminConsole = adminConsole;
+        this.adminPanel = adminPanel;
         this.applicationConfig = applicationConfig;
     }
 
@@ -41,7 +46,7 @@ public class ApplicationStartup {
             logger.info("Đang khởi động Swing Admin Console...");
 
             SwingUtilities.invokeLater(() -> {
-                adminConsole.setVisible(true);
+                adminPanel.setVisible(true);
                 logger.info("✓ Admin Console Swing Form đã được hiển thị");
             });
         } else {
