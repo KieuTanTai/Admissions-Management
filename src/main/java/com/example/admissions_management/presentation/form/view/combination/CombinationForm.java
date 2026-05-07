@@ -76,14 +76,14 @@ public class CombinationForm extends JFrame {
 		JPanel footerPanel = new JPanel(new FlowLayout(FlowLayout.CENTER, 10, 8));
 		footerPanel.add(new JSeparator());
 
-		prevButton = new JButton("<- Trước");
+		prevButton = new JButton("< Trước");
 		prevButton.setFocusPainted(false);
 		prevButton.addActionListener(_ -> previousPage());
 
 		pageInfoLabel = new JLabel("Trang 1 / 1");
-		pageInfoLabel.setPreferredSize(new Dimension(200, 20));
+		pageInfoLabel.setPreferredSize(new Dimension(170, 20));
 
-		nextButton = new JButton("Tiếp ->");
+		nextButton = new JButton("Tiếp >");
 		nextButton.setFocusPainted(false);
 		nextButton.addActionListener(_ -> nextPage());
 
@@ -120,7 +120,6 @@ public class CombinationForm extends JFrame {
 		java.util.List<CombinationResponse> content = (List<CombinationResponse>) pageData.get("content");
 		currentPage = (Integer) pageData.get("page");
 		totalPages = (Integer) pageData.get("totalPages");
-
 		tableModel.setRows(content);
 		pageInfoLabel.setText(String.format("Trang %d / %d (Tổng: %d)",
 			currentPage + 1, totalPages, (Long) pageData.get("totalElements")));
@@ -266,18 +265,6 @@ public class CombinationForm extends JFrame {
 		JTextField tbKeysField = new JTextField();
 		JTextField doLechField = new JTextField();
 
-		JCheckBox n1Box = new JCheckBox();
-		JCheckBox toBox = new JCheckBox();
-		JCheckBox liBox = new JCheckBox();
-		JCheckBox hoBox = new JCheckBox();
-		JCheckBox siBox = new JCheckBox();
-		JCheckBox vaBox = new JCheckBox();
-		JCheckBox suBox = new JCheckBox();
-		JCheckBox diBox = new JCheckBox();
-		JCheckBox tiBox = new JCheckBox();
-		JCheckBox khacBox = new JCheckBox();
-		JCheckBox ktplBox = new JCheckBox();
-
 		if (initial != null) {
 			maNganhField.setText(nullToEmpty(initial.getMaNganh()));
 			maToHopField.setText(nullToEmpty(initial.getMaToHop()));
@@ -290,17 +277,8 @@ public class CombinationForm extends JFrame {
 			tbKeysField.setText(nullToEmpty(initial.getTbKeys()));
 			doLechField.setText(initial.getDoLech() == null ? "" : initial.getDoLech().toPlainString());
 
-			n1Box.setSelected(Boolean.TRUE.equals(initial.getN1()));
-			toBox.setSelected(Boolean.TRUE.equals(initial.getTo()));
-			liBox.setSelected(Boolean.TRUE.equals(initial.getLi()));
-			hoBox.setSelected(Boolean.TRUE.equals(initial.getHo()));
-			siBox.setSelected(Boolean.TRUE.equals(initial.getSi()));
-			vaBox.setSelected(Boolean.TRUE.equals(initial.getVa()));
-			suBox.setSelected(Boolean.TRUE.equals(initial.getSu()));
-			diBox.setSelected(Boolean.TRUE.equals(initial.getDi()));
-			tiBox.setSelected(Boolean.TRUE.equals(initial.getTi()));
-			khacBox.setSelected(Boolean.TRUE.equals(initial.getKhac()));
-			ktplBox.setSelected(Boolean.TRUE.equals(initial.getKtpl()));
+			maNganhField.setEnabled(false);
+			tbKeysField.setEnabled(false);
 		}
 
 		int row = 0;
@@ -313,18 +291,7 @@ public class CombinationForm extends JFrame {
 		row = addRow(form, gbc, row, "th_mon3", thMon3Field);
 		row = addRow(form, gbc, row, "hsmon3", hsMon3Field);
 		row = addRow(form, gbc, row, "tb_keys", tbKeysField);
-		row = addRow(form, gbc, row, "dolech", doLechField);
-		row = addRow(form, gbc, row, "N1", n1Box);
-		row = addRow(form, gbc, row, "TO", toBox);
-		row = addRow(form, gbc, row, "LI", liBox);
-		row = addRow(form, gbc, row, "HO", hoBox);
-		row = addRow(form, gbc, row, "SI", siBox);
-		row = addRow(form, gbc, row, "VA", vaBox);
-		row = addRow(form, gbc, row, "SU", suBox);
-		row = addRow(form, gbc, row, "DI", diBox);
-		row = addRow(form, gbc, row, "TI", tiBox);
-		row = addRow(form, gbc, row, "KHAC", khacBox);
-		addRow(form, gbc, row, "KTPL", ktplBox);
+		addRow(form, gbc, row, "dolech", doLechField);
 
 		JScrollPane scrollPane = new JScrollPane(form);
 		scrollPane.setPreferredSize(new Dimension(520, 520));
@@ -334,29 +301,33 @@ public class CombinationForm extends JFrame {
 			return null;
 		}
 
+		String thMon1 = blankToNull(thMon1Field.getText());
+		String thMon2 = blankToNull(thMon2Field.getText());
+		String thMon3 = blankToNull(thMon3Field.getText());
+
 		CombinationResponse out = new CombinationResponse();
 		out.setMaNganh(maNganhField.getText().trim());
 		out.setMaToHop(maToHopField.getText().trim());
-		out.setThMon1(blankToNull(thMon1Field.getText()));
+		out.setThMon1(thMon1);
 		out.setHsMon1(parseByteOrNull(hsMon1Field.getText()));
-		out.setThMon2(blankToNull(thMon2Field.getText()));
+		out.setThMon2(thMon2);
 		out.setHsMon2(parseByteOrNull(hsMon2Field.getText()));
-		out.setThMon3(blankToNull(thMon3Field.getText()));
+		out.setThMon3(thMon3);
 		out.setHsMon3(parseByteOrNull(hsMon3Field.getText()));
 		out.setTbKeys(blankToNull(tbKeysField.getText()));
 		out.setDoLech(parseBigDecimalOrNull(doLechField.getText()));
 
-		out.setN1(n1Box.isSelected());
-		out.setTo(toBox.isSelected());
-		out.setLi(liBox.isSelected());
-		out.setHo(hoBox.isSelected());
-		out.setSi(siBox.isSelected());
-		out.setVa(vaBox.isSelected());
-		out.setSu(suBox.isSelected());
-		out.setDi(diBox.isSelected());
-		out.setTi(tiBox.isSelected());
-		out.setKhac(khacBox.isSelected());
-		out.setKtpl(ktplBox.isSelected());
+		out.setN1(checkEqualForCheckbox("N1", thMon1, thMon2, thMon3));
+		out.setTo(checkEqualForCheckbox("TO", thMon1, thMon2, thMon3));
+		out.setLi(checkEqualForCheckbox("LI", thMon1, thMon2, thMon3));
+		out.setHo(checkEqualForCheckbox("HO", thMon1, thMon2, thMon3));
+		out.setSi(checkEqualForCheckbox("SI", thMon1, thMon2, thMon3));
+		out.setVa(checkEqualForCheckbox("VA", thMon1, thMon2, thMon3));
+		out.setSu(checkEqualForCheckbox("SU", thMon1, thMon2, thMon3));
+		out.setDi(checkEqualForCheckbox("DI", thMon1, thMon2, thMon3));
+		out.setTi(checkEqualForCheckbox("TI", thMon1, thMon2, thMon3));
+		out.setKhac(checkEqualForCheckbox("KHAC", thMon1, thMon2, thMon3));
+		out.setKtpl(checkEqualForCheckbox("KTPL", thMon1, thMon2, thMon3));
 
 		// keep id for update semantics (service will override to selected id anyway)
 		if (initial != null) {
@@ -411,5 +382,9 @@ public class CombinationForm extends JFrame {
 		} catch (NumberFormatException ex) {
 			throw new IllegalArgumentException("Invalid decimal value: " + value);
 		}
+	}
+
+	private static boolean checkEqualForCheckbox(String inputName, String thMon1, String thMon2, String thMon3) {
+		return inputName.equals(thMon1) || inputName.equals(thMon2) || inputName.equals(thMon3);
 	}
 }
