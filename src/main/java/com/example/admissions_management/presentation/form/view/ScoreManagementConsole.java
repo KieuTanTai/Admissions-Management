@@ -15,6 +15,8 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -32,6 +34,8 @@ public class ScoreManagementConsole extends JFrame {
     private final ScoreManagementConsoleController controller;
     private final ObjectProvider<AdminConsole> adminConsoleProvider;
     private final ScoreManagementTableModel tableModel;
+
+    private static final Logger logger = LoggerFactory.getLogger(ScoreManagementConsole.class);
 
     private final JTextField idField = new JTextField();
     private final JTextField cccdField = new JTextField();
@@ -273,12 +277,21 @@ public class ScoreManagementConsole extends JFrame {
                                 : JOptionPane.INFORMATION_MESSAGE);
                     refreshTable();
                 } catch (Exception exception) {
-                    System.out.println("DEBUG: Exception during import: " + exception.getMessage());
-                    exception.printStackTrace();
-                    JOptionPane.showMessageDialog(this,
-                            "Loi khi import: " + exception.getMessage(),
-                            "Import Failed",
-                            JOptionPane.ERROR_MESSAGE);
+                    logger.error("Import failed", exception);
+                    String msg = exception.getMessage() == null ? exception.toString() : exception.getMessage();
+                    // Detect EntityManagerFactory closed / restart situations and give actionable guidance
+                    if (msg.contains("EntityManagerFactory is closed") || msg.contains("EntityManagerFactory")) {
+                        JOptionPane.showMessageDialog(this,
+                                "Lỗi: EntityManagerFactory đã đóng (ứng dụng có thể đang restart).\n" +
+                                        "Hãy tắt tính năng auto-restart (spring.devtools.restart.enabled=false) hoặc khởi động lại ứng dụng, rồi thử lại.\n\n(Chi tiết xem logs)",
+                                "Import Failed",
+                                JOptionPane.ERROR_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this,
+                                "Lỗi khi import: " + msg + "\n(Chi tiết xem logs)",
+                                "Import Failed",
+                                JOptionPane.ERROR_MESSAGE);
+                    }
                 }
             } else {
                 System.out.println("DEBUG: Dialog canceled");

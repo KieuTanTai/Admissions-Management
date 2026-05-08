@@ -5,6 +5,7 @@ import com.example.admissions_management.application.dto.response.ApplicantRespo
 import com.example.admissions_management.application.service.AdminApplicantService;
 import org.springframework.stereotype.Component;
 
+import java.io.File;
 import java.util.List;
 
 @Component
@@ -22,5 +23,9 @@ public class AdminConsoleController {
 
     public ApplicantResponse registerApplicant(String fullName, String email, String program) {
         return adminApplicantService.registerApplicant(new RegisterApplicantRequest(fullName, email, program));
+    }
+
+    public AdminApplicantService.ImportResult importApplicants(File excelFile) {
+        return adminApplicantService.importFromExcel(excelFile);
     }
 }

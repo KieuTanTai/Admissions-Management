@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -136,6 +137,8 @@ public class ScoreManagementService {
                     "Header bat buoc: CCCD. Cac header hop le: CCCD, SOBAODANH, D_PHUONGTHUC, TO, LI, HO, SI, SU, DI, VA, N1_THI, N1_CC, CNCN, CNNN, TI, KTPL, NL1, NK1, NK2.");
         }
 
+        boolean hasMethodColumn = headerIndex.containsKey("D_PHUONGTHUC");
+
         for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
             Row row = sheet.getRow(rowNum);
             if (row == null || isRowEmpty(row, formatter)) {
@@ -145,12 +148,6 @@ public class ScoreManagementService {
 
             String cccd = readStringCell(row, headerIndex.get("CCCD"), formatter);
             if (cccd.isBlank()) {
-                skipped++;
-                continue;
-            }
-
-            String method = normalizeImportedMethod(readStringCell(row, headerIndex.get("D_PHUONGTHUC"), formatter));
-            if (method.isBlank()) {
                 skipped++;
                 continue;
             }
@@ -171,6 +168,7 @@ public class ScoreManagementService {
             BigDecimal di = readDecimalCell(row, headerIndex.get("DI"), formatter);
             BigDecimal va = readDecimalCell(row, headerIndex.get("VA"), formatter);
             BigDecimal n1Thi = readDecimalCell(row, headerIndex.get("N1_THI"), formatter);
+            BigDecimal nn = readDecimalCell(row, headerIndex.get("NN"), formatter);
             BigDecimal n1Cc = readDecimalCell(row, headerIndex.get("N1_CC"), formatter);
             BigDecimal cncn = readDecimalCell(row, headerIndex.get("CNCN"), formatter);
             BigDecimal cnnn = readDecimalCell(row, headerIndex.get("CNNN"), formatter);
@@ -180,12 +178,28 @@ public class ScoreManagementService {
             BigDecimal nk1 = readDecimalCell(row, headerIndex.get("NK1"), formatter);
             BigDecimal nk2 = readDecimalCell(row, headerIndex.get("NK2"), formatter);
 
+            String method;
+            if (hasMethodColumn) {
+                method = normalizeImportedMethod(readStringCell(row, headerIndex.get("D_PHUONGTHUC"), formatter));
+                if (method.isBlank()) {
+                    skipped++;
+                    continue;
+                }
+            } else {
+                method = inferMethodFromRawSheet(row, headerIndex, formatter);
+            }
+
             entity.setCccd(cccd);
-            entity.setSoBaoDanh(readStringCell(row, headerIndex.get("SOBAODANH"), formatter));
             entity.setdPhuongThuc(method);
 
-            resetAllScoreColumns(entity);
-            applyImportPolicy(entity, method, to, li, ho, si, su, di, va, n1Thi, n1Cc, cncn, cnnn, ti, ktpl, nl1, nk1, nk2);
+            if (hasMethodColumn) {
+                entity.setSoBaoDanh(readStringCell(row, headerIndex.get("SOBAODANH"), formatter));
+
+                resetAllScoreColumns(entity);
+                applyImportPolicy(entity, method, to, li, ho, si, su, di, va, n1Thi, n1Cc, cncn, cnnn, ti, ktpl, nl1, nk1, nk2);
+            } else {
+                applyRawDsThiSinhImport(entity, row, headerIndex, formatter, to, li, ho, si, su, di, va, n1Thi, nn, n1Cc, cncn, cnnn, ti, ktpl, nl1, nk1, nk2);
+            }
 
             repository.save(entity);
         }
@@ -303,11 +317,25 @@ public class ScoreManagementService {
     }
 
     private String normalizeHeader(String value) {
-        return value == null
-                ? ""
-                : value.trim().toUpperCase(Locale.ROOT)
+        if (value == null) {
+            return "";
+        }
+
+        String normalized = Normalizer.normalize(value.trim(), Normalizer.Form.NFD)
+                .replaceAll("\\p{M}+", "")
+                .toUpperCase(Locale.ROOT)
                 .replace(" ", "")
                 .replace("-", "_");
+        return normalized;
+    }
+
+    private String inferMethodFromRawSheet(Row row, Map<String, Integer> headerIndex, DataFormatter formatter) {
+        BigDecimal nl1Value = readDecimalCell(row, headerIndex.get("NL1"), formatter);
+        if (nl1Value != null) {
+            return "DGNL";
+        }
+
+        return "THPT";
     }
 
     private String normalizeImportedMethod(String value) {
@@ -419,6 +447,48 @@ public class ScoreManagementService {
         if ("DGNL".equals(method)) {
             entity.setNl1(zeroIfNull(nl1));
         }
+    }
+
+    private void applyRawDsThiSinhImport(XtDiemThiXetTuyenEntity entity,
+                                         Row row,
+                                         Map<String, Integer> headerIndex,
+                                         DataFormatter formatter,
+                                         BigDecimal to,
+                                         BigDecimal li,
+                                         BigDecimal ho,
+                                         BigDecimal si,
+                                         BigDecimal su,
+                                         BigDecimal di,
+                                         BigDecimal va,
+                                         BigDecimal n1Thi,
+                                         BigDecimal nn,
+                                         BigDecimal n1Cc,
+                                         BigDecimal cncn,
+                                         BigDecimal cnnn,
+                                         BigDecimal ti,
+                                         BigDecimal ktpl,
+                                         BigDecimal nl1,
+                                         BigDecimal nk1,
+                                         BigDecimal nk2) {
+        resetAllScoreColumns(entity);
+
+        entity.setSoBaoDanh(readStringCell(row, headerIndex.get("STT"), formatter));
+        entity.setTo(zeroIfNull(to));
+        entity.setLi(zeroIfNull(li));
+        entity.setHo(zeroIfNull(ho));
+        entity.setSi(zeroIfNull(si));
+        entity.setSu(zeroIfNull(su));
+        entity.setDi(zeroIfNull(di));
+        entity.setVa(zeroIfNull(va));
+        entity.setN1Thi(zeroIfNull(n1Thi != null ? n1Thi : nn));
+        entity.setN1Cc(zeroIfNull(n1Cc));
+        entity.setCncn(zeroIfNull(cncn));
+        entity.setCnnn(zeroIfNull(cnnn));
+        entity.setTi(zeroIfNull(ti));
+        entity.setKtpl(zeroIfNull(ktpl));
+        entity.setNl1(zeroIfNull(nl1));
+        entity.setNk1(zeroIfNull(nk1));
+        entity.setNk2(zeroIfNull(nk2));
     }
 
     private BigDecimal zeroIfNull(BigDecimal value) {

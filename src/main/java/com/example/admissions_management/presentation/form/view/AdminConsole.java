@@ -6,6 +6,7 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Component;
 
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -13,8 +14,12 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Component
 public class AdminConsole extends JFrame {
@@ -22,6 +27,8 @@ public class AdminConsole extends JFrame {
 	private final AdminConsoleController controller;
 	private final ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider;
 	private final AdminConsoleTableModel tableModel;
+
+    private static final Logger logger = LoggerFactory.getLogger(AdminConsole.class);
 
 	private final JTextField fullNameField = new JTextField();
 	private final JTextField emailField = new JTextField();
@@ -56,17 +63,20 @@ public class AdminConsole extends JFrame {
 		panel.add(emailField);
 		panel.add(programField);
 
-		JPanel actionPanel = new JPanel(new GridLayout(1, 3, 8, 8));
+		JPanel actionPanel = new JPanel(new GridLayout(1, 4, 8, 8));
 		JButton saveButton = new JButton("Save");
 		JButton refreshButton = new JButton("Refresh");
+		JButton importButton = new JButton("Import Applicants");
 		JButton scoreManagementButton = new JButton("Open Scores Form");
 
 		saveButton.addActionListener(e -> saveApplicant());
 		refreshButton.addActionListener(e -> refreshTable());
+		importButton.addActionListener(e -> importApplicants());
 		scoreManagementButton.addActionListener(e -> openScoreManagementForm());
 
 		actionPanel.add(saveButton);
 		actionPanel.add(refreshButton);
+		actionPanel.add(importButton);
 		actionPanel.add(scoreManagementButton);
 		panel.add(actionPanel);
 
@@ -86,7 +96,8 @@ public class AdminConsole extends JFrame {
 			programField.setText("");
 			refreshTable();
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this, ex.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
+			logger.error("Save applicant failed", ex);
+			JOptionPane.showMessageDialog(this, "Lỗi lưu: " + ex.getMessage() + "\n(Chi tiết xem logs)", "Save Failed", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
@@ -100,10 +111,36 @@ public class AdminConsole extends JFrame {
 			scoreConsole.setVisible(true);
 			setVisible(false);
 		} catch (Exception ex) {
-			JOptionPane.showMessageDialog(this,
-					"Khong mo duoc form quan ly diem: " + ex.getMessage(),
-					"Open Form Failed",
-					JOptionPane.ERROR_MESSAGE);
+		    logger.error("Open score form failed", ex);
+		    JOptionPane.showMessageDialog(this,
+			    "Không mở được form quản lý điểm: " + ex.getMessage() + "\n(Chi tiết xem logs)",
+			    "Open Form Failed",
+			    JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void importApplicants() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx"));
+		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+
+		int result = fileChooser.showOpenDialog(this);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			File selectedFile = fileChooser.getSelectedFile();
+			try {
+				var importResult = controller.importApplicants(selectedFile);
+				JOptionPane.showMessageDialog(this,
+						importResult.toString(),
+						"Import Successful",
+						JOptionPane.INFORMATION_MESSAGE);
+				refreshTable();
+			} catch (Exception ex) {
+				logger.error("Import applicants failed", ex);
+				JOptionPane.showMessageDialog(this,
+						"Import failed: " + ex.getMessage() + "\n(Chi tiết xem logs)",
+						"Import Failed",
+						JOptionPane.ERROR_MESSAGE);
+			}
 		}
 	}
 }
