@@ -120,88 +120,26 @@ public class ScoreManagementService {
             return new ImportResult(inserted, updated, skipped, "Khong tim thay sheet nao trong file Excel.");
         }
 
-        Sheet sheet = workbook.getSheetAt(0);
-        if (sheet == null) {
-            return new ImportResult(inserted, updated, skipped, "Khong doc duoc sheet dau tien.");
-        }
-
-        DataFormatter formatter = new DataFormatter(Locale.US);
-        Row headerRow = sheet.getRow(0);
-        if (headerRow == null) {
-            return new ImportResult(inserted, updated, skipped, "File Excel khong co dong header.");
-        }
-
-        Map<String, Integer> headerIndex = extractHeaderIndex(headerRow, formatter);
-        if (!headerIndex.containsKey("CCCD")) {
-            return new ImportResult(inserted, updated, skipped,
-                    "Header bat buoc: CCCD. Cac header hop le: CCCD, SOBAODANH, D_PHUONGTHUC, TO, LI, HO, SI, SU, DI, VA, N1_THI, N1_CC, CNCN, CNNN, TI, KTPL, NL1, NK1, NK2.");
-        }
-
-        boolean hasMethodColumn = headerIndex.containsKey("D_PHUONGTHUC");
-
-        for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
-            Row row = sheet.getRow(rowNum);
-            if (row == null || isRowEmpty(row, formatter)) {
+        for (int sheetIndex = 0; sheetIndex < workbook.getNumberOfSheets(); sheetIndex++) {
+            Sheet sheet = workbook.getSheetAt(sheetIndex);
+            if (sheet == null) {
                 skipped++;
                 continue;
             }
 
-            String cccd = readStringCell(row, headerIndex.get("CCCD"), formatter);
-            if (cccd.isBlank()) {
-                skipped++;
-                continue;
-            }
-
-            Optional<XtDiemThiXetTuyenEntity> existing = repository.findByCccd(cccd);
-            XtDiemThiXetTuyenEntity entity = existing.orElseGet(XtDiemThiXetTuyenEntity::new);
-            if (existing.isPresent()) {
-                updated++;
+            String sheetName = safeTrim(sheet.getSheetName()).toUpperCase(Locale.ROOT);
+            ImportResult sheetResult;
+            if ("VSAT".equals(sheetName)) {
+                sheetResult = importVsatSheet(sheet);
+            } else if ("DGNL".equals(sheetName)) {
+                sheetResult = importDgnlSheet(sheet);
             } else {
-                inserted++;
+                sheetResult = importGenericSheet(sheet);
             }
 
-            BigDecimal to = readDecimalCell(row, headerIndex.get("TO"), formatter);
-            BigDecimal li = readDecimalCell(row, headerIndex.get("LI"), formatter);
-            BigDecimal ho = readDecimalCell(row, headerIndex.get("HO"), formatter);
-            BigDecimal si = readDecimalCell(row, headerIndex.get("SI"), formatter);
-            BigDecimal su = readDecimalCell(row, headerIndex.get("SU"), formatter);
-            BigDecimal di = readDecimalCell(row, headerIndex.get("DI"), formatter);
-            BigDecimal va = readDecimalCell(row, headerIndex.get("VA"), formatter);
-            BigDecimal n1Thi = readDecimalCell(row, headerIndex.get("N1_THI"), formatter);
-            BigDecimal nn = readDecimalCell(row, headerIndex.get("NN"), formatter);
-            BigDecimal n1Cc = readDecimalCell(row, headerIndex.get("N1_CC"), formatter);
-            BigDecimal cncn = readDecimalCell(row, headerIndex.get("CNCN"), formatter);
-            BigDecimal cnnn = readDecimalCell(row, headerIndex.get("CNNN"), formatter);
-            BigDecimal ti = readDecimalCell(row, headerIndex.get("TI"), formatter);
-            BigDecimal ktpl = readDecimalCell(row, headerIndex.get("KTPL"), formatter);
-            BigDecimal nl1 = readDecimalCell(row, headerIndex.get("NL1"), formatter);
-            BigDecimal nk1 = readDecimalCell(row, headerIndex.get("NK1"), formatter);
-            BigDecimal nk2 = readDecimalCell(row, headerIndex.get("NK2"), formatter);
-
-            String method;
-            if (hasMethodColumn) {
-                method = normalizeImportedMethod(readStringCell(row, headerIndex.get("D_PHUONGTHUC"), formatter));
-                if (method.isBlank()) {
-                    skipped++;
-                    continue;
-                }
-            } else {
-                method = inferMethodFromRawSheet(row, headerIndex, formatter);
-            }
-
-            entity.setCccd(cccd);
-            entity.setdPhuongThuc(method);
-
-            if (hasMethodColumn) {
-                entity.setSoBaoDanh(readStringCell(row, headerIndex.get("SOBAODANH"), formatter));
-
-                resetAllScoreColumns(entity);
-                applyImportPolicy(entity, method, to, li, ho, si, su, di, va, n1Thi, n1Cc, cncn, cnnn, ti, ktpl, nl1, nk1, nk2);
-            } else {
-                applyRawDsThiSinhImport(entity, row, headerIndex, formatter, to, li, ho, si, su, di, va, n1Thi, nn, n1Cc, cncn, cnnn, ti, ktpl, nl1, nk1, nk2);
-            }
-
-            repository.save(entity);
+            inserted += sheetResult.inserted();
+            updated += sheetResult.updated();
+            skipped += sheetResult.skipped();
         }
 
         return new ImportResult(inserted, updated, skipped,
@@ -449,46 +387,228 @@ public class ScoreManagementService {
         }
     }
 
-    private void applyRawDsThiSinhImport(XtDiemThiXetTuyenEntity entity,
-                                         Row row,
-                                         Map<String, Integer> headerIndex,
-                                         DataFormatter formatter,
-                                         BigDecimal to,
-                                         BigDecimal li,
-                                         BigDecimal ho,
-                                         BigDecimal si,
-                                         BigDecimal su,
-                                         BigDecimal di,
-                                         BigDecimal va,
-                                         BigDecimal n1Thi,
-                                         BigDecimal nn,
-                                         BigDecimal n1Cc,
-                                         BigDecimal cncn,
-                                         BigDecimal cnnn,
-                                         BigDecimal ti,
-                                         BigDecimal ktpl,
-                                         BigDecimal nl1,
-                                         BigDecimal nk1,
-                                         BigDecimal nk2) {
-        resetAllScoreColumns(entity);
+    private ImportResult importVsatSheet(Sheet sheet) {
+        DataFormatter formatter = new DataFormatter(Locale.US);
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            return new ImportResult(0, 0, 0, "Sheet VSAT khong co dong header.");
+        }
 
-        entity.setSoBaoDanh(readStringCell(row, headerIndex.get("STT"), formatter));
-        entity.setTo(zeroIfNull(to));
-        entity.setLi(zeroIfNull(li));
-        entity.setHo(zeroIfNull(ho));
-        entity.setSi(zeroIfNull(si));
-        entity.setSu(zeroIfNull(su));
-        entity.setDi(zeroIfNull(di));
-        entity.setVa(zeroIfNull(va));
-        entity.setN1Thi(zeroIfNull(n1Thi != null ? n1Thi : nn));
-        entity.setN1Cc(zeroIfNull(n1Cc));
-        entity.setCncn(zeroIfNull(cncn));
-        entity.setCnnn(zeroIfNull(cnnn));
-        entity.setTi(zeroIfNull(ti));
-        entity.setKtpl(zeroIfNull(ktpl));
-        entity.setNl1(zeroIfNull(nl1));
-        entity.setNk1(zeroIfNull(nk1));
-        entity.setNk2(zeroIfNull(nk2));
+        Map<String, Integer> headerIndex = extractHeaderIndex(headerRow, formatter);
+        Integer cccdIndex = headerIndex.get("CMND");
+        Integer subjectIndex = headerIndex.get("MAMONTHI");
+        Integer scoreIndex = headerIndex.get("DIEM");
+        if (cccdIndex == null || subjectIndex == null || scoreIndex == null) {
+            return new ImportResult(0, 0, 0, "Sheet VSAT can cac cot CMND, MAMONTHI, DIEM.");
+        }
+
+        Map<String, XtDiemThiXetTuyenEntity> entityByCccd = new LinkedHashMap<>();
+        Map<String, Boolean> existingFlagByCccd = new HashMap<>();
+        int skipped = 0;
+
+        for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+            Row row = sheet.getRow(rowNum);
+            if (row == null || isRowEmpty(row, formatter)) {
+                skipped++;
+                continue;
+            }
+
+            String cccd = readStringCell(row, cccdIndex, formatter);
+            String subjectCode = normalizeHeader(readStringCell(row, subjectIndex, formatter));
+            BigDecimal score = readDecimalCell(row, scoreIndex, formatter);
+            if (cccd.isBlank() || subjectCode.isBlank() || score == null) {
+                skipped++;
+                continue;
+            }
+
+            String targetColumn = mapVsatSubjectToColumn(subjectCode);
+            if (targetColumn == null) {
+                skipped++;
+                continue;
+            }
+
+            XtDiemThiXetTuyenEntity entity = entityByCccd.computeIfAbsent(cccd, key -> {
+                Optional<XtDiemThiXetTuyenEntity> existing = repository.findByCccd(key);
+                existingFlagByCccd.put(key, existing.isPresent());
+                XtDiemThiXetTuyenEntity target = existing.orElseGet(XtDiemThiXetTuyenEntity::new);
+                target.setCccd(key);
+                target.setdPhuongThuc("VSAT");
+                if (existing.isEmpty()) {
+                    resetAllScoreColumns(target);
+                }
+                return target;
+            });
+
+            setScoreByColumn(entity, targetColumn, score);
+        }
+
+        int inserted = 0;
+        int updated = 0;
+        for (Map.Entry<String, XtDiemThiXetTuyenEntity> entry : entityByCccd.entrySet()) {
+            if (existingFlagByCccd.getOrDefault(entry.getKey(), false)) {
+                updated++;
+            } else {
+                inserted++;
+            }
+            repository.save(entry.getValue());
+        }
+
+        return new ImportResult(inserted, updated, skipped,
+                "Import VSAT thanh cong: " + inserted + " them moi, " + updated + " cap nhat, " + skipped + " bo qua.");
+    }
+
+    private ImportResult importDgnlSheet(Sheet sheet) {
+        DataFormatter formatter = new DataFormatter(Locale.US);
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            return new ImportResult(0, 0, 0, "Sheet DGNL khong co dong header.");
+        }
+
+        Map<String, Integer> headerIndex = extractHeaderIndex(headerRow, formatter);
+        Integer cccdIndex = headerIndex.get("CMND");
+        Integer scoreIndex = headerIndex.get("DIEM");
+        if (cccdIndex == null || scoreIndex == null) {
+            return new ImportResult(0, 0, 0, "Sheet DGNL can cac cot CMND va DIEM.");
+        }
+
+        Map<String, XtDiemThiXetTuyenEntity> entityByCccd = new LinkedHashMap<>();
+        Map<String, Boolean> existingFlagByCccd = new HashMap<>();
+        int skipped = 0;
+
+        for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+            Row row = sheet.getRow(rowNum);
+            if (row == null || isRowEmpty(row, formatter)) {
+                skipped++;
+                continue;
+            }
+
+            String cccd = readStringCell(row, cccdIndex, formatter);
+            BigDecimal score = readDecimalCell(row, scoreIndex, formatter);
+            if (cccd.isBlank() || score == null) {
+                skipped++;
+                continue;
+            }
+
+            XtDiemThiXetTuyenEntity entity = entityByCccd.computeIfAbsent(cccd, key -> {
+                Optional<XtDiemThiXetTuyenEntity> existing = repository.findByCccd(key);
+                existingFlagByCccd.put(key, existing.isPresent());
+                XtDiemThiXetTuyenEntity target = existing.orElseGet(XtDiemThiXetTuyenEntity::new);
+                target.setCccd(key);
+                target.setdPhuongThuc("DGNL");
+                if (existing.isEmpty()) {
+                    resetAllScoreColumns(target);
+                }
+                return target;
+            });
+
+            entity.setNl1(score);
+        }
+
+        int inserted = 0;
+        int updated = 0;
+        for (Map.Entry<String, XtDiemThiXetTuyenEntity> entry : entityByCccd.entrySet()) {
+            if (existingFlagByCccd.getOrDefault(entry.getKey(), false)) {
+                updated++;
+            } else {
+                inserted++;
+            }
+            repository.save(entry.getValue());
+        }
+
+        return new ImportResult(inserted, updated, skipped,
+                "Import DGNL thanh cong: " + inserted + " them moi, " + updated + " cap nhat, " + skipped + " bo qua.");
+    }
+
+    private ImportResult importGenericSheet(Sheet sheet) {
+        DataFormatter formatter = new DataFormatter(Locale.US);
+        Row headerRow = sheet.getRow(0);
+        if (headerRow == null) {
+            return new ImportResult(0, 0, 0, "File Excel khong co dong header.");
+        }
+
+        Map<String, Integer> headerIndex = extractHeaderIndex(headerRow, formatter);
+        if (!headerIndex.containsKey("CCCD")) {
+            return new ImportResult(0, 0, 0,
+                    "Header bat buoc: CCCD. Cac header hop le: CCCD, SOBAODANH, D_PHUONGTHUC, TO, LI, HO, SI, SU, DI, VA, N1_THI, N1_CC, CNCN, CNNN, TI, KTPL, NL1, NK1, NK2.");
+        }
+
+        int inserted = 0;
+        int updated = 0;
+        int skipped = 0;
+        boolean hasMethodColumn = headerIndex.containsKey("D_PHUONGTHUC");
+
+        for (int rowNum = 1; rowNum <= sheet.getLastRowNum(); rowNum++) {
+            Row row = sheet.getRow(rowNum);
+            if (row == null || isRowEmpty(row, formatter)) {
+                skipped++;
+                continue;
+            }
+
+            String cccd = readStringCell(row, headerIndex.get("CCCD"), formatter);
+            if (cccd.isBlank()) {
+                skipped++;
+                continue;
+            }
+
+            Optional<XtDiemThiXetTuyenEntity> existing = repository.findByCccd(cccd);
+            XtDiemThiXetTuyenEntity entity = existing.orElseGet(XtDiemThiXetTuyenEntity::new);
+            if (existing.isPresent()) {
+                updated++;
+            } else {
+                inserted++;
+            }
+
+            entity.setCccd(cccd);
+            if (headerIndex.containsKey("SOBAODANH")) {
+                entity.setSoBaoDanh(readStringCell(row, headerIndex.get("SOBAODANH"), formatter));
+            }
+            if (hasMethodColumn) {
+                entity.setdPhuongThuc(normalizeImportedMethod(readStringCell(row, headerIndex.get("D_PHUONGTHUC"), formatter)));
+            }
+            repository.save(entity);
+        }
+
+        return new ImportResult(inserted, updated, skipped,
+                "Import Excel thanh cong: " + inserted + " them moi, " + updated + " cap nhat, " + skipped + " bo qua.");
+    }
+
+    private String mapVsatSubjectToColumn(String subjectCode) {
+        String normalized = normalizeHeader(subjectCode);
+        return switch (normalized) {
+            case "TO_VS" -> "TO";
+            case "LI_VS" -> "LI";
+            case "HO_VS" -> "HO";
+            case "SI_VS" -> "SI";
+            case "SU_VS" -> "SU";
+            case "DI_VS" -> "DI";
+            case "VA_VS" -> "VA";
+            case "N1_VS" -> "N1_THI";
+            case "M1" -> "TO";
+            case "M2" -> "LI";
+            case "M3" -> "HO";
+            case "M4" -> "SI";
+            case "M5" -> "VA";
+            case "M6" -> "SU";
+            case "M7" -> "DI";
+            case "M8" -> "N1_THI";
+            default -> null;
+        };
+    }
+
+    private void setScoreByColumn(XtDiemThiXetTuyenEntity entity, String column, BigDecimal score) {
+        BigDecimal value = zeroIfNull(score);
+        switch (column) {
+            case "TO" -> entity.setTo(value);
+            case "LI" -> entity.setLi(value);
+            case "HO" -> entity.setHo(value);
+            case "SI" -> entity.setSi(value);
+            case "SU" -> entity.setSu(value);
+            case "DI" -> entity.setDi(value);
+            case "VA" -> entity.setVa(value);
+            case "N1_THI" -> entity.setN1Thi(value);
+            default -> {
+            }
+        }
     }
 
     private BigDecimal zeroIfNull(BigDecimal value) {
