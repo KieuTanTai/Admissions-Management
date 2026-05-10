@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Thi Sinh - Admissions</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/candidate-portal.css}" href="/css/candidate-portal.css">
+</head>
+
+<body>
+    <div class="page">
+        <div class="hero">
+            <h1>Spring MVC Portal Cho Thi Sinh</h1>
+            <p>
+                Ung dung mau gom 3 chuc nang: tra cuu ket qua xet tuyen, tinh diem phuong thuc DGNL,
+                va tinh diem VSAT/THPT theo to hop mon cua tung nganh.
+            </p>
+        </div>
+
+        <div class="layout">
+            <section class="card" id="lookup-card">
+                <div class="section-title">
+                    <h2>1. Tra cuu ket qua xet tuyen</h2>
+                    <span class="chip">Dang nhap theo CCCD + ngay sinh</span>
+                </div>
+                <p class="desc">
+                    Username la so can cuoc cong dan. Password la 08 so ngay sinh theo dinh dang ddMMyyyy.
+                </p>
+
+                <form th:action="@{/candidate/lookup}" th:object="${lookupForm}" method="post">
+                    <div class="field">
+                        <label for="username">Username (CCCD)</label>
+                        <input id="username" type="text" th:field="*{username}" placeholder="Vi du: 079123456789"
+                            pattern="[0-9]{8,20}" title="Chi nhap so (8-20 chu so)" required>
+                    </div>
+                    <div class="field">
+                        <label for="password">Password (ddMMyyyy)</label>
+                        <input id="password" type="password" th:field="*{password}" placeholder="Vi du: 15082007"
+                            pattern="[0-9]{8}" title="Nhap dung 8 chu so ngay sinh ddMMyyyy" required>
+                    </div>
+                    <div class="actions">
+                        <button class="btn" type="submit">Tra cuu</button>
+                    </div>
+                </form>
+
+                <div class="result-box" th:if="${lookupResult != null}">
+                    <span class="status"
+                        th:classappend="${lookupResult.found} ? (${lookupResult.admitted} ? ' status-ok' : ' status-warn') : ' status-danger'"
+                        th:text="${lookupResult.message}"></span>
+
+                    <div th:if="${lookupResult.found and lookupResult.admitted}">
+                        <p class="meta"><strong>Thi sinh:</strong> <span th:text="${lookupResult.fullName}"></span> -
+                            <span th:text="${lookupResult.cccd}"></span></p>
+                        <p class="meta"><strong>Ket qua:</strong> Trung tuyen</p>
+                        <p class="meta"><strong>Nganh:</strong> <span th:text="${lookupResult.majorName}"></span></p>
+                        <p class="meta"><strong>Diem:</strong> <span th:text="${lookupResult.score}"></span></p>
+                        <p class="meta"><strong>To hop:</strong> <span th:text="${lookupResult.combination}"></span></p>
+                        <p class="meta"><strong>Phuong thuc:</strong> <span th:text="${lookupResult.method}"></span></p>
+                    </div>
+
+                    <div th:if="${lookupResult.found and !lookupResult.admitted}">
+                        <p class="meta"><strong>Thi sinh:</strong> <span th:text="${lookupResult.fullName}"></span> -
+                            <span th:text="${lookupResult.cccd}"></span></p>
+                        <p class="meta"><strong>Ket qua:</strong> Khong trung tuyen</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="dgnl-card">
+                <div class="section-title">
+                    <h2>2a. Tinh diem xet tuyen - Phuong thuc DGNL</h2>
+                    <span class="chip">Thang diem 1200 -> 30</span>
+                </div>
+                <p class="desc">
+                    Nhap diem DGNL, chon nganh xet tuyen, doi tuong/khu vuc uu tien va diem cong neu co.
+                </p>
+
+                <form th:action="@{/candidate/calculate/dgnl}" th:object="${dgnlForm}" method="post">
+                    <div class="field">
+                        <label for="dgnlScore">Diem thi DGNL (0-1200)</label>
+                        <input id="dgnlScore" type="number" step="0.01" min="0" max="1200" th:field="*{dgnlScore}"
+                            required>
+                    </div>
+
+                    <div class="field">
+                        <label for="dgnlMajor">Nganh xet tuyen</label>
+                        <select id="dgnlMajor" th:field="*{majorCode}" required>
+                            <option value="">-- Chon nganh --</option>
+                            <option th:each="item : ${majorOptions}" th:value="${item.value}" th:text="${item.label}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="dgnlObject">Doi tuong uu tien</label>
+                        <select id="dgnlObject" th:field="*{priorityObjectCode}">
+                            <option th:each="item : ${priorityObjectOptions}" th:value="${item.value}"
+                                th:text="${item.label}"></option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="dgnlRegion">Khu vuc uu tien</label>
+                        <select id="dgnlRegion" th:field="*{priorityRegionCode}">
+                            <option th:each="item : ${priorityRegionOptions}" th:value="${item.value}"
+                                th:text="${item.label}"></option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="dgnlBonus">Diem cong (tu bo sung)</label>
+                        <input id="dgnlBonus" type="number" step="0.01" min="0" max="3" th:field="*{bonusPoint}"
+                            placeholder="0.00">
+                    </div>
+
+                    <div class="actions">
+                        <button class="btn" type="submit">Tinh diem DGNL</button>
+                    </div>
+                </form>
+
+                <div class="result-box" th:if="${dgnlResult != null}">
+                    <span class="status status-ok" th:text="${dgnlResult.message}"></span>
+
+                    <div class="table-wrap" th:if="${dgnlResult.rows != null and !dgnlResult.rows.isEmpty()}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nguyen vong</th>
+                                    <th>Nganh</th>
+                                    <th>To hop goc</th>
+                                    <th>Diem quy doi (30)</th>
+                                    <th>Uu tien</th>
+                                    <th>Diem cong</th>
+                                    <th>Tong diem</th>
+                                    <th>Diem nguong</th>
+                                    <th>Dat nguong</th>
+                                    <th>Diem trung tuyen</th>
+                                    <th>Dat trung tuyen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="row : ${dgnlResult.rows}">
+                                    <td th:text="${row.aspirationName}"></td>
+                                    <td th:text="${row.majorName}"></td>
+                                    <td th:text="${row.originalCombination}"></td>
+                                    <td th:text="${row.convertedScore}"></td>
+                                    <td th:text="${row.priorityScore}"></td>
+                                    <td th:text="${row.bonusScore}"></td>
+                                    <td th:text="${row.totalScore}"></td>
+                                    <td th:text="${row.thresholdScore}"></td>
+                                    <td th:text="${row.passThreshold} ? 'Dat' : 'Khong dat'"></td>
+                                    <td th:text="${row.admissionScore != null ? row.admissionScore : 'Chua cong bo'}">
+                                    </td>
+                                    <td
+                                        th:text="${row.admissionScore == null} ? 'Chua cong bo' : (${row.passAdmission} ? 'Dat' : 'Khong dat')">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card" id="vsat-thpt-card">
+                <div class="section-title">
+                    <h2>2b. Tinh diem xet tuyen - Phuong thuc VSAT/THPT</h2>
+                    <span class="chip">Tinh theo to hop mon</span>
+                </div>
+                <p class="desc">
+                    Nhap diem tung mon, co the bo sung diem quy doi Tieng Anh, chon uu tien va diem cong theo mon.
+                </p>
+
+                <form th:action="@{/candidate/calculate/vsat-thpt}" th:object="${vsatThptForm}" method="post">
+                    <div class="field">
+                        <label for="methodType">Phuong thuc</label>
+                        <select id="methodType" th:field="*{methodType}">
+                            <option value="VSAT">VSAT (thang 150)</option>
+                            <option value="THPT">THPT (thang 10)</option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="regularMajor">Nganh xet tuyen</label>
+                        <select id="regularMajor" th:field="*{majorCode}" required>
+                            <option value="">-- Chon nganh --</option>
+                            <option th:each="item : ${majorOptions}" th:value="${item.value}" th:text="${item.label}">
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="grid-subject">
+                        <div class="field">
+                            <label for="mathScore">Toan</label>
+                            <input id="mathScore" type="number" step="0.01" min="0" th:field="*{mathScore}">
+                        </div>
+                        <div class="field">
+                            <label for="literatureScore">Ngu van</label>
+                            <input id="literatureScore" type="number" step="0.01" min="0" th:field="*{literatureScore}">
+                        </div>
+                        <div class="field">
+                            <label for="englishScore">Tieng Anh</label>
+                            <input id="englishScore" type="number" step="0.01" min="0" th:field="*{englishScore}">
+                        </div>
+                        <div class="field">
+                            <label for="physicsScore">Vat ly</label>
+                            <input id="physicsScore" type="number" step="0.01" min="0" th:field="*{physicsScore}">
+                        </div>
+                        <div class="field">
+                            <label for="chemistryScore">Hoa hoc</label>
+                            <input id="chemistryScore" type="number" step="0.01" min="0" th:field="*{chemistryScore}">
+                        </div>
+                        <div class="field">
+                            <label for="biologyScore">Sinh hoc</label>
+                            <input id="biologyScore" type="number" step="0.01" min="0" th:field="*{biologyScore}">
+                        </div>
+                        <div class="field">
+                            <label for="historyScore">Lich su</label>
+                            <input id="historyScore" type="number" step="0.01" min="0" th:field="*{historyScore}">
+                        </div>
+                        <div class="field">
+                            <label for="geographyScore">Dia ly</label>
+                            <input id="geographyScore" type="number" step="0.01" min="0" th:field="*{geographyScore}">
+                        </div>
+                        <div class="field">
+                            <label for="civicEducationScore">GDCD</label>
+                            <input id="civicEducationScore" type="number" step="0.01" min="0"
+                                th:field="*{civicEducationScore}">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="englishConvertedScore">Diem quy doi Tieng Anh (neu co)</label>
+                        <input id="englishConvertedScore" type="number" step="0.01" min="0" max="10"
+                            th:field="*{englishConvertedScore}">
+                    </div>
+
+                    <div class="field">
+                        <label for="regularObject">Doi tuong uu tien</label>
+                        <select id="regularObject" th:field="*{priorityObjectCode}">
+                            <option th:each="item : ${priorityObjectOptions}" th:value="${item.value}"
+                                th:text="${item.label}"></option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="regularRegion">Khu vuc uu tien</label>
+                        <select id="regularRegion" th:field="*{priorityRegionCode}">
+                            <option th:each="item : ${priorityRegionOptions}" th:value="${item.value}"
+                                th:text="${item.label}"></option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="bonusSubjectCode">Mon duoc cong diem</label>
+                        <select id="bonusSubjectCode" th:field="*{bonusSubjectCode}">
+                            <option th:each="item : ${bonusSubjectOptions}" th:value="${item.value}"
+                                th:text="${item.label}"></option>
+                        </select>
+                    </div>
+
+                    <div class="field">
+                        <label for="bonusPoint">Muc diem cong</label>
+                        <input id="bonusPoint" type="number" step="0.01" min="0" max="3" th:field="*{bonusPoint}"
+                            placeholder="0.00">
+                    </div>
+
+                    <div class="actions field-wide">
+                        <button class="btn" type="submit">Tinh diem VSAT/THPT</button>
+                        <span class="hint">Neu chon VSAT, he thong se quy doi diem ve thang 10 truoc khi tinh.</span>
+                    </div>
+                </form>
+
+                <div class="result-box" th:if="${vsatThptResult != null}">
+                    <span class="status status-ok" th:text="${vsatThptResult.message}"></span>
+                    <p class="meta"><strong>Phuong thuc:</strong> <span th:text="${vsatThptResult.methodLabel}"></span>
+                    </p>
+                    <p class="small-note" th:text="${vsatThptResult.scaleNote}"></p>
+                    <p class="meta"><strong>Diem uu tien:</strong> <span
+                            th:text="${vsatThptResult.priorityScore}"></span></p>
+                    <p class="meta"><strong>Diem cong theo mon:</strong> <span
+                            th:text="${vsatThptResult.bonusScore}"></span></p>
+                    <p class="meta"><strong>Diem Tieng Anh sau xu ly:</strong> <span
+                            th:text="${vsatThptResult.englishAppliedScore}"></span></p>
+
+                    <div class="table-wrap"
+                        th:if="${vsatThptResult.combinationResults != null and !vsatThptResult.combinationResults.isEmpty()}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>To hop</th>
+                                    <th>Cong thuc</th>
+                                    <th>Diem xet tuyen</th>
+                                    <th>Diem nguong</th>
+                                    <th>Dat nguong</th>
+                                    <th>Diem trung tuyen</th>
+                                    <th>Dat trung tuyen</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="row : ${vsatThptResult.combinationResults}">
+                                    <td th:text="${row.combinationCode}"></td>
+                                    <td th:text="${row.subjectFormula}"></td>
+                                    <td th:text="${row.totalScore}"></td>
+                                    <td th:text="${row.thresholdScore}"></td>
+                                    <td th:text="${row.passThreshold} ? 'Dat' : 'Khong dat'"></td>
+                                    <td th:text="${row.admissionScore != null ? row.admissionScore : 'Chua cong bo'}">
+                                    </td>
+                                    <td
+                                        th:text="${row.admissionScore == null} ? 'Chua cong bo' : (${row.passAdmission} ? 'Dat' : 'Khong dat')">
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+
+</html>

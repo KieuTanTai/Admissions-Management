@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admissions User Portal</title>
+    <style>
+        :root {
+            --bg: #f6f8fc;
+            --card: #ffffff;
+            --line: #dde3f0;
+            --text: #17324d;
+            --accent: #12745d;
+            --accent-2: #0f5b49;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: linear-gradient(140deg, #ecf8ff 0%, #f6f8fc 35%, #fff8eb 100%);
+            color: var(--text);
+        }
+
+        .page {
+            max-width: 1050px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 1.25rem;
+            box-shadow: 0 10px 26px rgba(23, 50, 77, 0.08);
+        }
+
+        h1 {
+            margin-top: 0;
+            font-size: 1.6rem;
+        }
+
+        form {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 0.75rem;
+            align-items: end;
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+        }
+
+        input {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 10px;
+            padding: 0.55rem 0.7rem;
+            font-size: 0.95rem;
+        }
+
+        button {
+            border: none;
+            border-radius: 10px;
+            padding: 0.65rem 0.95rem;
+            cursor: pointer;
+            background: var(--accent);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        button:hover {
+            background: var(--accent-2);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            overflow: hidden;
+            border-radius: 10px;
+        }
+
+        th, td {
+            border-bottom: 1px solid var(--line);
+            text-align: left;
+            padding: 0.6rem;
+            font-size: 0.95rem;
+        }
+
+        th {
+            background: #f2f6fb;
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <div class="card">
+        <h1>Admissions User Portal</h1>
+        <form th:action="@{/user/applicants}" th:object="${registerApplicantRequest}" method="post">
+            <div>
+                <label for="fullName">Full Name</label>
+                <input id="fullName" type="text" th:field="*{fullName}" required>
+            </div>
+            <div>
+                <label for="email">Email</label>
+                <input id="email" type="email" th:field="*{email}" required>
+            </div>
+            <div>
+                <label for="program">Program</label>
+                <input id="program" type="text" th:field="*{program}" required>
+            </div>
+            <div>
+                <button type="submit">Add Applicant</button>
+            </div>
+        </form>
+
+        <table>
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Program</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="item : ${applicants}">
+                <td th:text="${item.id}"></td>
+                <td th:text="${item.fullName}"></td>
+                <td th:text="${item.email}"></td>
+                <td th:text="${item.program}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>
