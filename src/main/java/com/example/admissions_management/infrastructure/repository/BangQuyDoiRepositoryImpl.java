@@ -58,9 +58,9 @@ public class BangQuyDoiRepositoryImpl implements BangQuyDoiRepository {
     }
 
     @Override
-    public Optional<BangQuyDoi> timQuyTacTheoKhoang(String phuongThuc, BigDecimal diemGoc) {
+    public Optional<BangQuyDoi> timQuyTacTheoKhoang(String phuongThuc, String toHopHoacMon ,BigDecimal diemGoc) {
          // Dùng hàm bạn vừa định nghĩa bên SpringDataBangQuyDoiRepository
-        return springDataRepository.timQuyTacTheoKhoang(phuongThuc, diemGoc).map(this::toDomain);
+        return springDataRepository.timQuyTacTheoKhoang(phuongThuc, toHopHoacMon,diemGoc).map(this::toDomain);
     }
 
     @Override

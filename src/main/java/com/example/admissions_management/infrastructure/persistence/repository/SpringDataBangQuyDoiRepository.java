@@ -14,7 +14,6 @@ import com.example.admissions_management.infrastructure.persistence.entity.xettu
 @Repository
 public interface SpringDataBangQuyDoiRepository extends JpaRepository<XtBangQuyDoiEntity, Integer> {
 
-    // Đã sửa lại lỗi chữ hoa/chữ thường ở :phuongThuc
     @Query("SELECT b FROM XtBangQuyDoiEntity b WHERE b.phuongThuc = :phuongThuc AND b.mon = :mon AND b.diemA = :diemGoc")
     Optional<XtBangQuyDoiEntity> timQuyTacChinhXac(
             @Param("phuongThuc") String phuongThuc,
@@ -22,9 +21,10 @@ public interface SpringDataBangQuyDoiRepository extends JpaRepository<XtBangQuyD
             @Param("diemGoc") BigDecimal diemGoc);
 
     // Đã sửa lại lỗi chữ hoa/chữ thường ở :phuongThuc
-    @Query("SELECT b FROM XtBangQuyDoiEntity b WHERE b.phuongThuc = :phuongThuc AND :diemGoc >= b.diemA AND :diemGoc <= b.diemB")
+    @Query("SELECT b FROM XtBangQuyDoiEntity b WHERE b.phuongThuc = :phuongThuc AND :diemGoc >= b.diemA AND :diemGoc <= b.diemB AND (b.maQuyDoi LIKE %:toHopHoacMon% OR b.mon LIKE %:toHopHoacMon%) ")
     Optional<XtBangQuyDoiEntity> timQuyTacTheoKhoang(
             @Param("phuongThuc") String phuongThuc,
+            @Param("toHopHoacMon") String toHopHoacMon,
             @Param("diemGoc") BigDecimal diemGoc);
 
     @Query("SELECT b FROM XtBangQuyDoiEntity b WHERE b.maQuyDoi LIKE %:maQuyDoi%")

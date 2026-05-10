@@ -1,9 +1,12 @@
 package com.example.admissions_management.presentation.form.controller;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.example.admissions_management.application.service.BangQuyDoiService;
 import com.example.admissions_management.domain.model.BangQuyDoi;
@@ -46,5 +49,14 @@ public class BangQuyDoiAppController {
     public void delete(int id)
     {
         bangQuyDoiService.delete(id);
+    }
+
+    public Map<String, String> tinhDiemQuyDoi(
+            @RequestParam String phuongThuc,
+            @RequestParam String toHopHoacMon,
+            @RequestParam BigDecimal diemGoc) {
+
+        Map<String, String> result = bangQuyDoiService.quyDoiDiemKhaoThi(phuongThuc, toHopHoacMon ,diemGoc);
+        return result;
     }
 }

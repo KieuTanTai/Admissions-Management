@@ -2,8 +2,10 @@ package com.example.admissions_management.presentation.web.controller;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -57,18 +59,17 @@ public class BangQuyDoiController {
     // TÍNH ĐIỂM QUY ĐỔI
     // ========================================================
     @GetMapping("/tinh-diem")
-    public ResponseEntity<String> tinhDiemQuyDoi(
+    public ResponseEntity<?> tinhDiemQuyDoi(
             @RequestParam String phuongThuc,
-            @RequestParam String toHop,
+            @RequestParam String toHopHoacMon,
             @RequestParam BigDecimal diemGoc) {
 
-        // Gọi Service để dò trong DB xem điểm này thuộc mức nào
-        Double diemSauQuyDoi = bangQuyDoiService.quyDoiDiemKhaoThi(phuongThuc, diemGoc);
-
-        if (diemSauQuyDoi > 0) {
-            return ResponseEntity.ok("Chứng chỉ " + toHop + " " + diemGoc + " được quy đổi thành: " + diemSauQuyDoi + " điểm.");
+        Map<String, String> result = bangQuyDoiService.quyDoiDiemKhaoThi(phuongThuc, toHopHoacMon ,diemGoc);
+        if (result != null) {
+            return ResponseEntity.ok(result);
         } else {
-            return ResponseEntity.badRequest().body("Không tìm thấy luật quy đổi cho mức điểm này!");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Không tìm thấy luật quy đổi cho mức điểm này!");
         }
     }
+
 }

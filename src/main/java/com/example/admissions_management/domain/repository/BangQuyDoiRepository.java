@@ -10,7 +10,7 @@ public interface BangQuyDoiRepository {
 
     Optional<BangQuyDoi> timQuyTacChinhXac(String phuongThuc, String mon, BigDecimal diemGoc);
 
-    Optional<BangQuyDoi> timQuyTacTheoKhoang(String phuongThuc, BigDecimal diemGoc);
+    Optional<BangQuyDoi> timQuyTacTheoKhoang(String phuongThuc, String toHopHoacMon ,BigDecimal diemGoc);
 
     BangQuyDoi add(BangQuyDoi quyTac);
 

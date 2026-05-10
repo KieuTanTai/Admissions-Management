@@ -1,9 +1,12 @@
 package com.example.admissions_management.application.service;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import org.apache.commons.collections4.map.HashedMap;
 import org.springframework.stereotype.Service;
 
 import com.example.admissions_management.domain.model.BangQuyDoi;
@@ -64,17 +67,13 @@ public class BangQuyDoiService {
     }
 
     // Hàm quy đổi điểm Đánh giá năng lực (hoặc V-SAT)
-    public Double quyDoiDiemKhaoThi(String phuongThuc, BigDecimal diemThiThucTe) {
-        Optional<BangQuyDoi> quyTac = bangQuyDoiRepository.timQuyTacTheoKhoang(phuongThuc, diemThiThucTe);
-
-        if (quyTac.isPresent() && quyTac.get().getPhanVi() != null) {
-            try {
-                return Double.valueOf(quyTac.get().getPhanVi());
-            } catch (NumberFormatException e) {
-                System.err.println("Lỗi parse điểm phân vị: " + quyTac.get().getPhanVi());
-                return 0.0;
-            }
-        }
-        return 0.0;
+    public Map<String, String> quyDoiDiemKhaoThi(String phuongThuc,String toHopHoacMon ,BigDecimal diemThiThucTe) {
+        Map<String, String> ketqua = new HashedMap<>();
+        Optional<BangQuyDoi> quyTac = bangQuyDoiRepository.timQuyTacTheoKhoang(phuongThuc, toHopHoacMon, diemThiThucTe);
+        BigDecimal diemDaDuocQuyDoi = quyTac.get().getDiemC().add(((diemThiThucTe.subtract(quyTac.get().getDiemA())).divide((quyTac.get().getDiemB().subtract(quyTac.get().getDiemA())),4, RoundingMode.HALF_UP)).multiply(quyTac.get().getDiemD().subtract(quyTac.get().getDiemC()))).divide(new BigDecimal(1),2,RoundingMode.HALF_UP);
+        String congThuc = quyTac.get().getDiemC() + " + (" + diemThiThucTe + " - " + quyTac.get().getDiemA() + ")/(" + quyTac.get().getDiemB() + " - " + quyTac.get().getDiemA() + ")*(" + quyTac.get().getDiemD() + " - " + quyTac.get().getDiemC() + ")";
+        ketqua.put("formula", congThuc);
+        ketqua.put("result", diemDaDuocQuyDoi.toString());
+        return ketqua;
     }
 }
