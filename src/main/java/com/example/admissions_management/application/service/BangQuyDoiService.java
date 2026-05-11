@@ -71,9 +71,11 @@ public class BangQuyDoiService {
         Map<String, String> ketqua = new HashedMap<>();
         Optional<BangQuyDoi> quyTac = bangQuyDoiRepository.timQuyTacTheoKhoang(phuongThuc, toHopHoacMon, diemThiThucTe);
         BigDecimal diemDaDuocQuyDoi = quyTac.get().getDiemC().add(((diemThiThucTe.subtract(quyTac.get().getDiemA())).divide((quyTac.get().getDiemB().subtract(quyTac.get().getDiemA())),4, RoundingMode.HALF_UP)).multiply(quyTac.get().getDiemD().subtract(quyTac.get().getDiemC()))).divide(new BigDecimal(1),2,RoundingMode.HALF_UP);
+        String phanVi = quyTac.get().getPhanVi();
         String congThuc = quyTac.get().getDiemC() + " + (" + diemThiThucTe + " - " + quyTac.get().getDiemA() + ")/(" + quyTac.get().getDiemB() + " - " + quyTac.get().getDiemA() + ")*(" + quyTac.get().getDiemD() + " - " + quyTac.get().getDiemC() + ")";
-        ketqua.put("formula", congThuc);
-        ketqua.put("result", diemDaDuocQuyDoi.toString());
+        ketqua.put("congThuc", congThuc);
+        ketqua.put("diemQuyDoi", diemDaDuocQuyDoi.toString());
+        ketqua.put("phanVi", phanVi);
         return ketqua;
     }
 }

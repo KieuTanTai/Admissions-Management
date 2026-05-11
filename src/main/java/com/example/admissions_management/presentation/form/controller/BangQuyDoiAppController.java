@@ -51,12 +51,9 @@ public class BangQuyDoiAppController {
         bangQuyDoiService.delete(id);
     }
 
-    public Map<String, String> tinhDiemQuyDoi(
-            @RequestParam String phuongThuc,
-            @RequestParam String toHopHoacMon,
-            @RequestParam BigDecimal diemGoc) {
-
+    public Map<String, String> tinhDiemQuyDoi(String phuongThuc, String toHopHoacMon, BigDecimal diemGoc) 
+    {
         Map<String, String> result = bangQuyDoiService.quyDoiDiemKhaoThi(phuongThuc, toHopHoacMon ,diemGoc);
-        return result;
+        return result;     
     }
 }
