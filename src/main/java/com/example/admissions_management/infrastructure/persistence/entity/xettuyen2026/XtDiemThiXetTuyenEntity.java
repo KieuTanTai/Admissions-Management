@@ -1,5 +1,7 @@
 package com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026;
 
+import java.math.BigDecimal;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -7,8 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-
-import java.math.BigDecimal;
 
 @Entity
 @Table(name = "xt_diemthixettuyen", uniqueConstraints = {

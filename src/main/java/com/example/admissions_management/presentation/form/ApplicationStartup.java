@@ -3,13 +3,18 @@ package com.example.admissions_management.presentation.form;
 import com.example.admissions_management.config.ApplicationConfig;
 import com.example.admissions_management.presentation.form.view.AdminConsole;
 import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
+import java.util.logging.Logger;
+
+import javax.swing.SwingUtilities;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.swing.SwingUtilities;
-import java.util.logging.Logger;
+import com.example.admissions_management.config.ApplicationConfig;
+import com.example.admissions_management.presentation.form.view.AdminConsole;
+import com.example.admissions_management.presentation.form.view.AdminPanel;
 
 /**
  * Component để khởi động Swing Form khi Spring Boot application sẵn sàng
@@ -23,11 +28,14 @@ public class ApplicationStartup {
 
     private static final Logger logger = Logger.getLogger(ApplicationStartup.class.getName());
 
-    private final ObjectProvider<AdminConsole> adminConsoleProvider;
+    private final AdminConsole adminConsole;
+    private final AdminPanel adminPanel;
     private final ApplicationConfig applicationConfig;
-    public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider, ApplicationConfig applicationConfig) {
+
+    public ApplicationStartup(AdminConsole adminConsole,AdminPanel adminPanel, ApplicationConfig applicationConfig) {
+        this.adminConsole = adminConsole;
+        this.adminPanel = adminPanel;
         this.applicationConfig = applicationConfig;
-        this.adminConsoleProvider = adminConsoleProvider;
     }
 
     @EventListener(ApplicationReadyEvent.class)
@@ -38,15 +46,14 @@ public class ApplicationStartup {
         logger.info("================================");
 
         if (applicationConfig.getSwing().isEnabled()) {
-            AdminConsole adminConsole = adminConsoleProvider.getIfAvailable();
             if (adminConsole == null) {
                 logger.warning("Swing UI được bật nhưng không tìm thấy bean CombinationForm (có thể chạy ở chế độ headless).");
                 return;
             }
             logger.info("Đang khởi động Swing Combination Form...");
             SwingUtilities.invokeLater(() -> {
-                adminConsole.setVisible(true);
-                logger.info("✓ Combination Form đã được hiển thị");
+                adminPanel.setVisible(true);
+                logger.info("✓ Admin Console Swing Form đã được hiển thị");
             });
 
         } else {
