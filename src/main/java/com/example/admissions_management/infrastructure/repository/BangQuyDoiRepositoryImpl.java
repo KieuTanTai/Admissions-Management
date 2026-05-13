@@ -104,4 +104,21 @@ public class BangQuyDoiRepositoryImpl implements BangQuyDoiRepository {
         // Hàm deleteById() đã có sẵn trong JpaRepository
         springDataRepository.deleteById(id);
     }
+
+    @Override
+    public BangQuyDoi save(BangQuyDoi bqd) {
+        XtBangQuyDoiEntity e = toEntity(bqd);
+        return toDomain(springDataRepository.save(e));
+    }
+
+    @Override
+    public void deleteAll() {
+        springDataRepository.deleteAll();
+    }
+
+    @Override
+    public void saveAll(List<BangQuyDoi> items) {
+        List<XtBangQuyDoiEntity> entities = items.stream().map(this::toEntity).collect(Collectors.toList());
+        springDataRepository.saveAll(entities);
+    }
 }

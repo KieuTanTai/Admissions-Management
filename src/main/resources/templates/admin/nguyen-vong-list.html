@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản Lý Nguyện Vọng & Xét Tuyển</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+        }
+        .container-fluid {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .btn-action {
+            margin: 5px;
+        }
+        table {
+            margin-top: 20px;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+        }
+        .badge-dau {
+            background-color: #28a745;
+        }
+        .badge-truot {
+            background-color: #dc3545;
+        }
+        .badge-danget {
+            background-color: #ffc107;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <h2>Quản Lý Nguyện Vọng & Xét Tuyển</h2>
+        <hr>
+
+        <!-- Control Section -->
+        <div class="row mb-4">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-success text-white">
+                        <h5>Điều Khiển Xét Tuyển</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="selectionForm">
+                            <div class="mb-3">
+                                <label for="maNganhSelect" class="form-label">Chọn Ngành (để trống = tất cả):</label>
+                                <input type="text" id="maNganhSelect" class="form-control" placeholder="Mã Ngành">
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-warning btn-action" id="processOneMajor">
+                                    Xét Tuyển 1 Ngành
+                                </button>
+                                <button type="button" class="btn btn-danger btn-action" id="processAllMajor">
+                                    Xét Tuyển Tất Cả
+                                </button>
+                                <button type="button" class="btn btn-info btn-action" id="exportResults">
+                                    Xuất Excel
+                                </button>
+                            </div>
+                        </form>
+                        <div id="processStatus" class="alert mt-3" style="display:none;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h5>Tìm Kiếm</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <input type="text" id="searchCCCD" class="form-control" placeholder="Tìm theo CCCD">
+                        </div>
+                        <div class="mb-2">
+                            <input type="text" id="searchMaNganh" class="form-control" placeholder="Tìm theo Mã Ngành">
+                        </div>
+                        <button class="btn btn-primary btn-sm w-100" id="searchBtn">Tìm Kiếm</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="card">
+            <div class="card-header">
+                <h5>Danh Sách Nguyện Vọng & Kết Quả Xét Tuyển</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped table-sm">
+                        <thead>
+                            <tr>
+                                <th>CCCD</th>
+                                <th>Mã Ngành</th>
+                                <th>Mã Tổ Hợp</th>
+                                <th>NV</th>
+                                <th>Điểm Thi</th>
+                                <th>Điểm Ưu Tiên</th>
+                                <th>Điểm Cộng</th>
+                                <th>Tổng Điểm</th>
+                                <th>Kết Quả</th>
+                                <th>Phương Thức</th>
+                                <th>Hành Động</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable">
+                            <tr>
+                                <td colspan="11" class="text-center">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', loadNguyenVong);
+
+        // Load all nguyen vong
+        async function loadNguyenVong() {
+            try {
+                const response = await fetch('/admin/nguyen-vong/api/all');
+                const data = await response.json();
+                displayTable(data);
+            } catch (error) {
+                console.error('Lỗi tải dữ liệu:', error);
+            }
+        }
+
+        // Process selection for one major
+        document.getElementById('processOneMajor').addEventListener('click', async () => {
+            const maNganh = document.getElementById('maNganhSelect').value;
+            if (!maNganh) {
+                alert('Vui lòng nhập mã ngành');
+                return;
+            }
+
+            const statusDiv = document.getElementById('processStatus');
+            try {
+                const response = await fetch('/admin/nguyen-vong/api/process-selection/' + maNganh, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                statusDiv.style.display = 'block';
+                if (data.success) {
+                    statusDiv.className = 'alert alert-success';
+                    statusDiv.innerHTML = `<strong>Thành công!</strong><br>
+                        Chỉ tiêu: ${data.chiTieu}<br>
+                        Đậu: ${data.passCount}<br>
+                        Trượt: ${data.failCount}`;
+                    loadNguyenVong();
+                } else {
+                    statusDiv.className = 'alert alert-danger';
+                    statusDiv.textContent = data.message;
+                }
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+            }
+        });
+
+        // Process selection for all majors
+        document.getElementById('processAllMajor').addEventListener('click', async () => {
+            if (!confirm('Xét tuyển cho tất cả ngành? Hành động này không thể hoàn tác!')) return;
+
+            const statusDiv = document.getElementById('processStatus');
+            try {
+                const response = await fetch('/admin/nguyen-vong/api/process-selection-all', {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                statusDiv.style.display = 'block';
+                if (data.success) {
+                    statusDiv.className = 'alert alert-success';
+                    statusDiv.textContent = data.message + ' (' + data.results.length + ' ngành)';
+                    loadNguyenVong();
+                } else {
+                    statusDiv.className = 'alert alert-danger';
+                    statusDiv.textContent = data.message;
+                }
+            } catch (error) {
+                statusDiv.style.display = 'block';
+                statusDiv.className = 'alert alert-danger';
+                statusDiv.textContent = 'Lỗi: ' + error.message;
+            }
+        });
+
+        // Export results
+        document.getElementById('exportResults').addEventListener('click', async () => {
+            const maNganh = document.getElementById('maNganhSelect').value;
+            let url = '/admin/nguyen-vong/api/export';
+            if (maNganh) {
+                url += '?maNganh=' + maNganh;
+            }
+
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(blob);
+                link.download = maNganh ? 'ket-qua-' + maNganh + '.xlsx' : 'ket-qua-xet-tuyen.xlsx';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        });
+
+        // Search
+        document.getElementById('searchBtn').addEventListener('click', async () => {
+            const cccd = document.getElementById('searchCCCD').value;
+            const maNganh = document.getElementById('searchMaNganh').value;
+
+            let url = '/admin/nguyen-vong/api/all';
+            if (cccd) {
+                url = '/admin/nguyen-vong/api/by-cccd/' + cccd;
+            } else if (maNganh) {
+                url = '/admin/nguyen-vong/api/by-nganh/' + maNganh;
+            }
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                displayTable(data);
+            } catch (error) {
+                alert('Lỗi tìm kiếm: ' + error.message);
+            }
+        });
+
+        // Display table
+        function displayTable(data) {
+            const tbody = document.getElementById('dataTable');
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="text-center">Không có dữ liệu</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.map(item => {
+                const resultBadge = item.nvKetQua === 'Đậu' ? 'badge-dau' :
+                                   item.nvKetQua === 'Trượt' ? 'badge-truot' : 'badge-danget';
+                
+                return `
+                    <tr>
+                        <td>${item.nnCccd}</td>
+                        <td>${item.maNganh}</td>
+                        <td>${item.maToHop || ''}</td>
+                        <td>${item.nvThuTu}</td>
+                        <td>${item.diemThxt ? item.diemThxt.toFixed(2) : '0.00'}</td>
+                        <td>${item.diemUtqd ? item.diemUtqd.toFixed(2) : '0.00'}</td>
+                        <td>${item.diemCong ? item.diemCong.toFixed(2) : '0.00'}</td>
+                        <td><strong>${item.diemXetTuyen ? item.diemXetTuyen.toFixed(2) : '0.00'}</strong></td>
+                        <td><span class="badge ${resultBadge}">${item.nvKetQua || 'Đang xét'}</span></td>
+                        <td>${item.ttPhuongThuc || ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteNguyenVong(${item.id})">Xóa</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Delete
+        async function deleteNguyenVong(id) {
+            if (!confirm('Bạn chắc chắn muốn xóa?')) return;
+            
+            try {
+                const response = await fetch('/admin/nguyen-vong/api/' + id, {
+                    method: 'DELETE'
+                });
+                const data = await response.json();
+                alert(data.message);
+                loadNguyenVong();
+            } catch (error) {
+                alert('Lỗi: ' + error.message);
+            }
+        }
+    </script>
+</body>
+
+</html>

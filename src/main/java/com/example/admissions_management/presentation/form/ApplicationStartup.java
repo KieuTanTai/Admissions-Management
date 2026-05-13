@@ -12,8 +12,6 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.example.admissions_management.config.ApplicationConfig;
-import com.example.admissions_management.presentation.form.view.AdminConsole;
 import com.example.admissions_management.presentation.form.view.AdminPanel;
 
 /**

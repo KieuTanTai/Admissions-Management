@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+
+build_phan8_full_excel.py

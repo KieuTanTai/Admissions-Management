@@ -162,6 +162,16 @@ body {
     cursor: pointer;
 }
 
+<<<<<<< HEAD
+=======
+a.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+>>>>>>> DP
 .btn.ghost {
     background: #edf3f0;
     color: var(--ink);
@@ -195,6 +205,51 @@ body {
     font-family: "Sora", sans-serif;
 }
 
+<<<<<<< HEAD
+=======
+.shortcut-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.8rem;
+}
+
+.shortcut-link {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    padding: 0.95rem 1rem;
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--ink);
+    border: 1px solid var(--line);
+    background: #fafdfb;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+}
+
+.shortcut-link strong {
+    font-size: 1rem;
+    font-family: "Sora", sans-serif;
+}
+
+.shortcut-link span {
+    color: var(--muted);
+    line-height: 1.45;
+}
+
+.shortcut-link:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(17, 46, 39, 0.08);
+}
+
+.shortcut-link.accent {
+    border-color: rgba(12, 122, 99, 0.25);
+}
+
+.shortcut-link.accent-2 {
+    border-color: rgba(231, 150, 45, 0.3);
+}
+
+>>>>>>> DP
 .pill {
     font-size: 0.76rem;
     color: #8d5108;

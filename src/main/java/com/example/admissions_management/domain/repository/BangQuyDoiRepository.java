@@ -23,4 +23,7 @@ public interface BangQuyDoiRepository {
     void delete(Integer id);
 
     List<BangQuyDoi> findByMaQuyDoi(String maQuyDoi);
+    BangQuyDoi save(BangQuyDoi bqd);
+    void deleteAll();
+    void saveAll(List<BangQuyDoi> items);
 }

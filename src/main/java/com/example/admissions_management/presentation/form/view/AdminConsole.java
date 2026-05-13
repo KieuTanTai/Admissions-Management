@@ -1,7 +1,11 @@
 package com.example.admissions_management.presentation.form.view;
 
 import com.example.admissions_management.presentation.form.controller.AdminConsoleController;
+import com.example.admissions_management.presentation.form.controller.DiemCongConsoleController;
+import com.example.admissions_management.presentation.form.controller.NguyenVongConsoleController;
 import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
+import com.example.admissions_management.presentation.form.view.DiemCongPanel;
+import com.example.admissions_management.presentation.form.view.NguyenVongPanel;
 import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -16,6 +20,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 
@@ -27,14 +32,19 @@ public class AdminConsole extends JFrame {
 	private final AdminConsoleController controller;
 	private final ObjectProvider<CombinationForm> combinationFormProvider;
 	private final AdminConsoleTableModel tableModel;
-
 	private final JTextField fullNameField = new JTextField();
 	private final JTextField emailField = new JTextField();
 	private final JTextField programField = new JTextField();
+	private final DiemCongConsoleController diemCongConsoleController;
+	private final NguyenVongConsoleController nguyenVongConsoleController;
 
-	public AdminConsole(AdminConsoleController controller, ObjectProvider<CombinationForm> combinationFormProvider) {
+	public AdminConsole(AdminConsoleController controller, ObjectProvider<CombinationForm> combinationFormProvider,
+			DiemCongConsoleController diemCongConsoleController,
+			NguyenVongConsoleController nguyenVongConsoleController) {
 		this.controller = controller;
 		this.combinationFormProvider = combinationFormProvider;
+		this.diemCongConsoleController = diemCongConsoleController;
+		this.nguyenVongConsoleController = nguyenVongConsoleController;
 		this.tableModel = new AdminConsoleTableModel();
 
 		setTitle("Admissions Admin Console");
@@ -61,18 +71,24 @@ public class AdminConsole extends JFrame {
 		panel.add(emailField);
 		panel.add(programField);
 
-		JPanel actionPanel = new JPanel(new GridLayout(1, 3, 8, 8));
+		JPanel actionPanel = new JPanel(new GridLayout(1, 5, 8, 8));
 		JButton saveButton = new JButton("Save");
 		JButton refreshButton = new JButton("Refresh");
 		JButton combinationsButton = new JButton("Combinations");
+		JButton diemCongButton = new JButton("Điểm Cộng");
+		JButton nguyenVongButton = new JButton("Nguyện Vọng");
 
 		saveButton.addActionListener(_ -> saveApplicant());
 		refreshButton.addActionListener(_ -> refreshTable());
 		combinationsButton.addActionListener(_ -> openCombinationManager());
+		diemCongButton.addActionListener(_ -> openDiemCongForm());
+		nguyenVongButton.addActionListener(_ -> openNguyenVongForm());
 
 		actionPanel.add(saveButton);
 		actionPanel.add(refreshButton);
 		actionPanel.add(combinationsButton);
+		actionPanel.add(diemCongButton);
+		actionPanel.add(nguyenVongButton);
 		panel.add(actionPanel);
 
 		return panel;
@@ -83,8 +99,7 @@ public class AdminConsole extends JFrame {
 			controller.registerApplicant(
 					fullNameField.getText().trim(),
 					emailField.getText().trim(),
-					programField.getText().trim()
-			);
+					programField.getText().trim());
 
 			fullNameField.setText("");
 			emailField.setText("");
@@ -98,6 +113,7 @@ public class AdminConsole extends JFrame {
 	private void refreshTable() {
 		tableModel.setRows(controller.loadApplicants());
 	}
+
 	private void openCombinationManager() {
 		CombinationForm form = combinationFormProvider.getObject();
 		form.setVisible(true);
@@ -105,5 +121,26 @@ public class AdminConsole extends JFrame {
 		form.setParentFrame(this);
 		form.setTrackingEnableForParentFrame();
 		form.toFront();
+
+	}
+
+	private void openDiemCongForm() {
+		DiemCongPanel diemCongPanel = new DiemCongPanel(diemCongConsoleController);
+		JFrame diemCongFrame = new JFrame("Phần 7 - Điểm Cộng");
+		diemCongFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		diemCongFrame.add(diemCongPanel);
+		diemCongFrame.setSize(1280, 760);
+		diemCongFrame.setLocationRelativeTo(this);
+		diemCongFrame.setVisible(true);
+	}
+
+	private void openNguyenVongForm() {
+		NguyenVongPanel nguyenVongPanel = new NguyenVongPanel(nguyenVongConsoleController);
+		JFrame nguyenVongFrame = new JFrame("Phần 8 - Nguyện Vọng");
+		nguyenVongFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		nguyenVongFrame.add(nguyenVongPanel);
+		nguyenVongFrame.setSize(1280, 760);
+		nguyenVongFrame.setLocationRelativeTo(this);
+		nguyenVongFrame.setVisible(true);
 	}
 }

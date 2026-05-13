@@ -50,6 +50,7 @@ public class BangQuyDoiService {
     {
         bangQuyDoiRepository.delete(id);
     }
+
     // Hàm quy đổi điểm ngoại ngữ (IELTS/TOEIC...)
     public Double quyDoiDiemNgoaiNgu(String phuongThuc, String mon, BigDecimal diemChungChi) {
         Optional<BangQuyDoi> quyTac = bangQuyDoiRepository.timQuyTacChinhXac(phuongThuc, mon, diemChungChi);
@@ -66,16 +67,34 @@ public class BangQuyDoiService {
         return 0.0;
     }
 
-    // Hàm quy đổi điểm Đánh giá năng lực (hoặc V-SAT)
-    public Map<String, String> quyDoiDiemKhaoThi(String phuongThuc,String toHopHoacMon ,BigDecimal diemThiThucTe) {
+    public Map<String, String> quyDoiDiemKhaoThi(String phuongThuc, String toHopHoacMon, BigDecimal diemThiThucTe) {
         Map<String, String> ketqua = new HashedMap<>();
         Optional<BangQuyDoi> quyTac = bangQuyDoiRepository.timQuyTacTheoKhoang(phuongThuc, toHopHoacMon, diemThiThucTe);
-        BigDecimal diemDaDuocQuyDoi = quyTac.get().getDiemC().add(((diemThiThucTe.subtract(quyTac.get().getDiemA())).divide((quyTac.get().getDiemB().subtract(quyTac.get().getDiemA())),4, RoundingMode.HALF_UP)).multiply(quyTac.get().getDiemD().subtract(quyTac.get().getDiemC()))).divide(new BigDecimal(1),2,RoundingMode.HALF_UP);
+        BigDecimal diemDaDuocQuyDoi = quyTac.get().getDiemC()
+                .add(((diemThiThucTe.subtract(quyTac.get().getDiemA()))
+                        .divide((quyTac.get().getDiemB().subtract(quyTac.get().getDiemA())), 4, RoundingMode.HALF_UP))
+                        .multiply(quyTac.get().getDiemD().subtract(quyTac.get().getDiemC())))
+                .divide(new BigDecimal(1), 2, RoundingMode.HALF_UP);
         String phanVi = quyTac.get().getPhanVi();
-        String congThuc = quyTac.get().getDiemC() + " + (" + diemThiThucTe + " - " + quyTac.get().getDiemA() + ")/(" + quyTac.get().getDiemB() + " - " + quyTac.get().getDiemA() + ")*(" + quyTac.get().getDiemD() + " - " + quyTac.get().getDiemC() + ")";
+        String congThuc = quyTac.get().getDiemC() + " + (" + diemThiThucTe + " - " + quyTac.get().getDiemA() + ")/("
+                + quyTac.get().getDiemB() + " - " + quyTac.get().getDiemA() + ")*(" + quyTac.get().getDiemD() + " - "
+                + quyTac.get().getDiemC() + ")";
         ketqua.put("congThuc", congThuc);
         ketqua.put("diemQuyDoi", diemDaDuocQuyDoi.toString());
         ketqua.put("phanVi", phanVi);
         return ketqua;
+    }
+    
+
+    public BangQuyDoi saveOrUpdate(BangQuyDoi bqd) {
+        return bangQuyDoiRepository.save(bqd);
+    }
+
+    public void deleteAll() {
+        bangQuyDoiRepository.deleteAll();
+    }
+
+    public void saveAll(List<BangQuyDoi> items) {
+        bangQuyDoiRepository.saveAll(items);
     }
 }
