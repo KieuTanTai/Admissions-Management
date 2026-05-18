@@ -38,7 +38,20 @@ public class DiemCongConsoleController {
                                  String diemUtxt,
                                  String diemTong,
                                  String ghiChu) {
+        return save(null, tsCccd, maNganh, maToHop, phuongThuc, diemCc, diemUtxt, diemTong, ghiChu);
+    }
+
+    public DiemCongXetTuyen save(Long id,
+                                 String tsCccd,
+                                 String maNganh,
+                                 String maToHop,
+                                 String phuongThuc,
+                                 String diemCc,
+                                 String diemUtxt,
+                                 String diemTong,
+                                 String ghiChu) {
         DiemCongImportRequest request = new DiemCongImportRequest(
+                id,
                 tsCccd.trim(),
                 maNganh.trim(),
                 maToHop == null ? "" : maToHop.trim(),

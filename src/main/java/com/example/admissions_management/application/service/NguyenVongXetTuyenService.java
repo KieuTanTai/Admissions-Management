@@ -108,6 +108,46 @@ public class NguyenVongXetTuyenService {
     }
 
     /**
+     * Cập nhật nguyện vọng và tính lại điểm xét tuyển
+     */
+    @Transactional
+    public NguyenVongXetTuyen updateNguyenVong(Integer id,
+                                               String nnCccd,
+                                               String maNganh,
+                                               String maToHop,
+                                               Integer nvThuTu,
+                                               BigDecimal diemThxt,
+                                               BigDecimal diemUtqd) {
+        Optional<NguyenVongXetTuyen> opt = nguyenVongRepository.findAll().stream()
+                .filter(nv -> nv.getId().equals(id))
+                .findFirst();
+
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("Nguyện vọng không tìm thấy: " + id);
+        }
+
+        NguyenVongXetTuyen nv = opt.get();
+        nv.setNnCccd(nnCccd);
+        nv.setNvMaNganh(maNganh);
+        nv.setMaToHop(maToHop);
+        nv.setNvThuTu(nvThuTu);
+        nv.setNvKeys(generateNvKeys(nnCccd, maNganh, maToHop, nvThuTu));
+
+        BigDecimal diemCong = getDiemCongForNguyenVong(nnCccd, maNganh, maToHop);
+        BigDecimal totalScore = (diemThxt != null ? diemThxt : BigDecimal.ZERO)
+                .add(diemUtqd != null ? diemUtqd : BigDecimal.ZERO)
+                .add(diemCong);
+
+        nv.setDiemThxt(diemThxt != null ? diemThxt : BigDecimal.ZERO);
+        nv.setDiemUtqd(diemUtqd != null ? diemUtqd : BigDecimal.ZERO);
+        nv.setDiemCong(diemCong);
+        nv.setDiemXetTuyen(totalScore);
+        nv.setUpdatedAt(LocalDateTime.now());
+
+        return nguyenVongRepository.update(nv);
+    }
+
+    /**
      * Chạy quá trình xét tuyển cho một ngành
      * Logic:
      * 1. Lấy danh sách nguyện vọng cho ngành này

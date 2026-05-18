@@ -4,7 +4,6 @@ import com.example.admissions_management.domain.model.Combination;
 import com.example.admissions_management.domain.repository.ICombinationRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhToHopEntity;
 import com.example.admissions_management.infrastructure.persistence.repository.ISpringDataCombinationRepository;
-import org.jspecify.annotations.NonNull;
 import org.springframework.stereotype.Repository;
 
 import org.springframework.data.domain.Page;
@@ -84,7 +83,6 @@ public class CombinationRepositoryImpl implements ICombinationRepository {
       return getStringObjectMap(result);
   }
 
-    @NonNull
     private Map<String, Object> getStringObjectMap(Page<XtNganhToHopEntity> result) {
         Map<String, Object> response = new HashMap<>();
         response.put("content", result.getContent().stream().map(this::toDomain).toList());

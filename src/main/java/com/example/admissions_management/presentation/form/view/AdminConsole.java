@@ -111,11 +111,11 @@ public class AdminConsole extends JFrame {
         JButton diemCongButton = new JButton("Điểm Cộng");
         JButton nguyenVongButton = new JButton("Nguyện Vọng");
 
-        saveButton.addActionListener(_ -> saveApplicant());
-        refreshButton.addActionListener(_ -> refreshTable());
-        combinationsButton.addActionListener(_ -> openCombinationManager());
-        diemCongButton.addActionListener(_ -> openDiemCongForm());
-        nguyenVongButton.addActionListener(_ -> openNguyenVongForm());
+        saveButton.addActionListener(e -> saveApplicant());
+        refreshButton.addActionListener(e -> refreshTable());
+        combinationsButton.addActionListener(e -> openCombinationManager());
+        diemCongButton.addActionListener(e -> openDiemCongForm());
+        nguyenVongButton.addActionListener(e -> openNguyenVongForm());
 
         actionPanel.add(saveButton);
         actionPanel.add(refreshButton);
@@ -243,6 +243,11 @@ public class AdminConsole extends JFrame {
         tabPane.addTab("Quản lý thí sinh", buildCandidatePanel());
         tabPane.addTab("Quản lý ngành tuyển sinh", buildMajorPanel());
         tabPane.addTab("Quản lý tổ hợp môn", buildToHopPanel());
+        
+        // Thêm phần 7, 8 theo yêu cầu
+        tabPane.addTab("Quản lý điểm cộng", new DiemCongPanel(diemCongConsoleController));
+        tabPane.addTab("Quản lý nguyện vọng", new NguyenVongPanel(nguyenVongConsoleController));
+        
         return tabPane;
     }
 

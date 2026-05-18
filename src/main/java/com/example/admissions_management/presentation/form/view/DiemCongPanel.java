@@ -6,33 +6,25 @@ import com.example.admissions_management.presentation.form.controller.DiemCongCo
 import com.example.admissions_management.presentation.form.model.DiemCongTableModel;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 public class DiemCongPanel extends JPanel {
 
-    private static final Font SECTION_TITLE_FONT = new Font("Segoe UI", Font.BOLD, 13);
-    private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
-    private static final Font FIELD_FONT = new Font("Segoe UI", Font.PLAIN, 12);
-    private static final Dimension FIELD_SIZE = new Dimension(320, 30);
-    private static final Dimension AREA_SIZE = new Dimension(320, 84);
-    private static final Dimension LABEL_SIZE = new Dimension(130, 24);
+    private static final int PAGE_SIZE = 50;
 
     private final DiemCongConsoleController controller;
     private final DiemCongTableModel tableModel;
 
     private final JTextField searchCccdField = new JTextField();
-    private final JTextField idField = new JTextField();
-    private final JTextField tsCccdField = new JTextField();
-    private final JTextField maNganhField = new JTextField();
-    private final JTextField maToHopField = new JTextField();
-    private final JTextField phuongThucField = new JTextField();
-    private final JTextField diemCcField = new JTextField();
-    private final JTextField diemUtxtField = new JTextField();
-    private final JTextField diemTongField = new JTextField();
-    private final JTextArea ghiChuArea = new JTextArea(4, 30);
-
     private final JTable table;
+    private final JLabel pageLabel = new JLabel("Page: 1");
+    private final JButton prevButton = new JButton("<< Trước");
+    private final JButton nextButton = new JButton("Sau >>");
+    private List<DiemCongXetTuyen> currentRows = new ArrayList<>();
+    private int page = 0;
+    private String currentQuery = "";
 
     public DiemCongPanel(DiemCongConsoleController controller) {
         this.controller = controller;
@@ -42,198 +34,60 @@ public class DiemCongPanel extends JPanel {
         setLayout(new BorderLayout(10, 10));
         add(buildTopPanel(), BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
-        add(buildEditPanel(), BorderLayout.EAST);
-
-        table.getSelectionModel().addListSelectionListener(this::onRowSelected);
+        add(buildActionPanel(), BorderLayout.SOUTH);
         refreshTable();
     }
 
     private JPanel buildTopPanel() {
-        JPanel panel = new JPanel(new GridBagLayout());
+        JPanel panel = new JPanel(new GridLayout(1, 6, 8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        GridBagConstraints c = new GridBagConstraints();
-        c.insets = new Insets(6, 6, 6, 6);
 
-        // Row 0: label + search field (expand)
-        c.gridx = 0; c.gridy = 0; c.anchor = GridBagConstraints.WEST; c.fill = GridBagConstraints.NONE; c.weightx = 0.0;
-        panel.add(new JLabel("Tìm theo CCCD"), c);
+        panel.add(new JLabel("Tìm theo CCCD"));
+        panel.add(searchCccdField);
 
-        c.gridx = 1; c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL; c.weightx = 1.0;
-        panel.add(searchCccdField, c);
-
-        // Row 0: buttons aligned to right
-        JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton searchButton = new JButton("Search");
-        JButton refreshButton = new JButton("Refresh");
-        JButton clearButton = new JButton("Clear");
+        JButton searchButton = new JButton("Tìm");
         JButton importButton = new JButton("Import Excel");
-        JButton deleteAllButton = new JButton("Delete All");
-        rightButtons.add(searchButton);
-        rightButtons.add(refreshButton);
-        rightButtons.add(clearButton);
-        rightButtons.add(importButton);
-        rightButtons.add(deleteAllButton);
+        JButton refreshButton = new JButton("Refresh");
 
-        c.gridx = 2; c.gridy = 0; c.fill = GridBagConstraints.NONE; c.weightx = 0.0;
-        panel.add(rightButtons, c);
+        panel.add(searchButton);
+        panel.add(importButton);
+        panel.add(refreshButton);
+        panel.add(pageLabel);
 
         searchButton.addActionListener(e -> search());
-        refreshButton.addActionListener(e -> refreshTable());
-        clearButton.addActionListener(e -> clearFields());
         importButton.addActionListener(e -> importExcel());
-        deleteAllButton.addActionListener(e -> deleteAllData());
+        refreshButton.addActionListener(e -> {
+            searchCccdField.setText("");
+            refreshTable();
+        });
+
         return panel;
     }
 
-    private JPanel buildEditPanel() {
-        JPanel outer = new JPanel(new BorderLayout(10, 10));
-        outer.setPreferredSize(new Dimension(560, 0));
-        outer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+    private JPanel buildActionPanel() {
+        JPanel btnPanel = new JPanel(new GridLayout(1, 6, 8, 8));
+        JButton addButton = new JButton("Thêm");
+        JButton editButton = new JButton("Sửa");
+        JButton deleteButton = new JButton("Xóa");
+        JButton deleteAllButton = new JButton("Xóa tất cả");
 
-        // Main content panel (scrollable)
-        JPanel contentPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gc = new GridBagConstraints();
-        gc.fill = GridBagConstraints.HORIZONTAL;
-        gc.anchor = GridBagConstraints.NORTHWEST;
-        gc.insets = new Insets(0, 0, 0, 0);
-
-        // Section 1: ID Info
-        JPanel section1 = createFieldSection("Thông Tin Chính", new Object[][] {
-            { "ID", idField },
-            { "CCCD", tsCccdField }
-        });
-        gc.gridx = 0; gc.gridy = 0; gc.weightx = 1.0; contentPanel.add(section1, gc);
-
-        // Section 2: Ngành và Tổ Hợp
-        JPanel section2 = createFieldSection("Ngành & Tổ Hợp", new Object[][] {
-            { "Mã Ngành", maNganhField },
-            { "Mã Tổ Hợp", maToHopField }
-        });
-        gc.gridy = 1; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section2, gc);
-
-        // Section 3: Phương thức
-        JPanel section3 = createFieldSection("Xét Tuyển", new Object[][] {
-            { "Phương Thức", phuongThucField }
-        });
-        gc.gridy = 2; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section3, gc);
-
-        // Section 4: Điểm
-        JPanel section4 = createFieldSection("Điểm", new Object[][] {
-            { "Điểm CC", diemCcField },
-            { "Điểm UT", diemUtxtField },
-            { "Tổng Điểm", diemTongField }
-        });
-        gc.gridy = 3; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section4, gc);
-
-        // Section 5: Ghi Chú
-        JPanel section5 = createFieldSection("Ghi Chú", new Object[][] {
-            { "Nội Dung", ghiChuArea }
-        });
-        gc.gridy = 4; gc.insets = new Insets(10, 0, 0, 0); gc.weighty = 1.0; contentPanel.add(section5, gc);
-
-        // Filler
-        gc.gridy = 5; gc.weighty = 1.0; contentPanel.add(new JPanel(), gc);
-
-        JScrollPane scrollPane = new JScrollPane(contentPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scrollPane.setBorder(null);
-        outer.add(scrollPane, BorderLayout.CENTER);
-
-        // Button panel
-        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-        btnPanel.setBackground(new Color(240, 240, 240));
-        JButton saveButton = new JButton("Save");
-        JButton deleteButton = new JButton("Delete");
-        JButton clearButton = new JButton("Clear");
-        
-        saveButton.setPreferredSize(new Dimension(80, 32));
-        deleteButton.setPreferredSize(new Dimension(80, 32));
-        clearButton.setPreferredSize(new Dimension(80, 32));
-        
-        btnPanel.add(saveButton);
+        btnPanel.add(addButton);
+        btnPanel.add(editButton);
         btnPanel.add(deleteButton);
-        btnPanel.add(clearButton);
+        btnPanel.add(deleteAllButton);
+        btnPanel.add(prevButton);
+        btnPanel.add(nextButton);
 
-        saveButton.addActionListener(e -> save());
+        addButton.addActionListener(e -> openEditDialog(null));
+        editButton.addActionListener(e -> openEditDialog(getSelectedRow()));
         deleteButton.addActionListener(e -> deleteSelected());
-        clearButton.addActionListener(e -> clearFields());
+        deleteAllButton.addActionListener(e -> deleteAllData());
+        prevButton.addActionListener(e -> goPrevPage());
+        nextButton.addActionListener(e -> goNextPage());
 
-        outer.add(btnPanel, BorderLayout.SOUTH);
+        updatePagingControls();
 
-        idField.setEditable(false);
-
-        return outer;
-    }
-
-    private JPanel createFieldSection(String title, Object[][] fields) {
-        JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
-                title,
-                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
-                javax.swing.border.TitledBorder.DEFAULT_POSITION,
-                SECTION_TITLE_FONT,
-                new Color(45, 45, 45)
-        ));
-        panel.setBackground(new Color(250, 250, 250));
-
-        GridBagConstraints gc = new GridBagConstraints();
-        gc.fill = GridBagConstraints.HORIZONTAL;
-        gc.insets = new Insets(8, 10, 8, 10);
-
-        for (int i = 0; i < fields.length; i++) {
-            String label = (String) fields[i][0];
-            Object comp = fields[i][1];
-
-            gc.gridx = 0;
-            gc.gridy = i;
-            gc.weightx = 0.0;
-            gc.gridwidth = 1;
-            gc.anchor = GridBagConstraints.NORTHWEST;
-            JLabel lbl = new JLabel(label);
-            lbl.setFont(LABEL_FONT);
-            lbl.setForeground(new Color(50, 50, 50));
-            lbl.setPreferredSize(LABEL_SIZE);
-            lbl.setMinimumSize(LABEL_SIZE);
-            lbl.setMaximumSize(LABEL_SIZE);
-            panel.add(lbl, gc);
-
-            gc.gridx = 1;
-            gc.weightx = 1.0;
-            gc.gridwidth = GridBagConstraints.REMAINDER;
-            gc.anchor = GridBagConstraints.WEST;
-            
-            if (comp instanceof JComponent) {
-                JComponent jcomp = (JComponent) comp;
-                if (jcomp instanceof JTextArea) {
-                    JTextArea area = (JTextArea) jcomp;
-                    area.setFont(FIELD_FONT);
-                    area.setLineWrap(true);
-                    area.setWrapStyleWord(true);
-                    area.setMargin(new Insets(6, 8, 6, 8));
-                    area.setBackground(new Color(255, 255, 255));
-                    area.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
-                    
-                    JScrollPane scrollPane = new JScrollPane(area);
-                    scrollPane.setPreferredSize(AREA_SIZE);
-                    scrollPane.setMinimumSize(AREA_SIZE);
-                    scrollPane.setMaximumSize(new Dimension(Integer.MAX_VALUE, AREA_SIZE.height));
-                    scrollPane.setBorder(null);
-                    panel.add(scrollPane, gc);
-                } else if (jcomp instanceof JTextField) {
-                    JTextField tf = (JTextField) jcomp;
-                    tf.setFont(FIELD_FONT);
-                    tf.setMargin(new Insets(6, 8, 6, 8));
-                    tf.setBackground(new Color(255, 255, 255));
-                    tf.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
-                    tf.setPreferredSize(FIELD_SIZE);
-                    tf.setMinimumSize(new Dimension(0, FIELD_SIZE.height));
-                    tf.setMaximumSize(new Dimension(Integer.MAX_VALUE, FIELD_SIZE.height));
-                    panel.add(tf, gc);
-                }
-            }
-        }
-
-        return panel;
+        return btnPanel;
     }
 
     private void search() {
@@ -241,28 +95,32 @@ public class DiemCongPanel extends JPanel {
         if (cccd.isEmpty()) {
             refreshTable();
         } else {
-            tableModel.setRows(controller.loadByCccd(cccd));
+            currentQuery = cccd;
+            currentRows = controller.loadByCccd(cccd);
+            page = 0;
+            updateTablePage();
         }
     }
 
     private void refreshTable() {
-        tableModel.setRows(controller.loadAll());
+        currentQuery = "";
+        currentRows = controller.loadAll();
+        page = 0;
+        updateTablePage();
     }
 
-    private void save() {
+    private void save(Long id,
+                      String tsCccd,
+                      String maNganh,
+                      String maToHop,
+                      String phuongThuc,
+                      String diemCc,
+                      String diemUtxt,
+                      String diemTong,
+                      String ghiChu) {
         try {
-            controller.save(
-                    tsCccdField.getText(),
-                    maNganhField.getText(),
-                    maToHopField.getText(),
-                    phuongThucField.getText(),
-                    diemCcField.getText(),
-                    diemUtxtField.getText(),
-                    diemTongField.getText(),
-                    ghiChuArea.getText()
-            );
-            refreshTable();
-            clearFields();
+            controller.save(id, tsCccd, maNganh, maToHop, phuongThuc, diemCc, diemUtxt, diemTong, ghiChu);
+            reloadCurrentData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
         }
@@ -277,45 +135,10 @@ public class DiemCongPanel extends JPanel {
         try {
             DiemCongXetTuyen row = tableModel.getRowAt(selectedRow);
             controller.delete(row.getId());
-            refreshTable();
-            clearFields();
+            reloadCurrentData();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    private void onRowSelected(ListSelectionEvent event) {
-        if (event.getValueIsAdjusting()) {
-            return;
-        }
-        int selectedRow = table.getSelectedRow();
-        if (selectedRow < 0) {
-            return;
-        }
-        DiemCongXetTuyen row = tableModel.getRowAt(selectedRow);
-        idField.setText(row.getId() == null ? "" : String.valueOf(row.getId()));
-        tsCccdField.setText(row.getTsCccd());
-        maNganhField.setText(row.getMaNganh());
-        maToHopField.setText(row.getMaToHop());
-        phuongThucField.setText(row.getPhuongThuc());
-        diemCcField.setText(row.getDiemCc() == null ? "" : row.getDiemCc().toPlainString());
-        diemUtxtField.setText(row.getDiemUtxt() == null ? "" : row.getDiemUtxt().toPlainString());
-        diemTongField.setText(row.getDiemTong() == null ? "" : row.getDiemTong().toPlainString());
-        ghiChuArea.setText(row.getGhiChu());
-    }
-
-    private void clearFields() {
-        searchCccdField.setText("");
-        idField.setText("");
-        tsCccdField.setText("");
-        maNganhField.setText("");
-        maToHopField.setText("");
-        phuongThucField.setText("");
-        diemCcField.setText("");
-        diemUtxtField.setText("");
-        diemTongField.setText("");
-        ghiChuArea.setText("");
-        table.clearSelection();
     }
 
     private void deleteAllData() {
@@ -329,8 +152,7 @@ public class DiemCongPanel extends JPanel {
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 controller.deleteAll();
-                refreshTable();
-                clearFields();
+                reloadCurrentData();
                 JOptionPane.showMessageDialog(this, "Xóa tất cả dữ liệu thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Xóa thất bại", JOptionPane.ERROR_MESSAGE);
@@ -352,8 +174,7 @@ public class DiemCongPanel extends JPanel {
         
         try {
             DiemCongImportSummary summary = controller.importExcelFile(selectedFile);
-            refreshTable();
-            clearFields();
+            reloadCurrentData();
             JOptionPane.showMessageDialog(this,
                 summary.toMessage(),
                 "Import Success",
@@ -363,6 +184,117 @@ public class DiemCongPanel extends JPanel {
                     "Lỗi khi nhập dữ liệu: " + ex.getMessage(), 
                     "Import Failed", 
                     JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void openEditDialog(DiemCongXetTuyen existing) {
+        JTextField tsCccdField = new JTextField();
+        JTextField maNganhField = new JTextField();
+        JTextField maToHopField = new JTextField();
+        JTextField phuongThucField = new JTextField();
+        JTextField diemCcField = new JTextField();
+        JTextField diemUtxtField = new JTextField();
+        JTextField diemTongField = new JTextField();
+        JTextArea ghiChuArea = new JTextArea(4, 22);
+        JScrollPane ghiChuScroll = new JScrollPane(ghiChuArea);
+
+        if (existing != null) {
+            tsCccdField.setText(existing.getTsCccd());
+            maNganhField.setText(existing.getMaNganh());
+            maToHopField.setText(existing.getMaToHop());
+            phuongThucField.setText(existing.getPhuongThuc());
+            diemCcField.setText(existing.getDiemCc() == null ? "" : existing.getDiemCc().toPlainString());
+            diemUtxtField.setText(existing.getDiemUtxt() == null ? "" : existing.getDiemUtxt().toPlainString());
+            diemTongField.setText(existing.getDiemTong() == null ? "" : existing.getDiemTong().toPlainString());
+            ghiChuArea.setText(existing.getGhiChu());
+        }
+
+        JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
+        form.add(new JLabel("CCCD"));
+        form.add(tsCccdField);
+        form.add(new JLabel("Mã Ngành"));
+        form.add(maNganhField);
+        form.add(new JLabel("Mã Tổ Hợp"));
+        form.add(maToHopField);
+        form.add(new JLabel("Phương Thức"));
+        form.add(phuongThucField);
+        form.add(new JLabel("Điểm CC"));
+        form.add(diemCcField);
+        form.add(new JLabel("Điểm UT"));
+        form.add(diemUtxtField);
+        form.add(new JLabel("Tổng Điểm"));
+        form.add(diemTongField);
+        form.add(new JLabel("Ghi Chú"));
+        form.add(ghiChuScroll);
+
+        int result = JOptionPane.showConfirmDialog(
+                this,
+                form,
+                existing == null ? "Thêm điểm cộng" : "Sửa điểm cộng",
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE
+        );
+
+        if (result == JOptionPane.OK_OPTION) {
+            save(existing == null ? null : existing.getId(),
+                    tsCccdField.getText(),
+                    maNganhField.getText(),
+                    maToHopField.getText(),
+                    phuongThucField.getText(),
+                    diemCcField.getText(),
+                    diemUtxtField.getText(),
+                    diemTongField.getText(),
+                    ghiChuArea.getText());
+        }
+    }
+
+    private DiemCongXetTuyen getSelectedRow() {
+        int selectedRow = table.getSelectedRow();
+        if (selectedRow < 0) {
+            JOptionPane.showMessageDialog(this, "Chọn một dòng để sửa.", "Sửa", JOptionPane.WARNING_MESSAGE);
+            return null;
+        }
+        return tableModel.getRowAt(selectedRow);
+    }
+
+    private void reloadCurrentData() {
+        if (currentQuery == null || currentQuery.isEmpty()) {
+            currentRows = controller.loadAll();
+        } else {
+            currentRows = controller.loadByCccd(currentQuery);
+        }
+        int maxPage = Math.max(0, (currentRows.size() - 1) / PAGE_SIZE);
+        page = Math.min(page, maxPage);
+        updateTablePage();
+    }
+
+    private void updateTablePage() {
+        int start = page * PAGE_SIZE;
+        int end = Math.min(start + PAGE_SIZE, currentRows.size());
+        List<DiemCongXetTuyen> slice = start < end ? currentRows.subList(start, end) : new ArrayList<>();
+        tableModel.setRows(slice);
+        updatePagingControls();
+    }
+
+    private void updatePagingControls() {
+        int totalPages = Math.max(1, (int) Math.ceil(currentRows.size() / (double) PAGE_SIZE));
+        pageLabel.setText("Page: " + (page + 1));
+        prevButton.setEnabled(page > 0);
+        nextButton.setEnabled(page + 1 < totalPages);
+    }
+
+    private void goPrevPage() {
+        if (page > 0) {
+            page--;
+            updateTablePage();
+        }
+    }
+
+    private void goNextPage() {
+        int totalPages = Math.max(1, (int) Math.ceil(currentRows.size() / (double) PAGE_SIZE));
+        if (page + 1 < totalPages) {
+            page++;
+            updateTablePage();
         }
     }
 }
