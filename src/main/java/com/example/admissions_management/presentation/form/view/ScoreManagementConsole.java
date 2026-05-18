@@ -51,7 +51,13 @@ public class ScoreManagementConsole extends JFrame {
     private final JTextField vaField = new JTextField();
     private final JTextField n1ThiField = new JTextField();
     private final JTextField n1CcField = new JTextField();
+    private final JTextField cncnField = new JTextField();
+    private final JTextField cnnnField = new JTextField();
+    private final JTextField tiField = new JTextField();
+    private final JTextField ktplField = new JTextField();
     private final JTextField nl1Field = new JTextField();
+    private final JTextField nk1Field = new JTextField();
+    private final JTextField nk2Field = new JTextField();
 
     private final JComboBox<String> filterType = new JComboBox<>(new String[]{"ALL", "THPT", "VSAT", "DGNL"});
     private final JTable table;
@@ -122,7 +128,7 @@ public class ScoreManagementConsole extends JFrame {
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(0, 8, 8, 8));
 
-        JPanel fields = new JPanel(new GridLayout(4, 7, 8, 8));
+        JPanel fields = new JPanel(new GridLayout(5, 8, 8, 8));
         idField.setEditable(false);
 
         addField(fields, "ID", idField);
@@ -138,7 +144,13 @@ public class ScoreManagementConsole extends JFrame {
         addField(fields, "VA", vaField);
         addField(fields, "N1_THI", n1ThiField);
         addField(fields, "N1_CC", n1CcField);
+        addField(fields, "CNCN", cncnField);
+        addField(fields, "CNNN", cnnnField);
+        addField(fields, "TI", tiField);
+        addField(fields, "KTPL", ktplField);
         addField(fields, "NL1", nl1Field);
+        addField(fields, "NK1", nk1Field);
+        addField(fields, "NK2", nk2Field);
 
         JPanel actions = new JPanel(new GridLayout(1, 1, 8, 8));
         JButton saveButton = new JButton("Save / Update");
@@ -180,7 +192,13 @@ public class ScoreManagementConsole extends JFrame {
         vaField.setText(toText(row.getVa()));
         n1ThiField.setText(toText(row.getN1Thi()));
         n1CcField.setText(toText(row.getN1Cc()));
+        cncnField.setText(toText(row.getCncn()));
+        cnnnField.setText(toText(row.getCnnn()));
+        tiField.setText(toText(row.getTi()));
+        ktplField.setText(toText(row.getKtpl()));
         nl1Field.setText(toText(row.getNl1()));
+        nk1Field.setText(toText(row.getNk1()));
+        nk2Field.setText(toText(row.getNk2()));
     }
 
     private void saveOrUpdate() {
@@ -202,7 +220,13 @@ public class ScoreManagementConsole extends JFrame {
             form.setVa(parseDecimal(vaField.getText()));
             form.setN1Thi(parseDecimal(n1ThiField.getText()));
             form.setN1Cc(parseDecimal(n1CcField.getText()));
+            form.setCncn(parseDecimal(cncnField.getText()));
+            form.setCnnn(parseDecimal(cnnnField.getText()));
+            form.setTi(parseDecimal(tiField.getText()));
+            form.setKtpl(parseDecimal(ktplField.getText()));
             form.setNl1(parseDecimal(nl1Field.getText()));
+            form.setNk1(parseDecimal(nk1Field.getText()));
+            form.setNk2(parseDecimal(nk2Field.getText()));
 
             if (form.getCccd() == null || form.getCccd().isBlank()) {
                 throw new IllegalArgumentException("CCCD la bat buoc.");
@@ -322,7 +346,13 @@ public class ScoreManagementConsole extends JFrame {
         vaField.setText("");
         n1ThiField.setText("");
         n1CcField.setText("");
+        cncnField.setText("");
+        cnnnField.setText("");
+        tiField.setText("");
+        ktplField.setText("");
         nl1Field.setText("");
+        nk1Field.setText("");
+        nk2Field.setText("");
         table.clearSelection();
     }
 

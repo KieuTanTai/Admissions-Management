@@ -8,9 +8,9 @@ import java.util.List;
 
 public class ScoreManagementTableModel extends AbstractTableModel {
 
-    private final String[] columns = {
-            "ID", "CCCD", "So Bao Danh", "d_phuongthuc", "TO", "LI", "HO", "SI", "SU", "DI", "VA", "N1_THI", "N1_CC", "NL1"
-    };
+        private final String[] columns = {
+            "ID", "CCCD", "So Bao Danh", "d_phuongthuc", "TO", "LI", "HO", "SI", "SU", "DI", "VA", "N1_THI", "N1_CC", "CNCN", "CNNN", "TI", "KTPL", "NL1", "NK1", "NK2"
+        };
 
     private List<XtDiemThiXetTuyenEntity> rows = new ArrayList<>();
 
@@ -58,7 +58,13 @@ public class ScoreManagementTableModel extends AbstractTableModel {
             case 10 -> row.getVa();
             case 11 -> row.getN1Thi();
             case 12 -> row.getN1Cc();
-            case 13 -> row.getNl1();
+            case 13 -> row.getCncn();
+            case 14 -> row.getCnnn();
+            case 15 -> row.getTi();
+            case 16 -> row.getKtpl();
+            case 17 -> row.getNl1();
+            case 18 -> row.getNk1();
+            case 19 -> row.getNk2();
             default -> "";
         };
     }
