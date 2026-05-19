@@ -4,14 +4,17 @@ import com.example.admissions_management.application.dto.request.DiemCongImportR
 import com.example.admissions_management.application.dto.response.DiemCongImportSummary;
 import com.example.admissions_management.domain.model.DiemCongXetTuyen;
 import com.example.admissions_management.domain.repository.DiemCongXetTuyenRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DiemCongXetTuyenService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(DiemCongXetTuyenService.class);
 
     private final DiemCongXetTuyenRepository diemCongRepository;
 
@@ -19,50 +22,36 @@ public class DiemCongXetTuyenService {
         this.diemCongRepository = diemCongRepository;
     }
 
-    /**
-     * Lấy tất cả điểm cộng
-     */
     public List<DiemCongXetTuyen> getAll() {
         return diemCongRepository.findAll();
     }
 
-    /**
-     * Tìm điểm cộng theo CCCD
-     */
     public List<DiemCongXetTuyen> findByTsCccd(String tsCccd) {
         return diemCongRepository.findByTsCccd(tsCccd);
     }
 
-    /**
-     * Tìm điểm cộng theo mã ngành
-     */
     public List<DiemCongXetTuyen> findByMaNganh(String maNganh) {
         return diemCongRepository.findByMaNganh(maNganh);
     }
 
-    /**
-     * Tìm điểm cộng theo ngành + tổ hợp + CCCD
-     */
     public List<DiemCongXetTuyen> findByTsCccdAndMaNganhAndMaToHop(String tsCccd, String maNganh, String maToHop) {
         return diemCongRepository.findByTsCccdAndMaNganhAndMaToHop(tsCccd, maNganh, maToHop);
     }
 
-    /**
-     * Lấy điểm cộng theo khóa duy nhất
-     */
-    public Optional<DiemCongXetTuyen> findByDcKeys(String dcKeys) {
+    public java.util.Optional<DiemCongXetTuyen> findByDcKeys(String dcKeys) {
         return diemCongRepository.findByDcKeys(dcKeys);
     }
 
-    /**
-     * Thêm hoặc cập nhật điểm cộng đơn
-     */
+    public java.util.Optional<DiemCongXetTuyen> findById(Long id) {
+        return diemCongRepository.findById(id);
+    }
+
     @Transactional
     public DiemCongXetTuyen saveOrUpdate(DiemCongImportRequest request) {
         String dcKeys = generateDcKeys(request.getTsCccd(), request.getMaNganh(), request.getMaToHop());
-        
-        Optional<DiemCongXetTuyen> existing = diemCongRepository.findByDcKeys(dcKeys);
-        
+
+        java.util.Optional<DiemCongXetTuyen> existing = diemCongRepository.findByDcKeys(dcKeys);
+
         DiemCongXetTuyen diemCong = existing.orElseGet(DiemCongXetTuyen::new);
         if (diemCong.getId() == null && request.getId() != null) {
             diemCong.setId(request.getId());
@@ -76,32 +65,25 @@ public class DiemCongXetTuyenService {
         diemCong.setDiemTong(request.getDiemTong());
         diemCong.setGhiChu(request.getGhiChu());
         diemCong.setDcKeys(dcKeys);
-        
+
         return diemCongRepository.save(diemCong);
     }
 
-    /**
-     * Import hàng loạt từ Excel
-     */
     @Transactional
     public int importFromExcel(List<DiemCongImportRequest> records) {
         int count = 0;
+        if (records == null) return 0;
         for (DiemCongImportRequest record : records) {
             try {
                 saveOrUpdate(record);
                 count++;
             } catch (Exception e) {
-                // Log error, continue processing
-                System.err.println("Error importing record: " + e.getMessage());
+                LOGGER.error("Error importing record: {}", e.getMessage());
             }
         }
         return count;
     }
 
-    /**
-     * Batch upsert: process records in batch, resolve existing by dcKeys and saveAll.
-     */
-    @Transactional
     public DiemCongImportSummary importInBatches(List<DiemCongImportRequest> records, int batchSize) {
         DiemCongImportSummary summary = new DiemCongImportSummary();
         summary.setTotalRows(records == null ? 0 : records.size());
@@ -110,49 +92,16 @@ public class DiemCongXetTuyenService {
             return summary;
         }
 
-        for (int start = 0; start < records.size(); start += batchSize) {
-            int end = Math.min(start + batchSize, records.size());
+        int effectiveBatch = Math.max(1, batchSize);
+        for (int start = 0; start < records.size(); start += effectiveBatch) {
+            int end = Math.min(start + effectiveBatch, records.size());
             List<DiemCongImportRequest> batch = records.subList(start, end);
-
-            // build dcKeys
-            List<String> keys = batch.stream()
-                    .map(r -> generateDcKeys(r.getTsCccd(), r.getMaNganh(), r.getMaToHop()))
-                    .toList();
-
-            // fetch existing
-            List<DiemCongXetTuyen> existing = diemCongRepository.findByDcKeysIn(keys);
-            java.util.Map<String, DiemCongXetTuyen> existingMap = existing.stream()
-                    .collect(java.util.stream.Collectors.toMap(DiemCongXetTuyen::getDcKeys, e -> e));
 
             List<DiemCongXetTuyen> toSave = new java.util.ArrayList<>();
             for (DiemCongImportRequest r : batch) {
                 String key = generateDcKeys(r.getTsCccd(), r.getMaNganh(), r.getMaToHop());
-
-                DiemCongXetTuyen d = null;
-                boolean updated = false;
-
-                if (r.getId() != null) {
-                    java.util.Optional<DiemCongXetTuyen> byId = diemCongRepository.findById(r.getId());
-                    if (byId.isPresent()) {
-                        d = byId.get();
-                        updated = true;
-                    }
-                }
-
-                if (d == null) {
-                    d = existingMap.get(key);
-                    if (d != null) {
-                        updated = true;
-                    }
-                }
-
-                if (d == null) {
-                    d = new DiemCongXetTuyen();
-                    if (r.getId() != null) {
-                        d.setId(r.getId());
-                    }
-                }
-
+                DiemCongXetTuyen d = new DiemCongXetTuyen();
+                d.setId(r.getId());
                 d.setTsCccd(r.getTsCccd());
                 d.setMaNganh(r.getMaNganh());
                 d.setMaToHop(r.getMaToHop());
@@ -163,38 +112,29 @@ public class DiemCongXetTuyenService {
                 d.setGhiChu(r.getGhiChu());
                 d.setDcKeys(key);
                 toSave.add(d);
-
-                if (updated) {
-                    summary.setUpdatedCount(summary.getUpdatedCount() + 1);
-                } else {
-                    summary.setNewCount(summary.getNewCount() + 1);
-                }
             }
 
-            diemCongRepository.saveAll(toSave);
+            long t0 = System.currentTimeMillis();
+            diemCongRepository.bulkUpsert(toSave, effectiveBatch);
+            long took = System.currentTimeMillis() - t0;
+            LOGGER.info("importInBatches: bulkUpsert batchSize={} persisted={} took={}ms", effectiveBatch, toSave.size(), took);
+
+            summary.setNewCount(summary.getNewCount() + toSave.size());
         }
+
         return summary;
     }
 
-    /**
-     * Xóa điểm cộng
-     */
     @Transactional
     public void delete(Long id) {
         diemCongRepository.delete(id);
     }
 
-    /**
-     * Xóa tất cả dữ liệu điểm cộng
-     */
     @Transactional
     public void deleteAll() {
         diemCongRepository.deleteAll();
     }
 
-    /**
-     * Tạo khóa duy nhất: CCCD_MANGANH_MATOHOP
-     */
     private String generateDcKeys(String tsCccd, String maNganh, String maToHop) {
         return tsCccd + "_" + maNganh + "_" + (maToHop != null ? maToHop : "");
     }

@@ -19,7 +19,7 @@ public class DiemCongPanel extends JPanel {
 
     private final JTextField searchCccdField = new JTextField();
     private final JTable table;
-    private final JLabel pageLabel = new JLabel("Page: 1");
+    private final JLabel pageLabel = new JLabel("Trang: 1 / 1"); // Cải tiến hiển thị trực quan hơn
     private final JButton prevButton = new JButton("<< Trước");
     private final JButton nextButton = new JButton("Sau >>");
     private List<DiemCongXetTuyen> currentRows = new ArrayList<>();
@@ -30,19 +30,24 @@ public class DiemCongPanel extends JPanel {
         this.controller = controller;
         this.tableModel = new DiemCongTableModel();
         this.table = new JTable(tableModel);
+        
+        // Cấu hình table selection mode đơn dòng để tránh lỗi khi lấy data
+        this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         setLayout(new BorderLayout(10, 10));
         add(buildTopPanel(), BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buildActionPanel(), BorderLayout.SOUTH);
+        
         refreshTable();
     }
 
     private JPanel buildTopPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 6, 8, 8));
+        // Tăng từ 6 cột lên 7 cột để chứa đủ các thành phần mà không bị tràn lưới
+        JPanel panel = new JPanel(new GridLayout(1, 7, 8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        panel.add(new JLabel("Tìm theo CCCD"));
+        panel.add(new JLabel("Tìm theo CCCD:", SwingConstants.RIGHT));
         panel.add(searchCccdField);
 
         JButton searchButton = new JButton("Tìm");
@@ -65,30 +70,41 @@ public class DiemCongPanel extends JPanel {
     }
 
     private JPanel buildActionPanel() {
-        JPanel btnPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-        JButton addButton = new JButton("Thêm");
-        JButton editButton = new JButton("Sửa");
-        JButton deleteButton = new JButton("Xóa");
-        JButton deleteAllButton = new JButton("Xóa tất cả");
+    // Tổng cộng có 6 nút: Thêm, Sửa, Xóa, Xóa tất cả, << Trước, Sau >>
+    // Cấu hình chuẩn GridLayout: 1 hàng, 6 cột, khoảng cách ngang/dọc là 8 pixel
+    JPanel btnPanel = new JPanel(new GridLayout(1, 6, 8, 8));
+    btnPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6)); // Tạo khoảng cách với viền ngoài
 
-        btnPanel.add(addButton);
-        btnPanel.add(editButton);
-        btnPanel.add(deleteButton);
-        btnPanel.add(deleteAllButton);
-        btnPanel.add(prevButton);
-        btnPanel.add(nextButton);
+    JButton addButton = new JButton("Thêm");
+    JButton editButton = new JButton("Sửa");
+    JButton deleteButton = new JButton("Xóa");
+    JButton deleteAllButton = new JButton("Xóa tất cả");
 
-        addButton.addActionListener(e -> openEditDialog(null));
-        editButton.addActionListener(e -> openEditDialog(getSelectedRow()));
-        deleteButton.addActionListener(e -> deleteSelected());
-        deleteAllButton.addActionListener(e -> deleteAllData());
-        prevButton.addActionListener(e -> goPrevPage());
-        nextButton.addActionListener(e -> goNextPage());
+    // Thêm các thành phần vào theo đúng thứ tự (đủ 6 cột)
+    btnPanel.add(addButton);
+    btnPanel.add(editButton);
+    btnPanel.add(deleteButton);
+    btnPanel.add(deleteAllButton);
+    btnPanel.add(prevButton);
+    btnPanel.add(nextButton);
 
-        updatePagingControls();
+    // Gán Sự kiện (Listeners)
+    addButton.addActionListener(e -> openEditDialog(null));
+    editButton.addActionListener(e -> {
+        DiemCongXetTuyen selected = getSelectedRow();
+        if (selected != null) {
+            openEditDialog(selected);
+        }
+    });
+    deleteButton.addActionListener(e -> deleteSelected());
+    deleteAllButton.addActionListener(e -> deleteAllData());
+    prevButton.addActionListener(e -> goPrevPage());
+    nextButton.addActionListener(e -> goNextPage());
 
-        return btnPanel;
-    }
+    updatePagingControls();
+
+    return btnPanel;
+}
 
     private void search() {
         String cccd = searchCccdField.getText().trim();
@@ -109,18 +125,12 @@ public class DiemCongPanel extends JPanel {
         updateTablePage();
     }
 
-    private void save(Long id,
-                      String tsCccd,
-                      String maNganh,
-                      String maToHop,
-                      String phuongThuc,
-                      String diemCc,
-                      String diemUtxt,
-                      String diemTong,
-                      String ghiChu) {
+    private void save(Long id, String tsCccd, String maNganh, String maToHop, String phuongThuc,
+                      String diemCc, String diemUtxt, String diemTong, String ghiChu) {
         try {
             controller.save(id, tsCccd, maNganh, maToHop, phuongThuc, diemCc, diemUtxt, diemTong, ghiChu);
             reloadCurrentData();
+            JOptionPane.showMessageDialog(this, "Lưu dữ liệu thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
         }
@@ -132,12 +142,20 @@ public class DiemCongPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn một dòng để xóa.", "Delete", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try {
-            DiemCongXetTuyen row = tableModel.getRowAt(selectedRow);
-            controller.delete(row.getId());
-            reloadCurrentData();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
+        
+        int confirm = JOptionPane.showConfirmDialog(
+                this, "Bạn có chắc chắn muốn xóa dòng đã chọn?", "Xác nhận xóa", 
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                DiemCongXetTuyen row = tableModel.getRowAt(selectedRow);
+                controller.delete(row.getId());
+                reloadCurrentData();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -152,7 +170,7 @@ public class DiemCongPanel extends JPanel {
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 controller.deleteAll();
-                reloadCurrentData();
+                refreshTable(); // Xóa sạch thì đưa về trạng thái mặc định ban đầu
                 JOptionPane.showMessageDialog(this, "Xóa tất cả dữ liệu thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Xóa thất bại", JOptionPane.ERROR_MESSAGE);
@@ -164,25 +182,25 @@ public class DiemCongPanel extends JPanel {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Chọn file Excel để import");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel Files (*.xlsx)", "xlsx"));
-        
+
         int result = fileChooser.showOpenDialog(this);
         if (result != JFileChooser.APPROVE_OPTION) {
             return;
         }
-        
+
         java.io.File selectedFile = fileChooser.getSelectedFile();
-        
+
         try {
             DiemCongImportSummary summary = controller.importExcelFile(selectedFile);
-            reloadCurrentData();
+            refreshTable(); // Nên tải lại toàn bộ danh sách mới sau khi import thành công
             JOptionPane.showMessageDialog(this,
-                summary.toMessage(),
-                "Import Success",
-                JOptionPane.INFORMATION_MESSAGE);
+                    summary.toMessage(),
+                    "Import Success",
+                    JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi nhập dữ liệu: " + ex.getMessage(), 
-                    "Import Failed", 
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi nhập dữ liệu: " + ex.getMessage(),
+                    "Import Failed",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
@@ -237,24 +255,26 @@ public class DiemCongPanel extends JPanel {
 
         if (result == JOptionPane.OK_OPTION) {
             save(existing == null ? null : existing.getId(),
-                    tsCccdField.getText(),
-                    maNganhField.getText(),
-                    maToHopField.getText(),
-                    phuongThucField.getText(),
-                    diemCcField.getText(),
-                    diemUtxtField.getText(),
-                    diemTongField.getText(),
-                    ghiChuArea.getText());
+                    tsCccdField.getText().trim(),
+                    maNganhField.getText().trim(),
+                    maToHopField.getText().trim(),
+                    phuongThucField.getText().trim(),
+                    diemCcField.getText().trim(),
+                    diemUtxtField.getText().trim(),
+                    diemTongField.getText().trim(),
+                    ghiChuArea.getText().trim());
         }
     }
 
     private DiemCongXetTuyen getSelectedRow() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Chọn một dòng để sửa.", "Sửa", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Chọn một dòng để thực hiện.", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        return tableModel.getRowAt(selectedRow);
+        // Chuyển đổi index nếu sau này bạn có xắp xếp cột (Sorter)
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        return tableModel.getRowAt(modelRow);
     }
 
     private void reloadCurrentData() {
@@ -274,11 +294,15 @@ public class DiemCongPanel extends JPanel {
         List<DiemCongXetTuyen> slice = start < end ? currentRows.subList(start, end) : new ArrayList<>();
         tableModel.setRows(slice);
         updatePagingControls();
+        
+        // Ép giao diện vẽ lại tránh bug không cập nhật UI
+        revalidate();
+        repaint();
     }
 
     private void updatePagingControls() {
         int totalPages = Math.max(1, (int) Math.ceil(currentRows.size() / (double) PAGE_SIZE));
-        pageLabel.setText("Page: " + (page + 1));
+        pageLabel.setText(String.format("Trang: %d / %d", (page + 1), totalPages));
         prevButton.setEnabled(page > 0);
         nextButton.setEnabled(page + 1 < totalPages);
     }

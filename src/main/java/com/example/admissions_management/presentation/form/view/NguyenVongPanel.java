@@ -18,7 +18,7 @@ public class NguyenVongPanel extends JPanel {
     private final JTable table;
 
     private final JTextField searchCccdField = new JTextField();
-    private final JLabel pageLabel = new JLabel("Page: 1");
+    private final JLabel pageLabel = new JLabel("Trang: 1 / 1");
     private final JButton prevButton = new JButton("<< Trước");
     private final JButton nextButton = new JButton("Sau >>");
     private List<NguyenVongXetTuyen> currentRows = new ArrayList<>();
@@ -29,6 +29,9 @@ public class NguyenVongPanel extends JPanel {
         this.controller = controller;
         this.tableModel = new NguyenVongTableModel();
         this.table = new JTable(tableModel);
+        
+        // Chỉ cho phép chọn một dòng để tránh lỗi xử lý dữ liệu đơn dòng
+        this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
         setLayout(new BorderLayout(10, 10));
         add(buildTopPanel(), BorderLayout.NORTH);
@@ -38,10 +41,11 @@ public class NguyenVongPanel extends JPanel {
     }
 
     private JPanel buildTopPanel() {
-        JPanel panel = new JPanel(new GridLayout(1, 6, 8, 8));
+        // Tăng lên 7 cột để chứa khít form tìm kiếm và nút bấm, nhãn trang không bị vỡ bố cục
+        JPanel panel = new JPanel(new GridLayout(1, 7, 8, 8));
         panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
 
-        panel.add(new JLabel("Tìm theo CCCD"));
+        panel.add(new JLabel("Tìm theo CCCD:", SwingConstants.RIGHT));
         panel.add(searchCccdField);
 
         JButton searchButton = new JButton("Tìm");
@@ -63,9 +67,11 @@ public class NguyenVongPanel extends JPanel {
         return panel;
     }
 
-
     private JPanel buildActionPanel() {
+        // Cố định GridLayout(1, 6) ứng với chính xác 6 nút để các nút tự động co giãn đều (Auto-fit)
         JPanel btnPanel = new JPanel(new GridLayout(1, 6, 8, 8));
+        btnPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        
         JButton addButton = new JButton("Thêm");
         JButton editButton = new JButton("Sửa");
         JButton deleteButton = new JButton("Xóa");
@@ -79,7 +85,12 @@ public class NguyenVongPanel extends JPanel {
         btnPanel.add(nextButton);
 
         addButton.addActionListener(e -> openEditDialog(null));
-        editButton.addActionListener(e -> openEditDialog(getSelectedRow()));
+        editButton.addActionListener(e -> {
+            NguyenVongXetTuyen selected = getSelectedRow();
+            if (selected != null) {
+                openEditDialog(selected);
+            }
+        });
         deleteButton.addActionListener(e -> deleteSelected());
         deleteAllButton.addActionListener(e -> deleteAllData());
         prevButton.addActionListener(e -> goPrevPage());
@@ -115,19 +126,28 @@ public class NguyenVongPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn một dòng để xóa.", "Delete", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        try {
-            NguyenVongXetTuyen row = tableModel.getRowAt(selectedRow);
-            controller.delete(row.getId());
-            reloadCurrentData();
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
+        
+        int confirm = JOptionPane.showConfirmDialog(
+                this, "Bạn có chắc chắn muốn xóa nguyện vọng này?", "Xác nhận xóa", 
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE
+        );
+        
+        if (confirm == JOptionPane.YES_OPTION) {
+            try {
+                int modelRow = table.convertRowIndexToModel(selectedRow);
+                NguyenVongXetTuyen row = tableModel.getRowAt(modelRow);
+                controller.delete(row.getId());
+                reloadCurrentData();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void deleteAllData() {
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Bạn có chắc chắn muốn xóa tất cả dữ liệu? Hành động này không thể hoàn tác!",
+                "Bạn có chắc chắn muốn xóa tất cả dữ liệu nguyện vọng? Hành động này không thể hoàn tác!",
                 "Xác nhận xóa tất cả",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
@@ -135,7 +155,7 @@ public class NguyenVongPanel extends JPanel {
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 controller.deleteAll();
-                reloadCurrentData();
+                refreshTable();
                 JOptionPane.showMessageDialog(this, "Xóa tất cả dữ liệu thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Xóa thất bại", JOptionPane.ERROR_MESSAGE);
@@ -145,7 +165,7 @@ public class NguyenVongPanel extends JPanel {
 
     private void importExcel() {
         JFileChooser fileChooser = new JFileChooser();
-        fileChooser.setDialogTitle("Chọn file Excel để import");
+        fileChooser.setDialogTitle("Chọn file Excel nguyện vọng để import");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel Files (*.xlsx)", "xlsx"));
 
         int result = fileChooser.showOpenDialog(this);
@@ -154,19 +174,38 @@ public class NguyenVongPanel extends JPanel {
         }
 
         java.io.File selectedFile = fileChooser.getSelectedFile();
-        try {
-            int imported = controller.importExcelFile(selectedFile);
-            reloadCurrentData();
-            JOptionPane.showMessageDialog(this,
-                    "Import thành công: " + imported + " dòng.",
-                    "Import Success",
-                    JOptionPane.INFORMATION_MESSAGE);
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this,
-                    "Lỗi khi nhập dữ liệu: " + ex.getMessage(),
-                    "Import Failed",
-                    JOptionPane.ERROR_MESSAGE);
-        }
+        
+        // Hiển thị trạng thái đang đọc luồng ngầm cho người dùng biết
+        pageLabel.setText("Đang đọc Excel...");
+        
+        // SỬ DỤNG SWINGWORKER ĐỂ KHÔNG BỊ ĐƠ GIAO DIỆN KHI IMPORT DỮ LIỆU LỚN
+        SwingWorker<com.example.admissions_management.application.dto.response.NguyenVongImportSummary, Void> worker = new SwingWorker<>() {
+            @Override
+            protected com.example.admissions_management.application.dto.response.NguyenVongImportSummary doInBackground() throws Exception {
+                // Đẩy tác vụ xử lý tệp Excel xuống Thread nền phụ
+                return controller.importExcelFile(selectedFile);
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    com.example.admissions_management.application.dto.response.NguyenVongImportSummary summary = (com.example.admissions_management.application.dto.response.NguyenVongImportSummary) get();
+                    refreshTable(); // Cập nhật lại UI bảng hiển thị dữ liệu mới
+                    JOptionPane.showMessageDialog(NguyenVongPanel.this,
+                            summary.toMessage(),
+                            "Import Summary",
+                            JOptionPane.INFORMATION_MESSAGE);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(NguyenVongPanel.this,
+                            "Lỗi khi nhập dữ liệu: " + (ex.getCause() != null ? ex.getCause().getMessage() : ex.getMessage()),
+                            "Import Failed",
+                            JOptionPane.ERROR_MESSAGE);
+                    updatePagingControls();
+                }
+            }
+        };
+        
+        worker.execute(); // Bắt đầu chạy tiến trình
     }
 
     private void openEditDialog(NguyenVongXetTuyen existing) {
@@ -210,48 +249,39 @@ public class NguyenVongPanel extends JPanel {
 
         if (result == JOptionPane.OK_OPTION) {
             if (existing == null) {
-                save(nnCccdField.getText(),
-                        maNganhField.getText(),
-                        maToHopField.getText(),
-                        nvThuTuField.getText(),
-                        diemThxtField.getText(),
-                        diemUtqdField.getText());
+                save(nnCccdField.getText().trim(),
+                        maNganhField.getText().trim(),
+                        maToHopField.getText().trim(),
+                        nvThuTuField.getText().trim(),
+                        diemThxtField.getText().trim(),
+                        diemUtqdField.getText().trim());
             } else {
                 update(existing.getId(),
-                        nnCccdField.getText(),
-                        maNganhField.getText(),
-                        maToHopField.getText(),
-                        nvThuTuField.getText(),
-                        diemThxtField.getText(),
-                        diemUtqdField.getText());
+                        nnCccdField.getText().trim(),
+                        maNganhField.getText().trim(),
+                        maToHopField.getText().trim(),
+                        nvThuTuField.getText().trim(),
+                        diemThxtField.getText().trim(),
+                        diemUtqdField.getText().trim());
             }
         }
     }
 
-    private void save(String nnCccd,
-                      String maNganh,
-                      String maToHop,
-                      String nvThuTu,
-                      String diemThxt,
-                      String diemUtqd) {
+    private void save(String nnCccd, String maNganh, String maToHop, String nvThuTu, String diemThxt, String diemUtqd) {
         try {
             controller.save(nnCccd, maNganh, maToHop, nvThuTu, diemThxt, diemUtqd);
             reloadCurrentData();
+            JOptionPane.showMessageDialog(this, "Lưu thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    private void update(Integer id,
-                        String nnCccd,
-                        String maNganh,
-                        String maToHop,
-                        String nvThuTu,
-                        String diemThxt,
-                        String diemUtqd) {
+    private void update(Integer id, String nnCccd, String maNganh, String maToHop, String nvThuTu, String diemThxt, String diemUtqd) {
         try {
             controller.update(id, nnCccd, maNganh, maToHop, nvThuTu, diemThxt, diemUtqd);
             reloadCurrentData();
+            JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, ex.getMessage(), "Update Failed", JOptionPane.ERROR_MESSAGE);
         }
@@ -260,10 +290,11 @@ public class NguyenVongPanel extends JPanel {
     private NguyenVongXetTuyen getSelectedRow() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Chọn một dòng để sửa.", "Sửa", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Chọn một dòng để thực hiện.", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return null;
         }
-        return tableModel.getRowAt(selectedRow);
+        int modelRow = table.convertRowIndexToModel(selectedRow);
+        return tableModel.getRowAt(modelRow);
     }
 
     private void reloadCurrentData() {
@@ -283,11 +314,15 @@ public class NguyenVongPanel extends JPanel {
         List<NguyenVongXetTuyen> slice = start < end ? currentRows.subList(start, end) : new ArrayList<>();
         tableModel.setRows(slice);
         updatePagingControls();
+        
+        // Buộc giao diện cập nhật và render lại cấu trúc dòng mới
+        revalidate();
+        repaint();
     }
 
     private void updatePagingControls() {
         int totalPages = Math.max(1, (int) Math.ceil(currentRows.size() / (double) PAGE_SIZE));
-        pageLabel.setText("Page: " + (page + 1));
+        pageLabel.setText(String.format("Trang: %d / %d", (page + 1), totalPages));
         prevButton.setEnabled(page > 0);
         nextButton.setEnabled(page + 1 < totalPages);
     }

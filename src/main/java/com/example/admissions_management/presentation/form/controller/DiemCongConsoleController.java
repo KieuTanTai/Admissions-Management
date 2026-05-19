@@ -14,6 +14,8 @@ import java.util.List;
 @Component
 public class DiemCongConsoleController {
 
+    private static final int DEFAULT_IMPORT_BATCH_SIZE = 2000;
+
     private final DiemCongXetTuyenService diemCongService;
     private final ExcelService excelService;
 
@@ -79,8 +81,19 @@ public class DiemCongConsoleController {
      * Import dữ liệu điểm cộng từ file Excel
      */
     public DiemCongImportSummary importExcelFile(File file) throws Exception {
-        // Use batch import (1000 records per batch) for better performance
-        return excelService.importDiemCongFromFileBatch(file, 1000);
+        return importExcelFile(file, DEFAULT_IMPORT_BATCH_SIZE);
+    }
+
+    /**
+     * Import dữ liệu điểm cộng từ file Excel với batch size tùy chỉnh.
+     */
+    public DiemCongImportSummary importExcelFile(File file, int batchSize) throws Exception {
+        if (file == null) {
+            throw new IllegalArgumentException("File import không được null");
+        }
+
+        int effectiveBatchSize = batchSize > 0 ? batchSize : DEFAULT_IMPORT_BATCH_SIZE;
+        return excelService.importDiemCongOptimized(file, effectiveBatchSize);
     }
 
     private BigDecimal parseDecimal(String value) {

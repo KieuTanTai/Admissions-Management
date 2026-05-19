@@ -76,25 +76,15 @@ public class DiemCongXetTuyenController {
         try {
             tempFile = File.createTempFile("diem-cong-upload-", ".xlsx");
             file.transferTo(tempFile);
-            try {
-                int imported = excelService.importDiemCongFromFileBulk(tempFile);
-                response.put("success", true);
-                response.put("message", "Import nhanh thành công: " + imported + " bản ghi");
-                response.put("importedCount", imported);
-                response.put("mode", "bulk");
-                return ResponseEntity.ok(response);
-            } catch (Exception bulkEx) {
-                DiemCongImportSummary summary = excelService.importDiemCongFromFileBatch(tempFile, 1000);
-                response.put("success", true);
-                response.put("message", "Import thành công theo batch: mới " + summary.getNewCount() + ", cập nhật " + summary.getUpdatedCount() + ", bỏ qua " + summary.getSkippedCount());
-                response.put("totalRows", summary.getTotalRows());
-                response.put("newCount", summary.getNewCount());
-                response.put("updatedCount", summary.getUpdatedCount());
-                response.put("skippedCount", summary.getSkippedCount());
-                response.put("mode", "batch");
-                response.put("bulkError", bulkEx.getMessage());
-                return ResponseEntity.ok(response);
-            }
+            DiemCongImportSummary summary = excelService.importDiemCongOptimized(tempFile, 1000);
+            response.put("success", true);
+            response.put("message", "Import thành công theo batch streaming: mới " + summary.getNewCount() + ", cập nhật " + summary.getUpdatedCount() + ", bỏ qua " + summary.getSkippedCount());
+            response.put("totalRows", summary.getTotalRows());
+            response.put("newCount", summary.getNewCount());
+            response.put("updatedCount", summary.getUpdatedCount());
+            response.put("skippedCount", summary.getSkippedCount());
+            response.put("mode", "auto");
+            return ResponseEntity.ok(response);
             
         } catch (Exception e) {
             response.put("success", false);

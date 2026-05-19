@@ -33,13 +33,13 @@ public class XtDiemCongXetTuyenEntity {
     @Column(name = "phuongthuc", length = 45)
     private String phuongThuc;
 
-    @Column(name = "diemCC", precision = 6, scale = 2)
+    @Column(name = "diemcc", precision = 6, scale = 2)
     private BigDecimal diemCc;
 
-    @Column(name = "diemUtxt", precision = 6, scale = 2)
+    @Column(name = "diemutxt", precision = 6, scale = 2)
     private BigDecimal diemUtxt;
 
-    @Column(name = "diemTong", precision = 6, scale = 2)
+    @Column(name = "diemtong", precision = 6, scale = 2)
     private BigDecimal diemTong;
 
     @Column(name = "ghichu", columnDefinition = "TEXT")

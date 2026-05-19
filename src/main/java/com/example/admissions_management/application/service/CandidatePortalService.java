@@ -10,9 +10,14 @@ import com.example.admissions_management.application.service.candidate.DgnlCalcu
 import com.example.admissions_management.application.service.candidate.MajorConfig;
 import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
+import com.example.admissions_management.domain.model.Combination;
+import com.example.admissions_management.domain.repository.ICombinationRepository;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
+import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
 import com.example.admissions_management.presentation.web.model.CandidateLookupForm;
 import com.example.admissions_management.presentation.web.model.DgnlCalculatorForm;
 import com.example.admissions_management.presentation.web.model.VsatThptCalculatorForm;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,6 +26,8 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @Service
 public class CandidatePortalService {
@@ -33,13 +40,15 @@ public class CandidatePortalService {
 
     private final Map<String, CandidateCredential> credentialByCccd;
     private final Map<String, AdmissionDecision> admissionByCccd;
-    private final Map<String, MajorConfig> majorByCode;
     private final Map<String, BigDecimal> priorityObjectPoint;
     private final Map<String, BigDecimal> priorityRegionPoint;
     private final Map<String, String> subjectLabelByCode;
+    private final MajorRepository majorRepository;
+    private final ICombinationRepository combinationRepository;
 
-    public CandidatePortalService() {
-        this.majorByCode = createMajors();
+    public CandidatePortalService(MajorRepository majorRepository, ICombinationRepository combinationRepository) {
+        this.majorRepository = majorRepository;
+        this.combinationRepository = combinationRepository;
         this.credentialByCccd = createCredentials();
         this.admissionByCccd = createAdmissions();
         this.priorityObjectPoint = createPriorityObjectPointMap();
@@ -48,6 +57,7 @@ public class CandidatePortalService {
     }
 
     public List<OptionItem> getMajorOptions() {
+        Map<String, MajorConfig> majorByCode = loadMajorConfigs();
         List<OptionItem> options = new ArrayList<>();
         for (MajorConfig major : majorByCode.values()) {
             options.add(new OptionItem(major.code(), major.code() + " - " + major.name()));
@@ -118,7 +128,7 @@ public class CandidatePortalService {
             return result;
         }
 
-        MajorConfig major = majorByCode.get(decision.majorCode());
+        MajorConfig major = loadMajorConfigs().get(decision.majorCode());
         result.setAdmitted(true);
         result.setMajorName(major != null ? major.name() : decision.majorCode());
         result.setScore(round(decision.score()));
@@ -132,6 +142,7 @@ public class CandidatePortalService {
         DgnlCalculationResult result = new DgnlCalculationResult();
         result.setCalculated(true);
 
+        Map<String, MajorConfig> majorByCode = loadMajorConfigs();
         MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
         if (major == null) {
             result.setMessage("Vui long chon nganh xet tuyen.");
@@ -143,6 +154,8 @@ public class CandidatePortalService {
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
         BigDecimal totalScore = round(converted30.add(priorityScore).add(bonusScore));
+        BigDecimal dgnlThreshold = safeThreshold(major.dgnlThreshold());
+        BigDecimal dgnlAdmission = major.dgnlAdmission();
 
         DgnlAspirationResult aspirationResult = new DgnlAspirationResult();
         aspirationResult.setAspirationName("NV1");
@@ -152,11 +165,10 @@ public class CandidatePortalService {
         aspirationResult.setPriorityScore(priorityScore);
         aspirationResult.setBonusScore(bonusScore);
         aspirationResult.setTotalScore(totalScore);
-        aspirationResult.setThresholdScore(major.dgnlThreshold());
-        aspirationResult.setAdmissionScore(major.dgnlAdmission());
-        aspirationResult.setPassThreshold(totalScore.compareTo(major.dgnlThreshold()) >= 0);
-        aspirationResult
-                .setPassAdmission(major.dgnlAdmission() != null && totalScore.compareTo(major.dgnlAdmission()) >= 0);
+        aspirationResult.setThresholdScore(dgnlThreshold);
+        aspirationResult.setAdmissionScore(dgnlAdmission);
+        aspirationResult.setPassThreshold(totalScore.compareTo(dgnlThreshold) >= 0);
+        aspirationResult.setPassAdmission(dgnlAdmission != null && totalScore.compareTo(dgnlAdmission) >= 0);
 
         result.setMajorName(major.name());
         result.setRows(List.of(aspirationResult));
@@ -168,6 +180,7 @@ public class CandidatePortalService {
         VsatThptCalculationResult result = new VsatThptCalculationResult();
         result.setCalculated(true);
 
+        Map<String, MajorConfig> majorByCode = loadMajorConfigs();
         MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
         if (major == null) {
             result.setMessage("Vui long chon nganh xet tuyen.");
@@ -186,12 +199,14 @@ public class CandidatePortalService {
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
         String bonusSubjectCode = normalize(form.getBonusSubjectCode());
+        BigDecimal regularThreshold = safeThreshold(major.regularThreshold());
+        BigDecimal regularAdmission = major.regularAdmission();
 
         List<CombinationScoreResult> combinationResults = new ArrayList<>();
         for (CombinationSpec combination : major.combinations()) {
-            BigDecimal total = subjectScores.get(combination.subjectCode1())
-                    .add(subjectScores.get(combination.subjectCode2()))
-                    .add(subjectScores.get(combination.subjectCode3()))
+            BigDecimal total = resolveSubjectScore(subjectScores, combination.subjectCode1())
+                .add(resolveSubjectScore(subjectScores, combination.subjectCode2()))
+                .add(resolveSubjectScore(subjectScores, combination.subjectCode3()))
                     .add(priorityScore);
 
             if (!"NONE".equalsIgnoreCase(bonusSubjectCode) && combination.containsSubject(bonusSubjectCode)) {
@@ -206,11 +221,11 @@ public class CandidatePortalService {
                     + " + " + subjectLabelByCode.get(combination.subjectCode2())
                     + " + " + subjectLabelByCode.get(combination.subjectCode3()));
             scoreResult.setTotalScore(total);
-            scoreResult.setThresholdScore(major.regularThreshold());
-            scoreResult.setAdmissionScore(major.regularAdmission());
-            scoreResult.setPassThreshold(total.compareTo(major.regularThreshold()) >= 0);
-            scoreResult.setPassAdmission(
-                    major.regularAdmission() != null && total.compareTo(major.regularAdmission()) >= 0);
+                scoreResult.setThresholdScore(regularThreshold);
+                scoreResult.setAdmissionScore(regularAdmission);
+                scoreResult.setPassThreshold(total.compareTo(regularThreshold) >= 0);
+                scoreResult.setPassAdmission(
+                    regularAdmission != null && total.compareTo(regularAdmission) >= 0);
             combinationResults.add(scoreResult);
         }
 
@@ -349,6 +364,92 @@ public class CandidatePortalService {
         return map;
     }
 
+    private Map<String, MajorConfig> loadMajorConfigs() {
+        Map<String, MajorConfig> databaseMajors = loadMajorConfigsFromDatabase();
+        if (!databaseMajors.isEmpty()) {
+            return databaseMajors;
+        }
+        return createMajors();
+    }
+
+    private Map<String, MajorConfig> loadMajorConfigsFromDatabase() {
+        List<XtNganhEntity> majors = majorRepository.findAll(Sort.by(Sort.Direction.ASC, "maNganh"));
+        if (majors.isEmpty()) {
+            return Map.of();
+        }
+
+        Map<String, List<CombinationSpec>> combinationsByMajor = combinationRepository.findAll().stream()
+                .filter(Objects::nonNull)
+                .map(this::toCombinationSpecHolder)
+                .filter(Objects::nonNull)
+                .collect(Collectors.groupingBy(
+                        CombinationSpecHolder::majorCode,
+                        LinkedHashMap::new,
+                        Collectors.mapping(CombinationSpecHolder::spec, Collectors.toList())
+                ));
+
+        Map<String, MajorConfig> majorMap = new LinkedHashMap<>();
+        for (XtNganhEntity major : majors) {
+            String majorCode = normalize(major.getMaNganh());
+            List<CombinationSpec> combinations = combinationsByMajor.getOrDefault(majorCode, List.of());
+            String originalCombination = major.getToHopGoc();
+            if ((originalCombination == null || originalCombination.isBlank()) && !combinations.isEmpty()) {
+                originalCombination = combinations.get(0).code();
+            }
+
+            majorMap.put(majorCode, new MajorConfig(
+                    majorCode,
+                    major.getTenNganh() == null ? majorCode : major.getTenNganh().trim(),
+                    originalCombination == null ? "" : originalCombination.trim(),
+                    major.getDiemSan(),
+                    major.getDiemTrungTuyen(),
+                    major.getDiemSan(),
+                    major.getDiemTrungTuyen(),
+                    combinations
+            ));
+        }
+
+        return majorMap;
+    }
+
+    private CombinationSpecHolder toCombinationSpecHolder(Combination combination) {
+        if (combination == null || combination.getMaNganh() == null || combination.getMaToHop() == null) {
+            return null;
+        }
+
+        return new CombinationSpecHolder(
+                normalize(combination.getMaNganh()),
+                new CombinationSpec(
+                        normalize(combination.getMaToHop()),
+                        normalizeSubjectCode(combination.getThMon1()),
+                        normalizeSubjectCode(combination.getThMon2()),
+                        normalizeSubjectCode(combination.getThMon3())
+                )
+        );
+    }
+
+    private BigDecimal resolveSubjectScore(Map<String, BigDecimal> subjectScores, String subjectCode) {
+        String normalizedCode = normalizeSubjectCode(subjectCode);
+        BigDecimal score = subjectScores.get(normalizedCode);
+        return score == null ? BigDecimal.ZERO : score;
+    }
+
+    private String normalizeSubjectCode(String subjectCode) {
+        String value = normalize(subjectCode);
+        return switch (value) {
+            case "N1" -> "NGU_VAN";
+            case "TO" -> "TOAN";
+            case "LI" -> "VAT_LY";
+            case "HO" -> "HOA_HOC";
+            case "SI" -> "SINH_HOC";
+            case "SU" -> "LICH_SU";
+            case "DI" -> "DIA_LY";
+            case "TI" -> "TIENG_ANH";
+            case "VA", "VAN" -> "NGU_VAN";
+            default -> value;
+        };
+    }
+
     private String normalize(String value) {
         return value == null ? "" : value.trim();
     }
@@ -369,5 +470,12 @@ public class CandidatePortalService {
             return max;
         }
         return value;
+    }
+
+    private BigDecimal safeThreshold(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private record CombinationSpecHolder(String majorCode, CombinationSpec spec) {
     }
 }
