@@ -16,6 +16,8 @@ public class ScoreCalculationRequest {
     private String doiTuong;
     private String monCongDiem;
     private Double diemCong;
+    private String loaiChungChiAnh;
+    private Double diemChungChiAnh;
 
     public String getMaNganh() {
         return maNganh;
@@ -135,5 +137,21 @@ public class ScoreCalculationRequest {
 
     public void setMucDiemCong(Double mucDiemCong) {
         this.diemCong = mucDiemCong;
+    }
+
+    public String getLoaiChungChiAnh() {
+        return loaiChungChiAnh;
+    }
+
+    public void setLoaiChungChiAnh(String loaiChungChiAnh) {
+        this.loaiChungChiAnh = loaiChungChiAnh;
+    }
+
+    public Double getDiemChungChiAnh() {
+        return diemChungChiAnh;
+    }
+
+    public void setDiemChungChiAnh(Double diemChungChiAnh) {
+        this.diemChungChiAnh = diemChungChiAnh;
     }
 }

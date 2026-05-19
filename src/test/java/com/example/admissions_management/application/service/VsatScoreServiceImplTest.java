@@ -85,6 +85,49 @@ class VsatScoreServiceImplTest {
         assertTrue(response.getCombinationResults().stream().noneMatch(r -> r.getTenToHop().contains("TIÊNG ANH") || r.getTenToHop().contains("TIENG_ANH")));
     }
 
+    @Test
+    void calculateShouldUseEnglishCertificateWhenProvidedAndExcludeNonsupportedCombinations() {
+        BangQuyDoiRepository bangQuyDoiRepository = proxy(BangQuyDoiRepository.class, (proxy, method, args) -> {
+            // Mock quy đổi IELTS: score 7.0 -> 8.5 (example conversion)
+            if ("timQuyTacChinhXac".equals(method.getName())) {
+                return Optional.of(new java.lang.Object() {
+                    public String getPhanVi() { return "8.5"; }
+                });
+            }
+            return defaultValue(method.getReturnType());
+        });
+
+        MajorRepository majorRepository = proxy(MajorRepository.class, (proxy, method, args) -> {
+            return defaultValue(method.getReturnType());
+        });
+
+        ICombinationRepository combinationRepository = proxy(ICombinationRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+
+        VsatScoreServiceImpl service = new VsatScoreServiceImpl(
+                majorRepository,
+                combinationRepository,
+                new BangQuyDoiService(bangQuyDoiRepository));
+
+        ScoreCalculationRequest request = new ScoreCalculationRequest();
+        request.setMaNganh("7480201");
+        request.setLoaiDiem("THPT");
+        request.setDiemToan(8.0d);
+        request.setDiemVan(7.5d);
+        request.setDiemAnh(6.0d); // lower score, but will be overridden by certificate
+        request.setDiemLy(8.25d);
+        request.setDiemHoa(7.0d);
+        request.setLoaiChungChiAnh("IELTS");
+        request.setDiemChungChiAnh(7.0d);
+
+        ScoreResultResponse response = service.calculate(request);
+
+        assertTrue(response.isCalculated());
+        // Should have combinations with tiếng Anh since certificate was provided
+        assertTrue(response.getCombinationResults().size() > 0);
+        // Warnings should contain info about certificate conversion
+        assertTrue(response.getWarnings().stream().anyMatch(w -> w.contains("IELTS") || w.contains("chứng chỉ")));
+    }
+
     private static <T> T proxy(Class<T> type, InvocationHandler behavior) {
         Object instance = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, behavior);
         return type.cast(instance);

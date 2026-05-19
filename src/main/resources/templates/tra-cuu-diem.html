@@ -249,6 +249,24 @@
                         <label class="form-label" for="diemAnh">Tiếng Anh</label>
                         <input id="diemAnh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemAnh}">
                     </div>
+                </div>
+
+                <div class="form-grid mb-3">
+                    <div>
+                        <label class="form-label" for="loaiChungChiAnh">Quỹ đổi tiếng Anh</label>
+                        <select id="loaiChungChiAnh" class="form-select" th:field="*{loaiChungChiAnh}">
+                            <option value="">-- Không có chứng chỉ --</option>
+                            <option value="IELTS">IELTS</option>
+                            <option value="TOEIC">TOEIC</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="diemChungChiAnh">Điểm chứng chỉ</label>
+                        <input id="diemChungChiAnh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemChungChiAnh}" placeholder="Nhập khi có chứng chỉ">
+                    </div>
+                </div>
+
+                <div class="form-grid mb-3">
                     <div th:if="${convertibleCodes.contains('VAT_LY')}">
                         <label class="form-label" for="diemLy">Vật lí</label>
                         <input id="diemLy" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemLy}">

@@ -199,9 +199,21 @@ public class VsatScoreServiceImpl implements VsatScoreService {
 
     private Map<String, SubjectConversion> convertAllSubjects(ScoreCalculationRequest request, boolean isVsat, List<String> warnings) {
         Map<String, SubjectConversion> map = new LinkedHashMap<>();
+        
+        // Handle English certificate if provided (IELTS/TOEIC)
+        Double effectiveDiemAnh = request.getDiemAnh();
+        if (request.getLoaiChungChiAnh() != null && !request.getLoaiChungChiAnh().isBlank() 
+            && request.getDiemChungChiAnh() != null && request.getDiemChungChiAnh() > 0) {
+            Double certificateScore = convertEnglishCertificate(request.getLoaiChungChiAnh(), 
+                    request.getDiemChungChiAnh(), warnings);
+            if (certificateScore != null && certificateScore > 0) {
+                effectiveDiemAnh = certificateScore;
+            }
+        }
+        
         map.put("TOAN", convertSubject("TOAN", request.getDiemToan(), isVsat, warnings));
         map.put("NGU_VAN", convertSubject("NGU_VAN", request.getDiemVan(), isVsat, warnings));
-        map.put("TIENG_ANH", convertSubject("TIENG_ANH", request.getDiemAnh(), isVsat, warnings));
+        map.put("TIENG_ANH", convertSubject("TIENG_ANH", effectiveDiemAnh, isVsat, warnings));
         map.put("VAT_LY", convertSubject("VAT_LY", request.getDiemLy(), isVsat, warnings));
         map.put("HOA_HOC", convertSubject("HOA_HOC", request.getDiemHoa(), isVsat, warnings));
         map.put("SINH_HOC", convertSubject("SINH_HOC", request.getDiemSinh(), isVsat, warnings));
@@ -267,6 +279,29 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             if (interval.contains(score)) {
                 return interval;
             }
+        }
+        return null;
+    }
+
+    /**
+     * Convert English certificate (IELTS/TOEIC) score to 10-point scale.
+     * Returns the converted score if successful, or null if conversion fails.
+     */
+    private Double convertEnglishCertificate(String certificateType, Double certificateScore, List<String> warnings) {
+        if (certificateType == null || certificateType.isBlank() || certificateScore == null || certificateScore <= 0) {
+            return null;
+        }
+        
+        try {
+            Double converted = bangQuyDoiService.quyDoiDiemNgoaiNgu(certificateType.toUpperCase(), "TIENG_ANH", 
+                    BigDecimal.valueOf(certificateScore));
+            if (converted != null && converted > 0) {
+                warnings.add("Tiếng Anh: Sử dụng quy đổi từ chứng chỉ " + certificateType.toUpperCase() + " (" 
+                        + format(certificateScore) + ") = " + format(converted));
+                return converted;
+            }
+        } catch (Exception e) {
+            warnings.add("Tiếng Anh: Lỗi khi quy đổi chứng chỉ " + certificateType + ": " + e.getMessage());
         }
         return null;
     }
