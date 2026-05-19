@@ -4,8 +4,6 @@ import com.example.admissions_management.presentation.form.controller.AdminConso
 import com.example.admissions_management.presentation.form.controller.DiemCongConsoleController;
 import com.example.admissions_management.presentation.form.controller.NguyenVongConsoleController;
 import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
-import com.example.admissions_management.presentation.form.view.DiemCongPanel;
-import com.example.admissions_management.presentation.form.view.NguyenVongPanel;
 import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;

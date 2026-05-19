@@ -7,7 +7,6 @@ import com.example.admissions_management.presentation.form.model.BangQuyDoiTable
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
 import java.awt.*;
-import java.math.BigDecimal;
 
 public class BangQuyDoiPanel extends JPanel {
 
