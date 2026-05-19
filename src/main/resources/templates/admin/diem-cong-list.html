@@ -4,238 +4,267 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Điểm Cộng</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-        .container-fluid {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        .btn-action {
-            margin: 5px;
-        }
-        table {
-            margin-top: 20px;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-    </style>
+    <title>Phần 7 - Quản lý điểm cộng xét tuyển</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
 
 <body>
-    <div class="container-fluid">
-        <h2>Quản Lý Điểm Cộng Xét Tuyển</h2>
-        <hr>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="brand-block">
+                <p class="brand-kicker">Admissions Console</p>
+                <h1>Phần 7</h1>
+                <p class="brand-note">Quản lý điểm cộng xét tuyển được nhập từ file Excel.</p>
+            </div>
 
-        <!-- Upload Section -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-primary text-white">
-                        <h5>Import Điểm Cộng từ Excel</h5>
+            <nav class="menu-list">
+                <a class="menu-item" th:href="@{/admin/form}" href="/admin/form">Tổng quan</a>
+                <a class="menu-item active" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Điểm cộng</a>
+                <a class="menu-item" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Nguyện vọng</a>
+            </nav>
+
+            <div class="status-card">
+                <p class="status-title">Nguồn dữ liệu</p>
+                <p class="status-value">Excel</p>
+                <p class="status-sub">Tải file Excel để nhập dữ liệu thật vào hệ thống.</p>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="topbar">
+                <div>
+                    <p class="topbar-kicker">Quản trị xét tuyển</p>
+                    <h2>Quản lý điểm cộng xét tuyển</h2>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" class="btn ghost" id="downloadTemplate">Tải mẫu Excel</button>
+                    <button type="button" class="btn solid" id="reloadBtn">Làm mới</button>
+                </div>
+            </header>
+
+            <section class="split-grid">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Nhập điểm cộng</h3>
+                            <p class="muted">Chỉ nhận dữ liệu từ file Excel `.xls` hoặc `.xlsx`.</p>
+                        </div>
+                        <span class="pill">Import</span>
                     </div>
-                    <div class="card-body">
-                        <form id="uploadForm">
-                            <div class="mb-3">
-                                <label for="excelFile" class="form-label">Chọn file Excel:</label>
-                                <input class="form-control" type="file" id="excelFile" accept=".xlsx,.xls" required>
-                            </div>
-                            <div>
-                                <button type="submit" class="btn btn-success btn-action">Upload & Import</button>
-                                <button type="button" class="btn btn-info btn-action" id="downloadTemplate">
-                                    Tải Template
-                                </button>
-                            </div>
-                        </form>
-                        <div id="uploadStatus" class="alert mt-3" style="display:none;"></div>
+
+                    <form id="uploadForm" class="form-grid">
+                        <label class="field field-lg">
+                            <span>File Excel</span>
+                            <input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls" required>
+                        </label>
+                        <div class="field">
+                            <span>&nbsp;</span>
+                            <button type="submit" class="btn accent">Nhập dữ liệu</button>
+                        </div>
+                    </form>
+                    <div id="uploadStatus" class="notice"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Tìm kiếm</h3>
+                            <p class="muted">Lọc nhanh theo CCCD hoặc mã ngành.</p>
+                        </div>
+                        <span class="pill">Filter</span>
+                    </div>
+                    <div class="form-grid">
+                        <label class="field field-full">
+                            <span>CCCD</span>
+                            <input type="text" id="searchCCCD" placeholder="Nhập CCCD">
+                        </label>
+                        <label class="field field-full">
+                            <span>Mã ngành</span>
+                            <input type="text" id="searchMaNganh" placeholder="Nhập mã ngành">
+                        </label>
+                        <button class="btn solid field-full" type="button" id="searchBtn">Tìm kiếm</button>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5>Tìm Kiếm</h5>
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>Danh sách điểm cộng</h3>
+                        <p class="muted" id="tableSummary">Đang tải dữ liệu từ hệ thống.</p>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <input type="text" id="searchCCCD" class="form-control" placeholder="Tìm theo CCCD">
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" id="searchMaNganh" class="form-control" placeholder="Tìm theo Mã Ngành">
-                        </div>
-                        <button class="btn btn-primary btn-sm w-100" id="searchBtn">Tìm Kiếm</button>
-                    </div>
+                    <span class="pill">Phần 7</span>
                 </div>
-            </div>
-        </div>
 
-        <!-- Data Table -->
-        <div class="card">
-            <div class="card-header">
-                <h5>Danh Sách Điểm Cộng</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped">
+                <div class="table-wrap">
+                    <table>
                         <thead>
                             <tr>
                                 <th>CCCD</th>
-                                <th>Mã Ngành</th>
-                                <th>Mã Tổ Hợp</th>
-                                <th>Phương Thức</th>
+                                <th>Mã ngành</th>
+                                <th>Mã tổ hợp</th>
+                                <th>Phương thức</th>
                                 <th>Điểm CC</th>
-                                <th>Điểm Ưu Tiên</th>
-                                <th>Tổng Điểm</th>
-                                <th>Ghi Chú</th>
-                                <th>Hành Động</th>
+                                <th>Điểm ưu tiên</th>
+                                <th>Tổng điểm</th>
+                                <th>Ghi chú</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="dataTable">
                             <tr>
-                                <td colspan="9" class="text-center">Đang tải dữ liệu...</td>
+                                <td colspan="9" class="empty-row">Đang tải dữ liệu...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Load data on page load
-        window.addEventListener('DOMContentLoaded', loadDiemCong);
+        const tbody = document.getElementById('dataTable');
+        const tableSummary = document.getElementById('tableSummary');
+        const uploadStatus = document.getElementById('uploadStatus');
 
-        // Upload form handler
-        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+        window.addEventListener('DOMContentLoaded', loadDiemCong);
+        document.getElementById('reloadBtn').addEventListener('click', loadDiemCong);
+
+        document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
             const file = document.getElementById('excelFile').files[0];
+            if (!file) {
+                showNotice(uploadStatus, 'Vui lòng chọn file Excel.', false);
+                return;
+            }
+
             const formData = new FormData();
             formData.append('file', file);
 
-            const statusDiv = document.getElementById('uploadStatus');
-            
             try {
                 const response = await fetch('/admin/diem-cong/api/import', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
-                
-                statusDiv.style.display = 'block';
+                showNotice(uploadStatus, data.message || 'Đã xử lý file Excel.', data.success === true);
                 if (data.success) {
-                    statusDiv.className = 'alert alert-success';
-                    statusDiv.textContent = data.message;
+                    event.target.reset();
                     loadDiemCong();
-                    document.getElementById('uploadForm').reset();
-                } else {
-                    statusDiv.className = 'alert alert-danger';
-                    statusDiv.textContent = data.message;
                 }
             } catch (error) {
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'alert alert-danger';
-                statusDiv.textContent = 'Lỗi upload: ' + error.message;
+                showNotice(uploadStatus, 'Lỗi nhập dữ liệu: ' + error.message, false);
             }
         });
 
-        // Download template
         document.getElementById('downloadTemplate').addEventListener('click', async () => {
             try {
                 const response = await fetch('/admin/diem-cong/api/download-template');
                 const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'diem-cong-template.xlsx';
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
+                downloadBlob(blob, 'diem-cong-template.xlsx');
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                showNotice(uploadStatus, 'Lỗi tải mẫu Excel: ' + error.message, false);
             }
         });
 
-        // Load all diem cong
-        async function loadDiemCong() {
-            try {
-                const response = await fetch('/admin/diem-cong/api/all');
-                const data = await response.json();
-                displayTable(data);
-            } catch (error) {
-                console.error('Lỗi tải dữ liệu:', error);
-            }
-        }
-
-        // Search
         document.getElementById('searchBtn').addEventListener('click', async () => {
-            const cccd = document.getElementById('searchCCCD').value;
-            const maNganh = document.getElementById('searchMaNganh').value;
+            const cccd = document.getElementById('searchCCCD').value.trim();
+            const maNganh = document.getElementById('searchMaNganh').value.trim();
 
             let url = '/admin/diem-cong/api/all';
             if (cccd) {
-                url = '/admin/diem-cong/api/by-cccd/' + cccd;
+                url = '/admin/diem-cong/api/by-cccd/' + encodeURIComponent(cccd);
             } else if (maNganh) {
-                url = '/admin/diem-cong/api/by-nganh/' + maNganh;
+                url = '/admin/diem-cong/api/by-nganh/' + encodeURIComponent(maNganh);
             }
 
+            await loadDiemCong(url);
+        });
+
+        async function loadDiemCong(url = '/admin/diem-cong/api/all') {
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Đang tải dữ liệu...</td></tr>';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 displayTable(data);
             } catch (error) {
-                alert('Lỗi tìm kiếm: ' + error.message);
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Không thể tải dữ liệu.</td></tr>';
+                tableSummary.textContent = 'Lỗi tải dữ liệu: ' + error.message;
             }
-        });
+        }
 
-        // Display table
         function displayTable(data) {
-            const tbody = document.getElementById('dataTable');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="text-center">Không có dữ liệu</td></tr>';
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Không có dữ liệu.</td></tr>';
+                tableSummary.textContent = 'Chưa có bản ghi phù hợp.';
                 return;
             }
 
+            tableSummary.textContent = 'Đang hiển thị ' + data.length + ' bản ghi.';
             tbody.innerHTML = data.map(item => `
                 <tr>
-                    <td>${item.tsCccd}</td>
-                    <td>${item.maNganh}</td>
-                    <td>${item.maToHop || ''}</td>
-                    <td>${item.phuongThuc || ''}</td>
-                    <td>${item.diemCc ? item.diemCc.toFixed(2) : '0.00'}</td>
-                    <td>${item.diemUtxt ? item.diemUtxt.toFixed(2) : '0.00'}</td>
-                    <td><strong>${item.diemTong ? item.diemTong.toFixed(2) : '0.00'}</strong></td>
-                    <td>${item.ghiChu || ''}</td>
-                    <td>
-                        <button class="btn btn-sm btn-danger" onclick="deleteDiemCong(${item.id})">Xóa</button>
-                    </td>
+                    <td>${escapeHtml(item.tsCccd)}</td>
+                    <td>${escapeHtml(item.maNganh)}</td>
+                    <td>${escapeHtml(item.maToHop)}</td>
+                    <td>${escapeHtml(item.phuongThuc)}</td>
+                    <td>${formatNumber(item.diemCc)}</td>
+                    <td>${formatNumber(item.diemUtxt)}</td>
+                    <td><strong>${formatNumber(item.diemTong)}</strong></td>
+                    <td>${escapeHtml(item.ghiChu)}</td>
+                    <td><button class="btn danger small" type="button" onclick="deleteDiemCong(${Number(item.id)})">Xóa</button></td>
                 </tr>
             `).join('');
         }
 
-        // Delete
         async function deleteDiemCong(id) {
-            if (!confirm('Bạn chắc chắn muốn xóa?')) return;
-            
+            if (!Number.isFinite(id) || !confirm('Bạn chắc chắn muốn xóa bản ghi này?')) {
+                return;
+            }
+
             try {
-                const response = await fetch('/admin/diem-cong/api/' + id, {
-                    method: 'DELETE'
-                });
+                const response = await fetch('/admin/diem-cong/api/' + id, { method: 'DELETE' });
                 const data = await response.json();
-                alert(data.message);
+                showNotice(uploadStatus, data.message || 'Đã xóa bản ghi.', data.success === 'true');
                 loadDiemCong();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                showNotice(uploadStatus, 'Lỗi xóa dữ liệu: ' + error.message, false);
             }
+        }
+
+        function showNotice(element, message, success) {
+            element.className = 'notice show ' + (success ? 'success' : 'error');
+            element.textContent = message;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function formatNumber(value) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(2) : '0.00';
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
         }
     </script>
 </body>

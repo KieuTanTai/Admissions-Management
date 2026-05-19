@@ -89,13 +89,13 @@ public class AdminConsole extends JFrame {
         this.majorController = majorController;
         this.toHopController = toHopController;
 
-        setTitle("Admissions Admin Console");
+        setTitle("Bảng Quản Trị Tuyển Sinh");
         setSize(1280, 980);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setVisible(false); // Not visible by default
 
-        setTitle("Admissions Management Console");
+        setTitle("Bảng Quản Trị Tuyển Sinh");
         setSize(1400, 750);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -105,9 +105,9 @@ public class AdminConsole extends JFrame {
         candidatePageLabel = new JLabel("Page: 1");
 
         JPanel actionPanel = new JPanel(new GridLayout(1, 5, 8, 8));
-        JButton saveButton = new JButton("Save");
-        JButton refreshButton = new JButton("Refresh");
-        JButton combinationsButton = new JButton("Combinations");
+        JButton saveButton = new JButton("Lưu");
+        JButton refreshButton = new JButton("Làm mới");
+        JButton combinationsButton = new JButton("Tổ hợp");
         JButton diemCongButton = new JButton("Điểm Cộng");
         JButton nguyenVongButton = new JButton("Nguyện Vọng");
 
@@ -243,11 +243,8 @@ public class AdminConsole extends JFrame {
         tabPane.addTab("Quản lý thí sinh", buildCandidatePanel());
         tabPane.addTab("Quản lý ngành tuyển sinh", buildMajorPanel());
         tabPane.addTab("Quản lý tổ hợp môn", buildToHopPanel());
-        
-        // Thêm phần 7, 8 theo yêu cầu
-        tabPane.addTab("Quản lý điểm cộng", new DiemCongPanel(diemCongConsoleController));
-        tabPane.addTab("Quản lý nguyện vọng", new NguyenVongPanel(nguyenVongConsoleController));
-        
+        tabPane.addTab("Phần 7 - Điểm cộng", new DiemCongPanel(diemCongConsoleController));
+        tabPane.addTab("Phần 8 - Nguyện vọng", new NguyenVongPanel(nguyenVongConsoleController));
         return tabPane;
     }
 
@@ -259,7 +256,7 @@ public class AdminConsole extends JFrame {
         topPanel.add(userSearchField);
 
         JButton searchButton = new JButton("Tìm");
-        JButton refreshButton = new JButton("Refresh");
+        JButton refreshButton = new JButton("Làm mới");
 
         searchButton.addActionListener(e -> loadUsers());
         refreshButton.addActionListener(e -> {
@@ -336,8 +333,8 @@ public class AdminConsole extends JFrame {
         topPanel.add(candidateSearchField);
 
         JButton searchButton = new JButton("Tìm");
-        JButton importButton = new JButton("Import CSV/Excel");
-        JButton refreshButton = new JButton("Refresh");
+        JButton importButton = new JButton("Nhập CSV/Excel");
+        JButton refreshButton = new JButton("Làm mới");
 
         topPanel.add(searchButton);
         topPanel.add(importButton);
