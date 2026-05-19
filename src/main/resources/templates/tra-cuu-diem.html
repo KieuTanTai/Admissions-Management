@@ -349,7 +349,11 @@
                 </ul>
             </div>
 
-            <div class="table-responsive">
+            <div class="alert alert-info border-0" th:if="${scoreResultResponse.combinationResults == null or scoreResultResponse.combinationResults.isEmpty()}">
+                Không có tổ hợp nào đủ 3 môn đã nhập để hiển thị.
+            </div>
+
+            <div class="table-responsive" th:if="${scoreResultResponse.combinationResults != null and !scoreResultResponse.combinationResults.isEmpty()}">
                 <table class="table table-dark table-striped align-middle">
                     <thead>
                         <tr>

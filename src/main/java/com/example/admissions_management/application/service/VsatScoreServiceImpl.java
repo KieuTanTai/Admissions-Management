@@ -143,6 +143,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             SubjectConversion subject2 = resolveConversion(conversions, combination.subjectCode2(), response.getWarnings());
             SubjectConversion subject3 = resolveConversion(conversions, combination.subjectCode3(), response.getWarnings());
 
+            if (!subject1.provided() || !subject2.provided() || !subject3.provided()) {
+                continue;
+            }
+
             double tongDiem3Mon = round2(subject1.convertedScore() + subject2.convertedScore() + subject3.convertedScore());
             double tongHeSo = weightOf(combination);
             double tongDiemCoHeSo = round2(
@@ -183,9 +187,13 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         response.setDiemCongMon(bonusScore);
         response.setTongDiemCong(round2(priorityScore + bonusScore));
         response.setCombinationResults(combinationResults);
-        response.setMessage(response.getWarnings().isEmpty()
-                ? "Đã tính điểm xét tuyển cho các tổ hợp môn của ngành đã chọn."
-                : "Đã tính điểm xét tuyển, một số môn có cảnh báo quy đổi.");
+        if (combinationResults.isEmpty()) {
+            response.setMessage("Không có tổ hợp nào đủ 3 môn để tính từ dữ liệu đã nhập.");
+        } else {
+            response.setMessage(response.getWarnings().isEmpty()
+                    ? "Đã tính điểm xét tuyển cho các tổ hợp môn của ngành đã chọn."
+                    : "Đã tính điểm xét tuyển, một số môn có cảnh báo quy đổi.");
+        }
         return response;
     }
 
@@ -203,18 +211,19 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     }
 
     private SubjectConversion convertSubject(String subjectCode, Double rawScore, boolean isVsat, List<String> warnings) {
+        boolean provided = rawScore != null;
         double score = clamp(defaultDouble(rawScore), 0.0d, isVsat ? MAX_VSAT_SCORE : MAX_THPT_SCORE);
         String label = subjectLabelByCode.getOrDefault(subjectCode, subjectCode);
 
         if (!isVsat) {
             double converted = round2(score);
-            return new SubjectConversion(subjectCode, score, converted,
+            return new SubjectConversion(subjectCode, provided, score, converted,
                     label + ": " + format(score) + " (THPT trực tiếp) = " + format(converted));
         }
 
         if (score <= 0.0d) {
             warnings.add(label + ": " + DEFAULT_WARNING);
-            return new SubjectConversion(subjectCode, score, 0.0d, label + ": " + DEFAULT_WARNING);
+            return new SubjectConversion(subjectCode, provided, score, 0.0d, label + ": " + DEFAULT_WARNING);
         }
 
         // Prefer database conversion rules (xt_bangquydoi) to match official lookup site
@@ -223,7 +232,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             if (ketqua != null && ketqua.containsKey("diemQuyDoi")) {
                 double converted = Double.parseDouble(ketqua.get("diemQuyDoi"));
                 String formula = label + ": " + ketqua.getOrDefault("congThuc", "") + " = " + ketqua.get("diemQuyDoi");
-                return new SubjectConversion(subjectCode, score, converted, formula);
+                return new SubjectConversion(subjectCode, provided, score, converted, formula);
             }
         } catch (Exception e) {
             // fall through to interval-based interpolation
@@ -232,7 +241,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         ScoreInterval interval = findInterval(subjectCode, score);
         if (interval == null) {
             warnings.add(label + ": " + DEFAULT_WARNING);
-            return new SubjectConversion(subjectCode, score, 0.0d, label + ": " + DEFAULT_WARNING);
+            return new SubjectConversion(subjectCode, provided, score, 0.0d, label + ": " + DEFAULT_WARNING);
         }
 
         double converted = calculateInterpolatedScore(score, interval);
@@ -240,7 +249,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
                 + format(score) + " - " + format(interval.xLowerExclusive()) + ")/("
                 + format(interval.xUpperInclusive()) + " - " + format(interval.xLowerExclusive()) + ")*("
                 + format(interval.yUpperInclusive()) + " - " + format(interval.yLowerExclusive()) + ") = " + format(converted);
-        return new SubjectConversion(subjectCode, score, converted, formula);
+        return new SubjectConversion(subjectCode, provided, score, converted, formula);
     }
 
     public ScoreInterval findInterval(String monHoc, double score) {
@@ -525,7 +534,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         if (warnings != null) {
             warnings.add(warning);
         }
-        return new SubjectConversion(normalizedCode, 0.0d, 0.0d, warning);
+        return new SubjectConversion(normalizedCode, false, 0.0d, 0.0d, warning);
     }
 
     private String normalizeSubjectCode(String subjectCode) {
@@ -570,6 +579,6 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         return String.format(Locale.US, "%.2f", value);
     }
 
-    private record SubjectConversion(String subjectCode, double rawScore, double convertedScore, String formulaText) {
+    private record SubjectConversion(String subjectCode, boolean provided, double rawScore, double convertedScore, String formulaText) {
     }
 }
