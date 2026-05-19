@@ -211,7 +211,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     }
 
     private SubjectConversion convertSubject(String subjectCode, Double rawScore, boolean isVsat, List<String> warnings) {
-        boolean provided = rawScore != null;
+        boolean provided = rawScore != null && Double.compare(rawScore.doubleValue(), 0.0d) != 0;
         double score = clamp(defaultDouble(rawScore), 0.0d, isVsat ? MAX_VSAT_SCORE : MAX_THPT_SCORE);
         String label = subjectLabelByCode.getOrDefault(subjectCode, subjectCode);
 
@@ -222,8 +222,14 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         }
 
         if (score <= 0.0d) {
-            warnings.add(label + ": " + DEFAULT_WARNING);
-            return new SubjectConversion(subjectCode, provided, score, 0.0d, label + ": " + DEFAULT_WARNING);
+            // If user explicitly left field null or entered 0, treat as "missing" (not provided)
+            if (provided) {
+                // Provided true but score <=0 (edge case) — keep the default warning
+                warnings.add(label + ": " + DEFAULT_WARNING);
+                return new SubjectConversion(subjectCode, true, score, 0.0d, label + ": " + DEFAULT_WARNING);
+            }
+            // Not provided (null or 0) -> mark as missing without percentile warning
+            return new SubjectConversion(subjectCode, false, score, 0.0d, label + ": không có dữ liệu (được coi là thiếu)");
         }
 
         // Prefer database conversion rules (xt_bangquydoi) to match official lookup site

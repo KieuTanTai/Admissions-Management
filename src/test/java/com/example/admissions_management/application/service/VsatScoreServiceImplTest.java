@@ -55,6 +55,36 @@ class VsatScoreServiceImplTest {
         assertTrue(response.getCombinationResults().stream().noneMatch(result -> "A00".equals(result.getMaToHop())));
     }
 
+    @Test
+    void calculateShouldTreatZeroAsMissingAndSkipCombinations() {
+        MajorRepository majorRepository = proxy(MajorRepository.class, (proxy, method, args) -> {
+            return defaultValue(method.getReturnType());
+        });
+
+        ICombinationRepository combinationRepository = proxy(ICombinationRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+        BangQuyDoiRepository bangQuyDoiRepository = proxy(BangQuyDoiRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+
+        VsatScoreServiceImpl service = new VsatScoreServiceImpl(
+                majorRepository,
+                combinationRepository,
+                new BangQuyDoiService(bangQuyDoiRepository));
+
+        ScoreCalculationRequest request = new ScoreCalculationRequest();
+        request.setMaNganh("7480201");
+        request.setLoaiDiem("THPT");
+        request.setDiemToan(8.0d);
+        request.setDiemVan(7.5d);
+        request.setDiemAnh(0.0d); // explicitly zero -> treat as missing
+        request.setDiemLy(8.25d);
+        request.setDiemHoa(7.0d);
+
+        ScoreResultResponse response = service.calculate(request);
+
+        assertTrue(response.isCalculated());
+        // Combinations that include TIENG_ANH should be excluded
+        assertTrue(response.getCombinationResults().stream().noneMatch(r -> r.getTenToHop().contains("TIÊNG ANH") || r.getTenToHop().contains("TIENG_ANH")));
+    }
+
     private static <T> T proxy(Class<T> type, InvocationHandler behavior) {
         Object instance = Proxy.newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, behavior);
         return type.cast(instance);
