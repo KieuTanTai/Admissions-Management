@@ -125,7 +125,51 @@ class VsatScoreServiceImplTest {
         // Should have combinations with tiếng Anh since certificate was provided
         assertTrue(response.getCombinationResults().size() > 0);
         // Warnings should contain info about certificate conversion
-        assertTrue(response.getWarnings().stream().anyMatch(w -> w.contains("IELTS") || w.contains("chứng chỉ")));
+        assertTrue(response.getWarnings().stream().anyMatch(w -> w.contains("IELTS") || w.contains("quy đổi")));
+    }
+
+    @Test
+    void calculateShouldHandleToeicWithDifferentSkillsCorrectly() {
+        BangQuyDoiRepository bangQuyDoiRepository = proxy(BangQuyDoiRepository.class, (proxy, method, args) -> {
+            // Mock TOEIC_NGHE (Listening) conversion
+            if ("timQuyTacChinhXac".equals(method.getName())) {
+                return Optional.of(new java.lang.Object() {
+                    public String getPhanVi() { return "9.0"; }
+                });
+            }
+            return defaultValue(method.getReturnType());
+        });
+
+        MajorRepository majorRepository = proxy(MajorRepository.class, (proxy, method, args) -> {
+            return defaultValue(method.getReturnType());
+        });
+
+        ICombinationRepository combinationRepository = proxy(ICombinationRepository.class, (proxy, method, args) -> defaultValue(method.getReturnType()));
+
+        VsatScoreServiceImpl service = new VsatScoreServiceImpl(
+                majorRepository,
+                combinationRepository,
+                new BangQuyDoiService(bangQuyDoiRepository));
+
+        ScoreCalculationRequest request = new ScoreCalculationRequest();
+        request.setMaNganh("7480201");
+        request.setLoaiDiem("THPT");
+        request.setDiemToan(8.0d);
+        request.setDiemVan(7.5d);
+        request.setDiemAnh(5.0d);
+        request.setDiemLy(8.25d);
+        request.setDiemHoa(7.0d);
+        request.setLoaiChungChiAnh("TOEIC");
+        request.setDiemChungChiAnh(400.0d); // TOEIC Listening score
+        request.setKyNangToeic("NGHE"); // Listening skill
+
+        ScoreResultResponse response = service.calculate(request);
+
+        assertTrue(response.isCalculated());
+        // Should have results since TOEIC was provided
+        assertTrue(response.getCombinationResults().size() > 0);
+        // Warnings should mention TOEIC with skill
+        assertTrue(response.getWarnings().stream().anyMatch(w -> w.contains("TOEIC") && w.contains("Nghe")));
     }
 
     private static <T> T proxy(Class<T> type, InvocationHandler behavior) {

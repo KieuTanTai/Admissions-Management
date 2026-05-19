@@ -257,12 +257,29 @@
                         <select id="loaiChungChiAnh" class="form-select" th:field="*{loaiChungChiAnh}">
                             <option value="">-- Không có chứng chỉ --</option>
                             <option value="IELTS">IELTS</option>
-                            <option value="TOEIC">TOEIC</option>
+                            <option value="TOEFL_ITP">TOEFL ITP</option>
+                            <option value="TOEFL_IBT">TOEFL iBT</option>
+                            <option value="TOEIC">TOEIC (4 kỹ năng)</option>
+                            <option value="PTE_ACADEMIC">PTE Academic</option>
+                            <option value="LINGUASKILL">Linguaskill</option>
+                            <option value="APTIS_ESOL_GENERAL">Aptis ESOL (General)</option>
+                            <option value="APTIS_ESOL_ADVANCED">Aptis ESOL (Advanced)</option>
+                            <option value="VSTEP">VSTEP (3 bác)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label" for="kyNangToeic">Kỹ năng TOEIC (nếu là TOEIC)</label>
+                        <select id="kyNangToeic" class="form-select" th:field="*{kyNangToeic}">
+                            <option value="">-- Chọn kỹ năng --</option>
+                            <option value="NGHE">Nghe (Listening)</option>
+                            <option value="DOC">Đọc (Reading)</option>
+                            <option value="NOI">Nói (Speaking)</option>
+                            <option value="VIET">Viết (Writing)</option>
                         </select>
                     </div>
                     <div>
                         <label class="form-label" for="diemChungChiAnh">Điểm chứng chỉ</label>
-                        <input id="diemChungChiAnh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemChungChiAnh}" placeholder="Nhập khi có chứng chỉ">
+                        <input id="diemChungChiAnh" class="form-control" type="number" step="0.01" min="0" max="999" th:field="*{diemChungChiAnh}" placeholder="Nhập điểm chứng chỉ">
                     </div>
                 </div>
 

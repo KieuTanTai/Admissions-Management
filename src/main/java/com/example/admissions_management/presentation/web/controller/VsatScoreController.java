@@ -58,6 +58,7 @@ public class VsatScoreController {
         request.setDiemCong(0.0d);
         request.setLoaiChungChiAnh("");
         request.setDiemChungChiAnh(0.0d);
+        request.setKyNangToeic("");
         return request;
     }
 

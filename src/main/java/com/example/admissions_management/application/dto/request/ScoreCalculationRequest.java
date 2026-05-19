@@ -18,6 +18,7 @@ public class ScoreCalculationRequest {
     private Double diemCong;
     private String loaiChungChiAnh;
     private Double diemChungChiAnh;
+    private String kyNangToeic;
 
     public String getMaNganh() {
         return maNganh;
@@ -153,5 +154,13 @@ public class ScoreCalculationRequest {
 
     public void setDiemChungChiAnh(Double diemChungChiAnh) {
         this.diemChungChiAnh = diemChungChiAnh;
+    }
+
+    public String getKyNangToeic() {
+        return kyNangToeic;
+    }
+
+    public void setKyNangToeic(String kyNangToeic) {
+        this.kyNangToeic = kyNangToeic;
     }
 }

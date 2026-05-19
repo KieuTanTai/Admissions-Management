@@ -200,12 +200,15 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private Map<String, SubjectConversion> convertAllSubjects(ScoreCalculationRequest request, boolean isVsat, List<String> warnings) {
         Map<String, SubjectConversion> map = new LinkedHashMap<>();
         
-        // Handle English certificate if provided (IELTS/TOEIC)
+        // Handle English certificate if provided (IELTS/TOEFL/TOEIC/PTE/...)
         Double effectiveDiemAnh = request.getDiemAnh();
         if (request.getLoaiChungChiAnh() != null && !request.getLoaiChungChiAnh().isBlank() 
             && request.getDiemChungChiAnh() != null && request.getDiemChungChiAnh() > 0) {
-            Double certificateScore = convertEnglishCertificate(request.getLoaiChungChiAnh(), 
-                    request.getDiemChungChiAnh(), warnings);
+            Double certificateScore = convertEnglishCertificate(
+                    request.getLoaiChungChiAnh(), 
+                    request.getDiemChungChiAnh(),
+                    request.getKyNangToeic(),
+                    warnings);
             if (certificateScore != null && certificateScore > 0) {
                 effectiveDiemAnh = certificateScore;
             }
@@ -284,26 +287,70 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     }
 
     /**
-     * Convert English certificate (IELTS/TOEIC) score to 10-point scale.
+     * Convert English certificate (IELTS/TOEFL/TOEIC/PTE/Linguaskill/Aptis/VSTEP) score to 10-point scale.
      * Returns the converted score if successful, or null if conversion fails.
+     * 
+     * For TOEIC, needs kyNangToeic (NGHE, DOC, NOI, VIET) to query correct conversion table.
      */
-    private Double convertEnglishCertificate(String certificateType, Double certificateScore, List<String> warnings) {
+    private Double convertEnglishCertificate(String certificateType, Double certificateScore, String kyNangToeic, List<String> warnings) {
         if (certificateType == null || certificateType.isBlank() || certificateScore == null || certificateScore <= 0) {
             return null;
         }
         
         try {
-            Double converted = bangQuyDoiService.quyDoiDiemNgoaiNgu(certificateType.toUpperCase(), "TIENG_ANH", 
+            // For TOEIC with 4 skills, append skill to certificate type for correct lookup
+            String phuongThucQuery = certificateType;
+            if ("TOEIC".equalsIgnoreCase(certificateType) && kyNangToeic != null && !kyNangToeic.isBlank()) {
+                phuongThucQuery = "TOEIC_" + kyNangToeic.toUpperCase();
+            }
+            
+            // Query database for conversion rule matching the score range
+            Double converted = bangQuyDoiService.quyDoiDiemNgoaiNgu(phuongThucQuery, "TIENG_ANH", 
                     BigDecimal.valueOf(certificateScore));
+            
             if (converted != null && converted > 0) {
-                warnings.add("Tiếng Anh: Sử dụng quy đổi từ chứng chỉ " + certificateType.toUpperCase() + " (" 
+                String certificateLabel = formatCertificateLabel(certificateType, kyNangToeic);
+                warnings.add("Tiếng Anh: Sử dụng quy đổi từ " + certificateLabel + " (" 
                         + format(certificateScore) + ") = " + format(converted));
                 return converted;
+            } else {
+                // If database lookup returns 0, score is out of range or not found
+                String certificateLabel = formatCertificateLabel(certificateType, kyNangToeic);
+                warnings.add("Tiếng Anh: Điểm " + certificateLabel + " (" + format(certificateScore) 
+                        + ") không nằm trong bảng quy đổi được hỗ trợ. Sử dụng điểm thi thay thế.");
+                return null;
             }
         } catch (Exception e) {
-            warnings.add("Tiếng Anh: Lỗi khi quy đổi chứng chỉ " + certificateType + ": " + e.getMessage());
+            String certificateLabel = formatCertificateLabel(certificateType, kyNangToeic);
+            warnings.add("Tiếng Anh: Lỗi khi quy đổi " + certificateLabel + ": " + e.getMessage());
+            return null;
         }
-        return null;
+    }
+    
+    private String formatCertificateLabel(String certificateType, String kyNangToeic) {
+        if (certificateType == null) return "chứng chỉ";
+        
+        return switch (certificateType) {
+            case "IELTS" -> "IELTS";
+            case "TOEFL_ITP" -> "TOEFL ITP";
+            case "TOEFL_IBT" -> "TOEFL iBT";
+            case "TOEIC" -> {
+                String skill = switch (kyNangToeic) {
+                    case "NGHE" -> " (Nghe)";
+                    case "DOC" -> " (Đọc)";
+                    case "NOI" -> " (Nói)";
+                    case "VIET" -> " (Viết)";
+                    default -> "";
+                };
+                yield "TOEIC" + skill;
+            }
+            case "PTE_ACADEMIC" -> "PTE Academic";
+            case "LINGUASKILL" -> "Linguaskill";
+            case "APTIS_ESOL_GENERAL" -> "Aptis ESOL (General)";
+            case "APTIS_ESOL_ADVANCED" -> "Aptis ESOL (Advanced)";
+            case "VSTEP" -> "VSTEP (3 bác)";
+            default -> certificateType;
+        };
     }
 
     private double calculateInterpolatedScore(double x, ScoreInterval interval) {
