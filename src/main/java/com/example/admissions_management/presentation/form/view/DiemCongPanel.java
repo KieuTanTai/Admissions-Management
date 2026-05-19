@@ -11,9 +11,18 @@ import java.awt.*;
 
 public class DiemCongPanel extends JPanel {
 
+    private static final Color BG_COLOR = new Color(245, 247, 244);
+    private static final Color SURFACE_COLOR = Color.WHITE;
+    private static final Color SOFT_COLOR = new Color(248, 251, 248);
+    private static final Color LINE_COLOR = new Color(220, 229, 223);
+    private static final Color PRIMARY_COLOR = new Color(12, 122, 99);
+    private static final Color DANGER_COLOR = new Color(194, 65, 53);
+    private static final Color TEXT_COLOR = new Color(29, 46, 40);
+    private static final Color MUTED_COLOR = new Color(100, 118, 110);
     private static final Font SECTION_TITLE_FONT = new Font("Segoe UI", Font.BOLD, 13);
     private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font FIELD_FONT = new Font("Segoe UI", Font.PLAIN, 12);
+    private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 12);
     private static final Dimension FIELD_SIZE = new Dimension(320, 30);
     private static final Dimension AREA_SIZE = new Dimension(320, 84);
     private static final Dimension LABEL_SIZE = new Dimension(130, 24);
@@ -39,7 +48,10 @@ public class DiemCongPanel extends JPanel {
         this.tableModel = new DiemCongTableModel();
         this.table = new JTable(tableModel);
 
+        setBackground(BG_COLOR);
         setLayout(new BorderLayout(10, 10));
+        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        styleTable();
         add(buildTopPanel(), BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buildEditPanel(), BorderLayout.EAST);
@@ -50,24 +62,38 @@ public class DiemCongPanel extends JPanel {
 
     private JPanel buildTopPanel() {
         JPanel panel = new JPanel(new GridBagLayout());
-        panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        panel.setBackground(SURFACE_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)
+        ));
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6, 6, 6, 6);
 
         // Row 0: label + search field (expand)
         c.gridx = 0; c.gridy = 0; c.anchor = GridBagConstraints.WEST; c.fill = GridBagConstraints.NONE; c.weightx = 0.0;
-        panel.add(new JLabel("Tìm theo CCCD"), c);
+        JLabel searchLabel = new JLabel("Tìm theo CCCD");
+        searchLabel.setForeground(MUTED_COLOR);
+        searchLabel.setFont(LABEL_FONT);
+        panel.add(searchLabel, c);
 
         c.gridx = 1; c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL; c.weightx = 1.0;
+        styleTextField(searchCccdField);
         panel.add(searchCccdField, c);
 
         // Row 0: buttons aligned to right
         JPanel rightButtons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton searchButton = new JButton("Search");
-        JButton refreshButton = new JButton("Refresh");
-        JButton clearButton = new JButton("Clear");
-        JButton importButton = new JButton("Import Excel");
-        JButton deleteAllButton = new JButton("Delete All");
+        rightButtons.setOpaque(false);
+        JButton searchButton = new JButton("Tìm");
+        JButton refreshButton = new JButton("Làm mới");
+        JButton clearButton = new JButton("Xóa lọc");
+        JButton importButton = new JButton("Nhập Excel");
+        JButton deleteAllButton = new JButton("Xóa tất cả");
+        styleButton(searchButton, PRIMARY_COLOR, Color.WHITE);
+        styleButton(refreshButton, SURFACE_COLOR, TEXT_COLOR);
+        styleButton(clearButton, SURFACE_COLOR, TEXT_COLOR);
+        styleButton(importButton, new Color(231, 150, 45), TEXT_COLOR);
+        styleButton(deleteAllButton, DANGER_COLOR, Color.WHITE);
         rightButtons.add(searchButton);
         rightButtons.add(refreshButton);
         rightButtons.add(clearButton);
@@ -89,9 +115,11 @@ public class DiemCongPanel extends JPanel {
         JPanel outer = new JPanel(new BorderLayout(10, 10));
         outer.setPreferredSize(new Dimension(560, 0));
         outer.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        outer.setBackground(BG_COLOR);
 
         // Main content panel (scrollable)
         JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(BG_COLOR);
         GridBagConstraints gc = new GridBagConstraints();
         gc.fill = GridBagConstraints.HORIZONTAL;
         gc.anchor = GridBagConstraints.NORTHWEST;
@@ -140,10 +168,14 @@ public class DiemCongPanel extends JPanel {
 
         // Button panel
         JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
-        btnPanel.setBackground(new Color(240, 240, 240));
-        JButton saveButton = new JButton("Save");
-        JButton deleteButton = new JButton("Delete");
-        JButton clearButton = new JButton("Clear");
+        btnPanel.setBackground(SURFACE_COLOR);
+        btnPanel.setBorder(BorderFactory.createLineBorder(LINE_COLOR));
+        JButton saveButton = new JButton("Lưu");
+        JButton deleteButton = new JButton("Xóa");
+        JButton clearButton = new JButton("Xóa form");
+        styleButton(saveButton, PRIMARY_COLOR, Color.WHITE);
+        styleButton(deleteButton, DANGER_COLOR, Color.WHITE);
+        styleButton(clearButton, SURFACE_COLOR, TEXT_COLOR);
         
         saveButton.setPreferredSize(new Dimension(80, 32));
         deleteButton.setPreferredSize(new Dimension(80, 32));
@@ -167,14 +199,14 @@ public class DiemCongPanel extends JPanel {
     private JPanel createFieldSection(String title, Object[][] fields) {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createTitledBorder(
-                BorderFactory.createLineBorder(new Color(180, 180, 180), 1),
+                BorderFactory.createLineBorder(LINE_COLOR, 1),
                 title,
                 javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
                 SECTION_TITLE_FONT,
-                new Color(45, 45, 45)
+                TEXT_COLOR
         ));
-        panel.setBackground(new Color(250, 250, 250));
+        panel.setBackground(SOFT_COLOR);
 
         GridBagConstraints gc = new GridBagConstraints();
         gc.fill = GridBagConstraints.HORIZONTAL;
@@ -191,7 +223,7 @@ public class DiemCongPanel extends JPanel {
             gc.anchor = GridBagConstraints.NORTHWEST;
             JLabel lbl = new JLabel(label);
             lbl.setFont(LABEL_FONT);
-            lbl.setForeground(new Color(50, 50, 50));
+            lbl.setForeground(MUTED_COLOR);
             lbl.setPreferredSize(LABEL_SIZE);
             lbl.setMinimumSize(LABEL_SIZE);
             lbl.setMaximumSize(LABEL_SIZE);
@@ -210,8 +242,8 @@ public class DiemCongPanel extends JPanel {
                     area.setLineWrap(true);
                     area.setWrapStyleWord(true);
                     area.setMargin(new Insets(6, 8, 6, 8));
-                    area.setBackground(new Color(255, 255, 255));
-                    area.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+                    area.setBackground(SURFACE_COLOR);
+                    area.setBorder(BorderFactory.createLineBorder(LINE_COLOR, 1));
                     
                     JScrollPane scrollPane = new JScrollPane(area);
                     scrollPane.setPreferredSize(AREA_SIZE);
@@ -221,10 +253,7 @@ public class DiemCongPanel extends JPanel {
                     panel.add(scrollPane, gc);
                 } else if (jcomp instanceof JTextField) {
                     JTextField tf = (JTextField) jcomp;
-                    tf.setFont(FIELD_FONT);
-                    tf.setMargin(new Insets(6, 8, 6, 8));
-                    tf.setBackground(new Color(255, 255, 255));
-                    tf.setBorder(BorderFactory.createLineBorder(new Color(200, 200, 200), 1));
+                    styleTextField(tf);
                     tf.setPreferredSize(FIELD_SIZE);
                     tf.setMinimumSize(new Dimension(0, FIELD_SIZE.height));
                     tf.setMaximumSize(new Dimension(Integer.MAX_VALUE, FIELD_SIZE.height));
@@ -234,6 +263,40 @@ public class DiemCongPanel extends JPanel {
         }
 
         return panel;
+    }
+
+    private void styleTable() {
+        table.setRowHeight(30);
+        table.setFont(FIELD_FONT);
+        table.setGridColor(new Color(237, 242, 239));
+        table.setSelectionBackground(new Color(218, 239, 232));
+        table.setSelectionForeground(TEXT_COLOR);
+        table.getTableHeader().setFont(BUTTON_FONT);
+        table.getTableHeader().setForeground(new Color(64, 93, 83));
+        table.getTableHeader().setBackground(new Color(242, 247, 244));
+        table.setFillsViewportHeight(true);
+    }
+
+    private void styleTextField(JTextField field) {
+        field.setFont(FIELD_FONT);
+        field.setMargin(new Insets(6, 8, 6, 8));
+        field.setBackground(SURFACE_COLOR);
+        field.setForeground(TEXT_COLOR);
+        field.setCaretColor(PRIMARY_COLOR);
+        field.setBorder(BorderFactory.createLineBorder(LINE_COLOR, 1));
+    }
+
+    private void styleButton(JButton button, Color background, Color foreground) {
+        button.setFont(BUTTON_FONT);
+        button.setFocusPainted(false);
+        button.setOpaque(true);
+        button.setContentAreaFilled(true);
+        button.setBackground(background);
+        button.setForeground(foreground);
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)
+        ));
     }
 
     private void search() {
@@ -264,14 +327,14 @@ public class DiemCongPanel extends JPanel {
             refreshTable();
             clearFields();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Save Failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Lưu thất bại", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void deleteSelected() {
         int selectedRow = table.getSelectedRow();
         if (selectedRow < 0) {
-            JOptionPane.showMessageDialog(this, "Chọn một dòng để xóa.", "Delete", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Chọn một dòng để xóa.", "Xóa", JOptionPane.WARNING_MESSAGE);
             return;
         }
         try {
@@ -280,7 +343,7 @@ public class DiemCongPanel extends JPanel {
             refreshTable();
             clearFields();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, ex.getMessage(), "Delete Failed", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, ex.getMessage(), "Xóa thất bại", JOptionPane.ERROR_MESSAGE);
         }
     }
 
@@ -356,12 +419,12 @@ public class DiemCongPanel extends JPanel {
             clearFields();
             JOptionPane.showMessageDialog(this,
                 summary.toMessage(),
-                "Import Success",
+                "Nhập thành công",
                 JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, 
+                JOptionPane.showMessageDialog(this, 
                     "Lỗi khi nhập dữ liệu: " + ex.getMessage(), 
-                    "Import Failed", 
+                    "Nhập thất bại", 
                     JOptionPane.ERROR_MESSAGE);
         }
     }

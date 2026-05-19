@@ -4,294 +4,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quản Lý Nguyện Vọng & Xét Tuyển</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
-    <style>
-        body {
-            background-color: #f5f5f5;
-            padding: 20px;
-        }
-        .container-fluid {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 30px;
-        }
-        .btn-action {
-            margin: 5px;
-        }
-        table {
-            margin-top: 20px;
-        }
-        th {
-            background-color: #007bff;
-            color: white;
-        }
-        .badge-dau {
-            background-color: #28a745;
-        }
-        .badge-truot {
-            background-color: #dc3545;
-        }
-        .badge-danget {
-            background-color: #ffc107;
-        }
-    </style>
+    <title>Phần 8 - Quản lý nguyện vọng và xét tuyển</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
 
 <body>
-    <div class="container-fluid">
-        <h2>Quản Lý Nguyện Vọng & Xét Tuyển</h2>
-        <hr>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="brand-block">
+                <p class="brand-kicker">Admissions Console</p>
+                <h1>Phần 8</h1>
+                <p class="brand-note">Quản lý nguyện vọng, chạy xét tuyển và xuất kết quả Excel.</p>
+            </div>
 
-        <!-- Control Section -->
-        <div class="row mb-4">
-            <div class="col-md-8">
-                <div class="card">
-                    <div class="card-header bg-success text-white">
-                        <h5>Điều Khiển Xét Tuyển</h5>
+            <nav class="menu-list">
+                <a class="menu-item" th:href="@{/admin/form}" href="/admin/form">Tổng quan</a>
+                <a class="menu-item" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Điểm cộng</a>
+                <a class="menu-item active" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Nguyện vọng</a>
+            </nav>
+
+            <div class="status-card">
+                <p class="status-title">Kết quả</p>
+                <p class="status-value">XLSX</p>
+                <p class="status-sub">Có thể xuất toàn bộ kết quả hoặc theo từng mã ngành.</p>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="topbar">
+                <div>
+                    <p class="topbar-kicker">Quản trị xét tuyển</p>
+                    <h2>Quản lý nguyện vọng và kết quả xét tuyển</h2>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" class="btn ghost" id="exportResults">Xuất Excel</button>
+                    <button type="button" class="btn solid" id="reloadBtn">Làm mới</button>
+                </div>
+            </header>
+
+            <section class="split-grid">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Điều khiển xét tuyển</h3>
+                            <p class="muted">Nhập mã ngành để xét một ngành hoặc để trống khi xuất toàn bộ kết quả.</p>
+                        </div>
+                        <span class="pill">Process</span>
                     </div>
-                    <div class="card-body">
-                        <form id="selectionForm">
-                            <div class="mb-3">
-                                <label for="maNganhSelect" class="form-label">Chọn Ngành (để trống = tất cả):</label>
-                                <input type="text" id="maNganhSelect" class="form-control" placeholder="Mã Ngành">
-                            </div>
-                            <div>
-                                <button type="button" class="btn btn-warning btn-action" id="processOneMajor">
-                                    Xét Tuyển 1 Ngành
-                                </button>
-                                <button type="button" class="btn btn-danger btn-action" id="processAllMajor">
-                                    Xét Tuyển Tất Cả
-                                </button>
-                                <button type="button" class="btn btn-info btn-action" id="exportResults">
-                                    Xuất Excel
-                                </button>
-                            </div>
-                        </form>
-                        <div id="processStatus" class="alert mt-3" style="display:none;"></div>
+                    <div class="form-grid">
+                        <label class="field field-lg">
+                            <span>Mã ngành</span>
+                            <input type="text" id="maNganhSelect" placeholder="Ví dụ: 7480201">
+                        </label>
+                        <button type="button" class="btn accent" id="processOneMajor">Xét một ngành</button>
+                        <button type="button" class="btn danger field-full" id="processAllMajor">Xét tất cả ngành</button>
+                    </div>
+                    <div id="processStatus" class="notice"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Tìm kiếm</h3>
+                            <p class="muted">Lọc theo CCCD hoặc mã ngành.</p>
+                        </div>
+                        <span class="pill">Filter</span>
+                    </div>
+                    <div class="form-grid">
+                        <label class="field field-full">
+                            <span>CCCD</span>
+                            <input type="text" id="searchCCCD" placeholder="Nhập CCCD">
+                        </label>
+                        <label class="field field-full">
+                            <span>Mã ngành</span>
+                            <input type="text" id="searchMaNganh" placeholder="Nhập mã ngành">
+                        </label>
+                        <button class="btn solid field-full" type="button" id="searchBtn">Tìm kiếm</button>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <div class="col-md-4">
-                <div class="card">
-                    <div class="card-header bg-info text-white">
-                        <h5>Tìm Kiếm</h5>
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>Danh sách nguyện vọng và kết quả</h3>
+                        <p class="muted" id="tableSummary">Đang tải dữ liệu từ hệ thống.</p>
                     </div>
-                    <div class="card-body">
-                        <div class="mb-2">
-                            <input type="text" id="searchCCCD" class="form-control" placeholder="Tìm theo CCCD">
-                        </div>
-                        <div class="mb-2">
-                            <input type="text" id="searchMaNganh" class="form-control" placeholder="Tìm theo Mã Ngành">
-                        </div>
-                        <button class="btn btn-primary btn-sm w-100" id="searchBtn">Tìm Kiếm</button>
-                    </div>
+                    <span class="pill">Phần 8</span>
                 </div>
-            </div>
-        </div>
 
-        <!-- Data Table -->
-        <div class="card">
-            <div class="card-header">
-                <h5>Danh Sách Nguyện Vọng & Kết Quả Xét Tuyển</h5>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover table-striped table-sm">
+                <div class="table-wrap">
+                    <table>
                         <thead>
                             <tr>
                                 <th>CCCD</th>
-                                <th>Mã Ngành</th>
-                                <th>Mã Tổ Hợp</th>
+                                <th>Mã ngành</th>
+                                <th>Mã tổ hợp</th>
                                 <th>NV</th>
-                                <th>Điểm Thi</th>
-                                <th>Điểm Ưu Tiên</th>
-                                <th>Điểm Cộng</th>
-                                <th>Tổng Điểm</th>
-                                <th>Kết Quả</th>
-                                <th>Phương Thức</th>
-                                <th>Hành Động</th>
+                                <th>Điểm thi</th>
+                                <th>Điểm ưu tiên</th>
+                                <th>Điểm cộng</th>
+                                <th>Tổng điểm</th>
+                                <th>Kết quả</th>
+                                <th>Phương thức</th>
+                                <th>Thao tác</th>
                             </tr>
                         </thead>
                         <tbody id="dataTable">
                             <tr>
-                                <td colspan="11" class="text-center">Đang tải dữ liệu...</td>
+                                <td colspan="11" class="empty-row">Đang tải dữ liệu...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Load data on page load
+        const tbody = document.getElementById('dataTable');
+        const tableSummary = document.getElementById('tableSummary');
+        const processStatus = document.getElementById('processStatus');
+
         window.addEventListener('DOMContentLoaded', loadNguyenVong);
+        document.getElementById('reloadBtn').addEventListener('click', loadNguyenVong);
 
-        // Load all nguyen vong
-        async function loadNguyenVong() {
-            try {
-                const response = await fetch('/admin/nguyen-vong/api/all');
-                const data = await response.json();
-                displayTable(data);
-            } catch (error) {
-                console.error('Lỗi tải dữ liệu:', error);
-            }
-        }
-
-        // Process selection for one major
         document.getElementById('processOneMajor').addEventListener('click', async () => {
-            const maNganh = document.getElementById('maNganhSelect').value;
+            const maNganh = document.getElementById('maNganhSelect').value.trim();
             if (!maNganh) {
-                alert('Vui lòng nhập mã ngành');
+                showNotice(processStatus, 'Vui lòng nhập mã ngành để xét tuyển.', false);
                 return;
             }
 
-            const statusDiv = document.getElementById('processStatus');
             try {
-                const response = await fetch('/admin/nguyen-vong/api/process-selection/' + maNganh, {
+                const response = await fetch('/admin/nguyen-vong/api/process-selection/' + encodeURIComponent(maNganh), {
                     method: 'POST'
                 });
                 const data = await response.json();
-                
-                statusDiv.style.display = 'block';
                 if (data.success) {
-                    statusDiv.className = 'alert alert-success';
-                    statusDiv.innerHTML = `<strong>Thành công!</strong><br>
-                        Chỉ tiêu: ${data.chiTieu}<br>
-                        Đậu: ${data.passCount}<br>
-                        Trượt: ${data.failCount}`;
+                    showNotice(processStatus,
+                        `Xét tuyển thành công. Chỉ tiêu: ${data.chiTieu ?? 0}, đậu: ${data.passCount ?? 0}, trượt: ${data.failCount ?? 0}.`,
+                        true);
                     loadNguyenVong();
                 } else {
-                    statusDiv.className = 'alert alert-danger';
-                    statusDiv.textContent = data.message;
+                    showNotice(processStatus, data.message || 'Không thể xét tuyển ngành này.', false);
                 }
             } catch (error) {
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'alert alert-danger';
-                statusDiv.textContent = 'Lỗi: ' + error.message;
+                showNotice(processStatus, 'Lỗi xét tuyển: ' + error.message, false);
             }
         });
 
-        // Process selection for all majors
         document.getElementById('processAllMajor').addEventListener('click', async () => {
-            if (!confirm('Xét tuyển cho tất cả ngành? Hành động này không thể hoàn tác!')) return;
+            if (!confirm('Xét tuyển cho tất cả ngành? Hành động này sẽ cập nhật kết quả hiện có.')) {
+                return;
+            }
 
-            const statusDiv = document.getElementById('processStatus');
             try {
-                const response = await fetch('/admin/nguyen-vong/api/process-selection-all', {
-                    method: 'POST'
-                });
+                const response = await fetch('/admin/nguyen-vong/api/process-selection-all', { method: 'POST' });
                 const data = await response.json();
-                
-                statusDiv.style.display = 'block';
                 if (data.success) {
-                    statusDiv.className = 'alert alert-success';
-                    statusDiv.textContent = data.message + ' (' + data.results.length + ' ngành)';
+                    const count = Array.isArray(data.results) ? data.results.length : 0;
+                    showNotice(processStatus, `${data.message || 'Xét tuyển thành công.'} (${count} ngành)`, true);
                     loadNguyenVong();
                 } else {
-                    statusDiv.className = 'alert alert-danger';
-                    statusDiv.textContent = data.message;
+                    showNotice(processStatus, data.message || 'Không thể xét tuyển tất cả ngành.', false);
                 }
             } catch (error) {
-                statusDiv.style.display = 'block';
-                statusDiv.className = 'alert alert-danger';
-                statusDiv.textContent = 'Lỗi: ' + error.message;
+                showNotice(processStatus, 'Lỗi xét tuyển: ' + error.message, false);
             }
         });
 
-        // Export results
         document.getElementById('exportResults').addEventListener('click', async () => {
-            const maNganh = document.getElementById('maNganhSelect').value;
+            const maNganh = document.getElementById('maNganhSelect').value.trim();
             let url = '/admin/nguyen-vong/api/export';
             if (maNganh) {
-                url += '?maNganh=' + maNganh;
+                url += '?maNganh=' + encodeURIComponent(maNganh);
             }
 
             try {
                 const response = await fetch(url);
                 const blob = await response.blob();
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(blob);
-                link.download = maNganh ? 'ket-qua-' + maNganh + '.xlsx' : 'ket-qua-xet-tuyen.xlsx';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                downloadBlob(blob, maNganh ? 'ket-qua-' + maNganh + '.xlsx' : 'ket-qua-xet-tuyen.xlsx');
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                showNotice(processStatus, 'Lỗi xuất Excel: ' + error.message, false);
             }
         });
 
-        // Search
         document.getElementById('searchBtn').addEventListener('click', async () => {
-            const cccd = document.getElementById('searchCCCD').value;
-            const maNganh = document.getElementById('searchMaNganh').value;
+            const cccd = document.getElementById('searchCCCD').value.trim();
+            const maNganh = document.getElementById('searchMaNganh').value.trim();
 
             let url = '/admin/nguyen-vong/api/all';
             if (cccd) {
-                url = '/admin/nguyen-vong/api/by-cccd/' + cccd;
+                url = '/admin/nguyen-vong/api/by-cccd/' + encodeURIComponent(cccd);
             } else if (maNganh) {
-                url = '/admin/nguyen-vong/api/by-nganh/' + maNganh;
+                url = '/admin/nguyen-vong/api/by-nganh/' + encodeURIComponent(maNganh);
             }
 
+            await loadNguyenVong(url);
+        });
+
+        async function loadNguyenVong(url = '/admin/nguyen-vong/api/all') {
+            tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Đang tải dữ liệu...</td></tr>';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
                 displayTable(data);
             } catch (error) {
-                alert('Lỗi tìm kiếm: ' + error.message);
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Không thể tải dữ liệu.</td></tr>';
+                tableSummary.textContent = 'Lỗi tải dữ liệu: ' + error.message;
             }
-        });
+        }
 
-        // Display table
         function displayTable(data) {
-            const tbody = document.getElementById('dataTable');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="text-center">Không có dữ liệu</td></tr>';
+            if (!Array.isArray(data) || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Không có dữ liệu.</td></tr>';
+                tableSummary.textContent = 'Chưa có bản ghi phù hợp.';
                 return;
             }
 
+            tableSummary.textContent = 'Đang hiển thị ' + data.length + ' bản ghi.';
             tbody.innerHTML = data.map(item => {
-                const resultBadge = item.nvKetQua === 'Đậu' ? 'badge-dau' :
-                                   item.nvKetQua === 'Trượt' ? 'badge-truot' : 'badge-danget';
-                
+                const result = normalizeResult(item.nvKetQua);
                 return `
                     <tr>
-                        <td>${item.nnCccd}</td>
-                        <td>${item.maNganh}</td>
-                        <td>${item.maToHop || ''}</td>
-                        <td>${item.nvThuTu}</td>
-                        <td>${item.diemThxt ? item.diemThxt.toFixed(2) : '0.00'}</td>
-                        <td>${item.diemUtqd ? item.diemUtqd.toFixed(2) : '0.00'}</td>
-                        <td>${item.diemCong ? item.diemCong.toFixed(2) : '0.00'}</td>
-                        <td><strong>${item.diemXetTuyen ? item.diemXetTuyen.toFixed(2) : '0.00'}</strong></td>
-                        <td><span class="badge ${resultBadge}">${item.nvKetQua || 'Đang xét'}</span></td>
-                        <td>${item.ttPhuongThuc || ''}</td>
-                        <td>
-                            <button class="btn btn-sm btn-danger" onclick="deleteNguyenVong(${item.id})">Xóa</button>
-                        </td>
+                        <td>${escapeHtml(item.nnCccd)}</td>
+                        <td>${escapeHtml(item.maNganh ?? item.nvMaNganh)}</td>
+                        <td>${escapeHtml(item.maToHop)}</td>
+                        <td>${escapeHtml(item.nvThuTu)}</td>
+                        <td>${formatNumber(item.diemThxt)}</td>
+                        <td>${formatNumber(item.diemUtqd)}</td>
+                        <td>${formatNumber(item.diemCong)}</td>
+                        <td><strong>${formatNumber(item.diemXetTuyen)}</strong></td>
+                        <td><span class="badge ${result.className}">${escapeHtml(result.label)}</span></td>
+                        <td>${escapeHtml(item.ttPhuongThuc)}</td>
+                        <td><button class="btn danger small" type="button" onclick="deleteNguyenVong(${Number(item.id)})">Xóa</button></td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Delete
         async function deleteNguyenVong(id) {
-            if (!confirm('Bạn chắc chắn muốn xóa?')) return;
-            
+            if (!Number.isFinite(id) || !confirm('Bạn chắc chắn muốn xóa nguyện vọng này?')) {
+                return;
+            }
+
             try {
-                const response = await fetch('/admin/nguyen-vong/api/' + id, {
-                    method: 'DELETE'
-                });
+                const response = await fetch('/admin/nguyen-vong/api/' + id, { method: 'DELETE' });
                 const data = await response.json();
-                alert(data.message);
+                showNotice(processStatus, data.message || 'Đã xóa nguyện vọng.', data.success === 'true');
                 loadNguyenVong();
             } catch (error) {
-                alert('Lỗi: ' + error.message);
+                showNotice(processStatus, 'Lỗi xóa dữ liệu: ' + error.message, false);
             }
+        }
+
+        function normalizeResult(value) {
+            const label = String(value || 'Đang xét');
+            const lower = label.toLowerCase();
+            if (lower.includes('đậu') || lower.includes('dau')) {
+                return { label, className: 'success' };
+            }
+            if (lower.includes('trượt') || lower.includes('truot')) {
+                return { label, className: 'danger' };
+            }
+            return { label, className: 'warning' };
+        }
+
+        function showNotice(element, message, success) {
+            element.className = 'notice show ' + (success ? 'success' : 'error');
+            element.textContent = message;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        }
+
+        function formatNumber(value) {
+            const number = Number(value);
+            return Number.isFinite(number) ? number.toFixed(2) : '0.00';
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '').replace(/[&<>"']/g, char => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            }[char]));
         }
     </script>
 </body>
