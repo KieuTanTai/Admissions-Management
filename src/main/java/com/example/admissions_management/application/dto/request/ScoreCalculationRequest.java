@@ -19,6 +19,12 @@ public class ScoreCalculationRequest {
     private String loaiChungChiAnh;
     private Double diemChungChiAnh;
     private String kyNangToeic;
+    
+    // TOEIC 4 Skills
+    private Double diemToeicNghe;    // Listening, max 495
+    private Double diemToeicDoc;     // Reading, max 495
+    private Double diemToeicNoi;     // Speaking, max 200
+    private Double diemToeicViet;    // Writing, max 200
 
     public String getMaNganh() {
         return maNganh;
@@ -162,5 +168,37 @@ public class ScoreCalculationRequest {
 
     public void setKyNangToeic(String kyNangToeic) {
         this.kyNangToeic = kyNangToeic;
+    }
+
+    public Double getDiemToeicNghe() {
+        return diemToeicNghe;
+    }
+
+    public void setDiemToeicNghe(Double diemToeicNghe) {
+        this.diemToeicNghe = diemToeicNghe;
+    }
+
+    public Double getDiemToeicDoc() {
+        return diemToeicDoc;
+    }
+
+    public void setDiemToeicDoc(Double diemToeicDoc) {
+        this.diemToeicDoc = diemToeicDoc;
+    }
+
+    public Double getDiemToeicNoi() {
+        return diemToeicNoi;
+    }
+
+    public void setDiemToeicNoi(Double diemToeicNoi) {
+        this.diemToeicNoi = diemToeicNoi;
+    }
+
+    public Double getDiemToeicViet() {
+        return diemToeicViet;
+    }
+
+    public void setDiemToeicViet(Double diemToeicViet) {
+        this.diemToeicViet = diemToeicViet;
     }
 }

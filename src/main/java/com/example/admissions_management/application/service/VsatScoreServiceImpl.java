@@ -202,15 +202,42 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         
         // Handle English certificate if provided (IELTS/TOEFL/TOEIC/PTE/...)
         Double effectiveDiemAnh = request.getDiemAnh();
-        if (request.getLoaiChungChiAnh() != null && !request.getLoaiChungChiAnh().isBlank() 
-            && request.getDiemChungChiAnh() != null && request.getDiemChungChiAnh() > 0) {
-            Double certificateScore = convertEnglishCertificate(
-                    request.getLoaiChungChiAnh(), 
-                    request.getDiemChungChiAnh(),
-                    request.getKyNangToeic(),
-                    warnings);
-            if (certificateScore != null && certificateScore > 0) {
-                effectiveDiemAnh = certificateScore;
+        if (request.getLoaiChungChiAnh() != null && !request.getLoaiChungChiAnh().isBlank()) {
+            
+            // Special handling for TOEIC 4 skills
+            if ("TOEIC".equalsIgnoreCase(request.getLoaiChungChiAnh())) {
+                Double toeicScore = convertToeic4Skills(
+                        request.getDiemToeicNghe(),
+                        request.getDiemToeicDoc(),
+                        request.getDiemToeicNoi(),
+                        request.getDiemToeicViet(),
+                        warnings);
+                if (toeicScore != null && toeicScore > 0) {
+                    effectiveDiemAnh = toeicScore;
+                }
+            } else if ("APTIS_ESOL_GENERAL".equalsIgnoreCase(request.getLoaiChungChiAnh()) 
+                    || "APTIS_ESOL_ADVANCED".equalsIgnoreCase(request.getLoaiChungChiAnh())) {
+                // Aptis ESOL: diemChungChiAnh contains the level (B1, B2, C1)
+                Double aptisScore = convertAptisEsol(request.getLoaiChungChiAnh(), request.getDiemChungChiAnh(), warnings);
+                if (aptisScore != null && aptisScore > 0) {
+                    effectiveDiemAnh = aptisScore;
+                }
+            } else if ("VSTEP".equalsIgnoreCase(request.getLoaiChungChiAnh())) {
+                // VSTEP: diemChungChiAnh contains the level (3, 4, 5)
+                Double vstepScore = convertVstep(request.getDiemChungChiAnh(), warnings);
+                if (vstepScore != null && vstepScore > 0) {
+                    effectiveDiemAnh = vstepScore;
+                }
+            } else if (request.getDiemChungChiAnh() != null && request.getDiemChungChiAnh() > 0) {
+                // Standard single-score certificates (IELTS, TOEFL, PTE, Linguaskill)
+                Double certificateScore = convertEnglishCertificate(
+                        request.getLoaiChungChiAnh(), 
+                        request.getDiemChungChiAnh(),
+                        request.getKyNangToeic(),
+                        warnings);
+                if (certificateScore != null && certificateScore > 0) {
+                    effectiveDiemAnh = certificateScore;
+                }
             }
         }
         
@@ -348,9 +375,183 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             case "LINGUASKILL" -> "Linguaskill";
             case "APTIS_ESOL_GENERAL" -> "Aptis ESOL (General)";
             case "APTIS_ESOL_ADVANCED" -> "Aptis ESOL (Advanced)";
-            case "VSTEP" -> "VSTEP (3 bác)";
+            case "VSTEP" -> "VSTEP (3 bậc)";
             default -> certificateType;
         };
+    }
+
+    /**
+     * Convert TOEIC 4 skills to 10-point scale.
+     * Only converts if ALL 4 skills meet their respective thresholds.
+     * Thresholds:
+     * - Level 1: Listening 275-399, Reading 275-399, Speaking 120-159, Writing 120-159
+     * - Level 2: Listening 400-489, Reading 385-454, Speaking 160-179, Writing 150-179
+     * - Level 3: Listening >=490, Reading >=455, Speaking >=180, Writing >=180
+     */
+    private Double convertToeic4Skills(Double nghe, Double doc, Double noi, Double viet, List<String> warnings) {
+        // Check if any skill is provided
+        boolean hasNghe = nghe != null && nghe > 0;
+        boolean hasDoc = doc != null && doc > 0;
+        boolean hasNoi = noi != null && noi > 0;
+        boolean hasViet = viet != null && viet > 0;
+        
+        if (!hasNghe && !hasDoc && !hasNoi && !hasViet) {
+            return null;
+        }
+        
+        // Normalize null/0 values
+        double listeningScore = hasNghe ? nghe : 0;
+        double readingScore = hasDoc ? doc : 0;
+        double speakingScore = hasNoi ? noi : 0;
+        double writingScore = hasViet ? viet : 0;
+        
+        // Determine level based on ALL 4 skills
+        int listeningLevel = getToeicSkillLevel(listeningScore, "NGHE");
+        int readingLevel = getToeicSkillLevel(readingScore, "DOC");
+        int speakingLevel = getToeicSkillLevel(speakingScore, "NOI");
+        int writingLevel = getToeicSkillLevel(writingScore, "VIET");
+        
+        // Only convert if ALL 4 skills meet at least level 1 threshold
+        if (listeningLevel == 0 || readingLevel == 0 || speakingLevel == 0 || writingLevel == 0) {
+            // At least one skill doesn't meet minimum threshold
+            String failedSkills = "";
+            if (listeningLevel == 0) failedSkills += "Nghe ";
+            if (readingLevel == 0) failedSkills += "Đọc ";
+            if (speakingLevel == 0) failedSkills += "Nói ";
+            if (writingLevel == 0) failedSkills += "Viết ";
+            warnings.add("TOEIC: Các kỹ năng sau không đạt mức tối thiểu: " + failedSkills.trim());
+            return null;
+        }
+        
+        // Determine final level: take minimum level across all 4 skills
+        int finalLevel = Math.min(Math.min(listeningLevel, readingLevel), 
+                                  Math.min(speakingLevel, writingLevel));
+        
+        try {
+            // Get conversion score from database for each skill at the final level
+            Double listeningConverted = bangQuyDoiService.quyDoiDiemNgoaiNgu("TOEIC_NGHE", "TIENG_ANH", 
+                    BigDecimal.valueOf(listeningScore));
+            Double readingConverted = bangQuyDoiService.quyDoiDiemNgoaiNgu("TOEIC_DOC", "TIENG_ANH", 
+                    BigDecimal.valueOf(readingScore));
+            Double speakingConverted = bangQuyDoiService.quyDoiDiemNgoaiNgu("TOEIC_NOI", "TIENG_ANH", 
+                    BigDecimal.valueOf(speakingScore));
+            Double writingConverted = bangQuyDoiService.quyDoiDiemNgoaiNgu("TOEIC_VIET", "TIENG_ANH", 
+                    BigDecimal.valueOf(writingScore));
+            
+            // Average all converted scores
+            double totalConverted = (listeningConverted != null ? listeningConverted : 0) +
+                                  (readingConverted != null ? readingConverted : 0) +
+                                  (speakingConverted != null ? speakingConverted : 0) +
+                                  (writingConverted != null ? writingConverted : 0);
+            double avgConverted = round2(totalConverted / 4);
+            
+            String details = String.format("TOEIC: Nghe=%d, Đọc=%d, Nói=%d, Viết=%d (Mức %d) -> %.1f",
+                    nghe != null ? nghe.intValue() : 0,
+                    doc != null ? doc.intValue() : 0,
+                    noi != null ? noi.intValue() : 0,
+                    viet != null ? viet.intValue() : 0,
+                    finalLevel, avgConverted);
+            warnings.add("Tiếng Anh: " + details);
+            
+            return avgConverted;
+        } catch (Exception e) {
+            warnings.add("Tiếng Anh: Lỗi khi quy đổi TOEIC 4 kỹ năng: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Get TOEIC skill level (0-3) based on score ranges.
+     * Level 0: below minimum (no conversion)
+     * Level 1: 275-399 (Listening/Reading) or 120-159 (Speaking/Writing)
+     * Level 2: 400-489 (Listening) / 385-454 (Reading) or 160-179 (Speaking/Writing)
+     * Level 3: >=490 (Listening) / >=455 (Reading) or >=180 (Speaking/Writing)
+     */
+    private int getToeicSkillLevel(double score, String skillCode) {
+        if (score <= 0) return 0;
+        
+        if ("NGHE".equals(skillCode) || "DOC".equals(skillCode)) {
+            // Listening and Reading: max 495
+            if (score < 275) return 0;
+            if (score < 400) return 1;
+            if (score < 490) return 2;
+            if (score >= 490) return 3;
+        } else {
+            // Speaking and Writing: max 200
+            if (score < 120) return 0;
+            if (score < 160) return 1;
+            if (score < 180) return 2;
+            if (score >= 180) return 3;
+        }
+        return 0;
+    }
+    
+    /**
+     * Convert Aptis ESOL level to 10-point scale.
+     * B1 -> Level 1, B2 -> Level 2, C1 -> Level 3
+     */
+    private Double convertAptisEsol(String certificateType, Double levelValue, List<String> warnings) {
+        if (levelValue == null || levelValue <= 0) {
+            warnings.add("Tiếng Anh: Vui lòng chọn mức bằng Aptis ESOL");
+            return null;
+        }
+        
+        try {
+            // levelValue is a numeric representation (converted from B1, B2, C1 in frontend)
+            // We need to convert it back or use it directly with the database
+            String level = "";
+            if (levelValue == 1) level = "B1";
+            else if (levelValue == 2) level = "B2";
+            else if (levelValue == 3) level = "C1";
+            else {
+                warnings.add("Tiếng Anh: Mức bằng Aptis ESOL không hợp lệ");
+                return null;
+            }
+            
+            Double converted = bangQuyDoiService.quyDoiDiemNgoaiNgu(certificateType, "TIENG_ANH", 
+                    BigDecimal.valueOf(levelValue));
+            
+            if (converted != null && converted > 0) {
+                String certLabel = "APTIS_ESOL_GENERAL".equals(certificateType) ? 
+                        "Aptis ESOL (General)" : "Aptis ESOL (Advanced)";
+                warnings.add("Tiếng Anh: Sử dụng quy đổi từ " + certLabel + " (" + level + ") = " + format(converted));
+                return converted;
+            } else {
+                warnings.add("Tiếng Anh: Aptis ESOL mức " + level + " không tìm thấy bảng quy đổi");
+                return null;
+            }
+        } catch (Exception e) {
+            warnings.add("Tiếng Anh: Lỗi khi quy đổi Aptis ESOL: " + e.getMessage());
+            return null;
+        }
+    }
+    
+    /**
+     * Convert VSTEP level to 10-point scale.
+     * Bậc 3 -> Level 1, Bậc 4 -> Level 2, Bậc 5 -> Level 3
+     */
+    private Double convertVstep(Double levelValue, List<String> warnings) {
+        if (levelValue == null || levelValue < 3 || levelValue > 5) {
+            warnings.add("Tiếng Anh: Vui lòng chọn mức bằng VSTEP (3, 4, hoặc 5)");
+            return null;
+        }
+        
+        try {
+            Double converted = bangQuyDoiService.quyDoiDiemNgoaiNgu("VSTEP", "TIENG_ANH", 
+                    BigDecimal.valueOf(levelValue));
+            
+            if (converted != null && converted > 0) {
+                String level = "Bậc " + levelValue.intValue();
+                warnings.add("Tiếng Anh: Sử dụng quy đổi từ VSTEP (" + level + ") = " + format(converted));
+                return converted;
+            } else {
+                warnings.add("Tiếng Anh: VSTEP mức " + levelValue.intValue() + " không tìm thấy bảng quy đổi");
+                return null;
+            }
+        } catch (Exception e) {
+            warnings.add("Tiếng Anh: Lỗi khi quy đổi VSTEP: " + e.getMessage());
+            return null;
+        }
     }
 
     private double calculateInterpolatedScore(double x, ScoreInterval interval) {
