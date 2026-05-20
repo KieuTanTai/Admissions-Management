@@ -133,31 +133,33 @@ public class MajorManagementController {
         JButton saveButton = new JButton("Lưu");
 
         saveButton.addActionListener(e -> {
-            try {
-                form.setIdnganh(majorId);
-                form.setManganh(txtMaNganh.getText().trim());
-                form.setTennganh(txtTenNganh.getText().trim());
-                form.setnTohopgoc(txtToHopGoc.getText().trim());
-                form.setnChitieu(toInteger(txtChiTieu.getText()));
-                form.setnDiemsan(toBigDecimal(txtDiemSan.getText()));
-                form.setnDiemtrungtuyen(toBigDecimal(txtDiemTrungTuyen.getText()));
-                form.setnTuyenthang(txtTuyenThang.getText().trim());
-                form.setnDgnl(txtDgnl.getText().trim());
-                form.setnThpt(txtThpt.getText().trim());
-                form.setnVsat(txtVsat.getText().trim());
-                form.setSlXtt(toInteger(txtSlXtt.getText()));
-                form.setSlDgnl(toInteger(txtSlDgnl.getText()));
-                form.setSlVsat(toInteger(txtSlVsat.getText()));
-                form.setSlThpt(txtSlThpt.getText().trim());
+    try {
+        // Chuyển MajorForm sang XtNganhEntity trước khi gọi service
+        XtNganhEntity entity = new XtNganhEntity();
+        entity.setId(form.getIdnganh());
+        entity.setMaNganh(form.getManganh());
+        entity.setTenNganh(form.getTennganh());
+        entity.setToHopGoc(form.getnTohopgoc());
+        entity.setChiTieu(form.getnChitieu());
+        entity.setDiemSan(form.getnDiemsan());
+        entity.setDiemTrungTuyen(form.getnDiemtrungtuyen());
+        entity.setTuyenThang(form.getnTuyenthang());
+        entity.setDgnl(form.getnDgnl());
+        entity.setThpt(form.getnThpt());
+        entity.setVsat(form.getnVsat());
+        entity.setSlXtt(form.getSlXtt());
+        entity.setSlDgnl(form.getSlDgnl());
+        entity.setSlVsat(form.getSlVsat());
+        entity.setSlThpt(form.getSlThpt());
 
-                majorManagementService.saveMajor(form);
+        majorManagementService.saveMajor(entity);
 
-                JOptionPane.showMessageDialog(frame, "Lưu ngành thành công.");
-                frame.dispose();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(frame, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-            }
-        });
+        JOptionPane.showMessageDialog(frame, "Lưu ngành thành công.");
+        frame.dispose();
+    } catch (Exception ex) {
+        JOptionPane.showMessageDialog(frame, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+    }
+});
 
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));

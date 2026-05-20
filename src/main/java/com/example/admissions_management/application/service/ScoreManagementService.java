@@ -565,6 +565,40 @@ public class ScoreManagementService {
             if (hasMethodColumn) {
                 entity.setdPhuongThuc(normalizeImportedMethod(readStringCell(row, headerIndex.get("D_PHUONGTHUC"), formatter)));
             }
+            BigDecimal to   = readDecimalCell(row, headerIndex.get("TO"), formatter);
+BigDecimal li   = readDecimalCell(row, headerIndex.get("LI"), formatter);
+BigDecimal ho   = readDecimalCell(row, headerIndex.get("HO"), formatter);
+BigDecimal si   = readDecimalCell(row, headerIndex.get("SI"), formatter);
+BigDecimal su   = readDecimalCell(row, headerIndex.get("SU"), formatter);
+BigDecimal di   = readDecimalCell(row, headerIndex.get("DI"), formatter);
+BigDecimal va   = readDecimalCell(row, headerIndex.get("VA"), formatter);
+BigDecimal n1Thi = readDecimalCell(row, headerIndex.get("N1_THI"), formatter);
+BigDecimal n1Cc  = readDecimalCell(row, headerIndex.get("N1_CC"), formatter);
+BigDecimal cncn  = readDecimalCell(row, headerIndex.get("CNCN"), formatter);
+BigDecimal cnnn  = readDecimalCell(row, headerIndex.get("CNNN"), formatter);
+BigDecimal ti    = readDecimalCell(row, headerIndex.get("TI"), formatter);
+BigDecimal ktpl  = readDecimalCell(row, headerIndex.get("KTPL"), formatter);
+BigDecimal nl1   = readDecimalCell(row, headerIndex.get("NL1"), formatter);
+BigDecimal nk1   = readDecimalCell(row, headerIndex.get("NK1"), formatter);
+BigDecimal nk2   = readDecimalCell(row, headerIndex.get("NK2"), formatter);
+
+entity.setTo(zeroIfNull(to));
+            entity.setLi(zeroIfNull(li));
+            entity.setHo(zeroIfNull(ho));
+            entity.setSi(zeroIfNull(si));
+            entity.setSu(zeroIfNull(su));
+            entity.setDi(zeroIfNull(di));
+            entity.setVa(zeroIfNull(va));
+            entity.setN1Thi(zeroIfNull(n1Thi));
+            entity.setN1Cc(zeroIfNull(n1Cc));
+            entity.setCncn(zeroIfNull(cncn));
+            entity.setCnnn(zeroIfNull(cnnn));
+            entity.setTi(zeroIfNull(ti));
+            entity.setKtpl(zeroIfNull(ktpl));
+            entity.setNl1(zeroIfNull(nl1));
+            entity.setNk1(zeroIfNull(nk1));
+            entity.setNk2(zeroIfNull(nk2));
+
             repository.save(entity);
         }
 

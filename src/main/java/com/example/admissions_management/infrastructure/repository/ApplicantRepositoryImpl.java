@@ -4,8 +4,13 @@ import com.example.admissions_management.domain.model.Applicant;
 import com.example.admissions_management.domain.repository.ApplicantRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.ApplicantEntity;
 import com.example.admissions_management.infrastructure.persistence.repository.ISpringDataApplicantRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,6 +18,9 @@ import java.util.Optional;
 public class ApplicantRepositoryImpl implements ApplicantRepository {
 
     private final ISpringDataApplicantRepository springDataApplicantRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     public ApplicantRepositoryImpl(ISpringDataApplicantRepository springDataApplicantRepository) {
         this.springDataApplicantRepository = springDataApplicantRepository;
@@ -49,5 +57,33 @@ public class ApplicantRepositoryImpl implements ApplicantRepository {
                 entity.getEmail(),
                 entity.getProgram()
         );
+    }
+
+    // --- Bổ sung phương thức lấy điểm trúng tuyển thấp nhất theo ngành ---
+    @Override
+    public List<MinScorePerMajor> findMinScorePerMajor(List<String> maNganhList) {
+        String jpql = "SELECT a.maNganh, MIN(a.diemTongKet) " +
+                      "FROM ApplicantEntity a " +
+                      "WHERE a.maNganh IN :maNganhList " +
+                      "GROUP BY a.maNganh";
+        TypedQuery<Object[]> query = entityManager.createQuery(jpql, Object[].class);
+        query.setParameter("maNganhList", maNganhList);
+
+        List<Object[]> results = query.getResultList();
+        List<MinScorePerMajor> list = new ArrayList<>();
+        for (Object[] r : results) {
+            list.add(new MinScorePerMajor() {
+                @Override
+                public String getMaNganh() {
+                    return (String) r[0];
+                }
+
+                @Override
+                public BigDecimal getMinDiem() {
+                    return (BigDecimal) r[1];
+                }
+            });
+        }
+        return list;
     }
 }
