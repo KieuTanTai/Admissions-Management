@@ -78,6 +78,21 @@ public class XtDiemThiXetTuyenEntity {
     @Column(name = "NK2", precision = 8, scale = 2)
     private BigDecimal nk2;
 
+    @Column(name = "thpt_equivalent_score", precision = 8, scale = 2)
+    private BigDecimal thptEquivalentScore;
+
+    @Column(name = "vsat_equivalent_score", precision = 8, scale = 2)
+    private BigDecimal vsatEquivalentScore;
+
+    @Column(name = "dgnl_equivalent_score", precision = 8, scale = 2)
+    private BigDecimal dgnlEquivalentScore;
+
+    @Column(name = "best_equivalent_method", length = 20)
+    private String bestEquivalentMethod;
+
+    @Column(name = "best_equivalent_score", precision = 8, scale = 2)
+    private BigDecimal bestEquivalentScore;
+
     public Integer getId() {
         return id;
     }
@@ -236,5 +251,45 @@ public class XtDiemThiXetTuyenEntity {
 
     public void setNk2(BigDecimal nk2) {
         this.nk2 = nk2;
+    }
+
+    public BigDecimal getThptEquivalentScore() {
+        return thptEquivalentScore;
+    }
+
+    public void setThptEquivalentScore(BigDecimal thptEquivalentScore) {
+        this.thptEquivalentScore = thptEquivalentScore;
+    }
+
+    public BigDecimal getVsatEquivalentScore() {
+        return vsatEquivalentScore;
+    }
+
+    public void setVsatEquivalentScore(BigDecimal vsatEquivalentScore) {
+        this.vsatEquivalentScore = vsatEquivalentScore;
+    }
+
+    public BigDecimal getDgnlEquivalentScore() {
+        return dgnlEquivalentScore;
+    }
+
+    public void setDgnlEquivalentScore(BigDecimal dgnlEquivalentScore) {
+        this.dgnlEquivalentScore = dgnlEquivalentScore;
+    }
+
+    public String getBestEquivalentMethod() {
+        return bestEquivalentMethod;
+    }
+
+    public void setBestEquivalentMethod(String bestEquivalentMethod) {
+        this.bestEquivalentMethod = bestEquivalentMethod;
+    }
+
+    public BigDecimal getBestEquivalentScore() {
+        return bestEquivalentScore;
+    }
+
+    public void setBestEquivalentScore(BigDecimal bestEquivalentScore) {
+        this.bestEquivalentScore = bestEquivalentScore;
     }
 }

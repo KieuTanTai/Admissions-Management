@@ -62,9 +62,12 @@ public class ScoreManagementService {
     }
 
     private final SpringDataXtDiemThiXetTuyenRepository repository;
+    private final ScoreEquivalenceService scoreEquivalenceService;
 
-    public ScoreManagementService(SpringDataXtDiemThiXetTuyenRepository repository) {
+    public ScoreManagementService(SpringDataXtDiemThiXetTuyenRepository repository,
+                                  ScoreEquivalenceService scoreEquivalenceService) {
         this.repository = repository;
+        this.scoreEquivalenceService = scoreEquivalenceService;
     }
 
     public Map<String, String> getSubjectLabels() {
@@ -92,6 +95,7 @@ public class ScoreManagementService {
     public XtDiemThiXetTuyenEntity save(ScoreManagementForm form) {
         XtDiemThiXetTuyenEntity entity = resolveTargetEntity(form);
         mapFormToEntity(form, entity);
+        scoreEquivalenceService.refreshEquivalence(entity);
         return repository.save(entity);
     }
 
@@ -450,6 +454,7 @@ public class ScoreManagementService {
             } else {
                 inserted++;
             }
+            scoreEquivalenceService.refreshEquivalence(entry.getValue());
             repository.save(entry.getValue());
         }
 
@@ -512,6 +517,7 @@ public class ScoreManagementService {
             } else {
                 inserted++;
             }
+            scoreEquivalenceService.refreshEquivalence(entry.getValue());
             repository.save(entry.getValue());
         }
 
@@ -598,6 +604,8 @@ entity.setTo(zeroIfNull(to));
             entity.setNl1(zeroIfNull(nl1));
             entity.setNk1(zeroIfNull(nk1));
             entity.setNk2(zeroIfNull(nk2));
+
+            scoreEquivalenceService.refreshEquivalence(entity);
 
             repository.save(entity);
         }
