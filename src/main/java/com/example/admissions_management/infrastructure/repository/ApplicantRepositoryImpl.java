@@ -1,7 +1,7 @@
 package com.example.admissions_management.infrastructure.repository;
 
 import com.example.admissions_management.domain.model.Applicant;
-import com.example.admissions_management.domain.repository.IApplicantRepository;
+import com.example.admissions_management.domain.repository.ApplicantRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.ApplicantEntity;
 import com.example.admissions_management.infrastructure.persistence.repository.ISpringDataApplicantRepository;
 import org.springframework.stereotype.Repository;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public class ApplicantRepositoryImpl implements IApplicantRepository {
+public class ApplicantRepositoryImpl implements ApplicantRepository {
 
     private final ISpringDataApplicantRepository springDataApplicantRepository;
 
