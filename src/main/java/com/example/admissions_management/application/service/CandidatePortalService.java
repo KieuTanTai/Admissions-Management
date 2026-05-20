@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.stereotype.Service;
 
@@ -146,10 +147,25 @@ public class CandidatePortalService {
             return result;
         }
         BigDecimal originalScore = clamp(nonNull(form.getDgnlScore()), BigDecimal.ZERO, DGNL_MAX_SCORE);
+        String majorCode = form.getMajorCode();
+        Optional<XtNganhEntity> nganh = majorRepository.findByMaNganh(majorCode);
+        String toHop =  nganh.get().getToHopGoc();
+        if(toHop == null || toHop.isBlank()) {
+            result.setMessage("Khong tim thay to hop goc cho nganh da chon.");
+            return result;
+        }
+        if(toHop.equals("A00"))
+        {
+            toHop = "A01";
+        }
+        if(toHop.equals("C00"))
+        {
+            toHop = "C01";
+        }
         BigDecimal converted30;
         
         try {
-            Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", "A01", originalScore);
+            Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", toHop, originalScore);
             String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
             converted30 = new BigDecimal(diemQuyDoiStr);
         } catch (Exception e) {
