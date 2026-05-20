@@ -17,8 +17,23 @@ import com.example.admissions_management.presentation.form.controller.MajorManag
 import com.example.admissions_management.presentation.form.controller.ToHopMonThiManagementController;
 import com.example.admissions_management.presentation.form.controller.UserManagementController;
 import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Component;
+
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.BorderLayout;
 import java.awt.GridLayout;
+import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -55,7 +70,10 @@ public class AdminConsole extends JFrame {
     private final JLabel candidatePageLabel;
     private int candidatePage = 0;
     private String candidateQuery = "";
+	private final ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider;
 
+    private static final Logger logger = LoggerFactory.getLogger(AdminConsole.class);
+        
     private final DefaultTableModel majorTableModel;
     private final JTable majorTable;
     private final JTextField majorSearchField;
@@ -114,12 +132,25 @@ public class AdminConsole extends JFrame {
         combinationsButton.addActionListener(e -> openCombinationManager());
         diemCongButton.addActionListener(e -> openDiemCongForm());
         nguyenVongButton.addActionListener(e -> openNguyenVongForm());
+		JButton importButton = new JButton("Import Applicants");
+		JButton scoreManagementButton = new JButton("Open Scores Form");
+
+		saveButton.addActionListener(e -> saveApplicant());
+		refreshButton.addActionListener(e -> refreshTable());
+		importButton.addActionListener(e -> importApplicants());
+		scoreManagementButton.addActionListener(e -> openScoreManagementForm());
+
+		actionPanel.add(saveButton);
+		actionPanel.add(refreshButton);
+		actionPanel.add(importButton);
+		actionPanel.add(scoreManagementButton);
 
         actionPanel.add(saveButton);
         actionPanel.add(refreshButton);
         actionPanel.add(combinationsButton);
         actionPanel.add(diemCongButton);
         actionPanel.add(nguyenVongButton);
+        this.scoreManagementConsoleProvider = null;
 
         majorSearchField = new JTextField(20);
         majorPageLabel = new JLabel("Page: 1");
@@ -199,10 +230,6 @@ public class AdminConsole extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    private void refreshTable() {
-        tableModel.setRows(controller.loadApplicants());
     }
 
     private void openCombinationManager() {
@@ -807,4 +834,47 @@ public class AdminConsole extends JFrame {
             loadToHop();
         }
     }
+
+	private void refreshTable() {
+		tableModel.setRows(controller.loadApplicants());
+	}
+
+	private void openScoreManagementForm() {
+		try {
+			ScoreManagementConsole scoreConsole = scoreManagementConsoleProvider.getObject();
+			scoreConsole.setVisible(true);
+			setVisible(false);
+		} catch (Exception ex) {
+		    logger.error("Open score form failed", ex);
+		    JOptionPane.showMessageDialog(this,
+			    "Không mở được form quản lý điểm: " + ex.getMessage() + "\n(Chi tiết xem logs)",
+			    "Open Form Failed",
+			    JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private void importApplicants() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx"));
+		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
+
+		int result = fileChooser.showOpenDialog(this);
+		if (result == JFileChooser.APPROVE_OPTION) {
+			File selectedFile = fileChooser.getSelectedFile();
+			try {
+				var importResult = controller.importApplicants(selectedFile);
+				JOptionPane.showMessageDialog(this,
+						importResult.toString(),
+						"Import Successful",
+						JOptionPane.INFORMATION_MESSAGE);
+				refreshTable();
+			} catch (Exception ex) {
+				logger.error("Import applicants failed", ex);
+				JOptionPane.showMessageDialog(this,
+						"Import failed: " + ex.getMessage() + "\n(Chi tiết xem logs)",
+						"Import Failed",
+						JOptionPane.ERROR_MESSAGE);
+			}
+		}
+	}
 }
