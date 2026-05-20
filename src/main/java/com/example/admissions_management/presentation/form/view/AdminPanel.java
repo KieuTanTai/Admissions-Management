@@ -35,8 +35,6 @@ import com.example.admissions_management.presentation.form.controller.BangQuyDoi
 @Component
 public class AdminPanel extends JFrame {
 
-    private CardLayout cardLayout;
-    private JPanel mainContentPanel;
     private JTable table;
     private DefaultTableModel tableModel;
     private JTextField txtSearch;
@@ -50,18 +48,11 @@ public class AdminPanel extends JFrame {
 
         setTitle("Hệ thống Quản lý Tuyển sinh - Admin");
         setSize(1100, 650);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
-        cardLayout = new CardLayout();
-        mainContentPanel = new JPanel(cardLayout);
-
-        mainContentPanel.add(createHomePanel(), "TRANG_CHU");
-        mainContentPanel.add(createBangQuyDoiPanel(), "BANG_QUY_DOI");
-
-        add(mainContentPanel, BorderLayout.CENTER);
-        add(createLeftNavBar(), BorderLayout.WEST);
+        add(createBangQuyDoiPanel(), BorderLayout.CENTER);
 
         // 3. Tải dữ liệu lên bảng ngay khi mở ứng dụng
         loadDataToTable();
@@ -77,22 +68,22 @@ public class AdminPanel extends JFrame {
     private void fillTable(List<BangQuyDoi> danhSach) {
         tableModel.setRowCount(0); // Xóa dữ liệu cũ
         for (BangQuyDoi qd : danhSach) {
-            tableModel.addRow(new Object[]{
-                qd.getId(),
-                qd.getPhuongThuc(),
-                qd.getToHop(),
-                qd.getMon(),
-                qd.getDiemA(), // d_diema
-                qd.getDiemB(), // d_diemb
-                qd.getDiemC(), // d_diemc
-                qd.getDiemD(), // d_diemd
-                qd.getMaQuyDoi(), // d_maquydoi
-                qd.getPhanVi() // d_phanvi
+            tableModel.addRow(new Object[] {
+                    qd.getId(),
+                    qd.getPhuongThuc(),
+                    qd.getToHop(),
+                    qd.getMon(),
+                    qd.getDiemA(), // d_diema
+                    qd.getDiemB(), // d_diemb
+                    qd.getDiemC(), // d_diemc
+                    qd.getDiemD(), // d_diemd
+                    qd.getMaQuyDoi(), // d_maquydoi
+                    qd.getPhanVi() // d_phanvi
             });
         }
     }
 
-// Trong hàm createBangQuyDoiPanel, cập nhật tiêu đề cột:
+    // Trong hàm createBangQuyDoiPanel, cập nhật tiêu đề cột:
     private JPanel createBangQuyDoiPanel() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
         panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
@@ -108,7 +99,8 @@ public class AdminPanel extends JFrame {
         toolbar.add(txtSearch);
 
         // Cấu hình Bảng
-        String[] columnNames = {"ID", "Phương thức", "Tổ hợp", "Môn", "Điểm A", "Điểm B", "Điểm C", "Điểm D", "Mã quy đổi", "Phân vị"};
+        String[] columnNames = { "ID", "Phương thức", "Tổ hợp", "Môn", "Điểm A", "Điểm B", "Điểm C", "Điểm D",
+                "Mã quy đổi", "Phân vị" };
         tableModel = new DefaultTableModel(columnNames, 0); // Khởi tạo model rỗng
         table = new JTable(tableModel);
 
@@ -146,8 +138,8 @@ public class AdminPanel extends JFrame {
                 }
 
             } catch (NumberFormatException ex) {
-                List<BangQuyDoi> ketQua= bangQuyDoiAppController.findByMaQuyDoi(searchText);
-                 if (ketQua != null) {
+                List<BangQuyDoi> ketQua = bangQuyDoiAppController.findByMaQuyDoi(searchText);
+                if (ketQua != null) {
                     fillTable(ketQua);
                 } else {
                     // Nếu không tìm thấy: Truyền vào 1 danh sách rỗng để làm sạch bảng
@@ -160,7 +152,8 @@ public class AdminPanel extends JFrame {
 
         btnAdd.addActionListener(e -> {
             // Mở cửa sổ nhập liệu (Dialog)
-            // Truyền 'this' để làm cửa sổ cha, và 'true' để khóa màn hình chính khi đang nhập
+            // Truyền 'this' để làm cửa sổ cha, và 'true' để khóa màn hình chính khi đang
+            // nhập
             BangQuyDoiDialog dialog = new BangQuyDoiDialog(this, null);
             dialog.setVisible(true);
 
@@ -190,8 +183,7 @@ public class AdminPanel extends JFrame {
 
                 // Sau khi đóng cửa sổ nhập, tải lại bảng để hiện dữ liệu mới
                 loadDataToTable();
-            }
-            else{
+            } else {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần sửa!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
 
@@ -201,11 +193,9 @@ public class AdminPanel extends JFrame {
 
         btnDelete.addActionListener(e -> {
             int selectedRow = table.getSelectedRow();
-            if (selectedRow != -1)
-            {
+            if (selectedRow != -1) {
                 bangQuyDoiAppController.delete(Integer.parseInt(table.getValueAt(selectedRow, 0).toString()));
-            }
-            else{
+            } else {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn dòng cần xóa!", "Lỗi", JOptionPane.ERROR_MESSAGE);
             }
         });
@@ -217,7 +207,8 @@ public class AdminPanel extends JFrame {
             JFileChooser fileChooser = new JFileChooser();
             fileChooser.setDialogTitle("Chọn file Excel để Import");
             // Chỉ cho phép chọn file .xlsx
-            fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel Files (*.xlsx)", "xlsx"));
+            fileChooser
+                    .setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel Files (*.xlsx)", "xlsx"));
 
             int result = fileChooser.showOpenDialog(this);
             if (result == JFileChooser.APPROVE_OPTION) {
@@ -232,10 +223,12 @@ public class AdminPanel extends JFrame {
                     // Load lại bảng
                     loadDataToTable();
 
-                    JOptionPane.showMessageDialog(this, "Import thành công " + dataImport.size() + " dòng!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Import thành công " + dataImport.size() + " dòng!",
+                            "Thành công", JOptionPane.INFORMATION_MESSAGE);
                 } catch (Exception ex) {
                     ex.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "Lỗi khi đọc file Excel! Hãy kiểm tra lại định dạng các cột.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Lỗi khi đọc file Excel! Hãy kiểm tra lại định dạng các cột.",
+                            "Lỗi", JOptionPane.ERROR_MESSAGE);
                 }
             }
         });
@@ -260,7 +253,8 @@ public class AdminPanel extends JFrame {
                     org.apache.poi.xssf.usermodel.XSSFSheet sheet = workbook.createSheet("Data");
                     org.apache.poi.xssf.usermodel.XSSFRow row = sheet.createRow(0);
 
-                    String[] headers = {"Phương thức", "Tổ hợp", "Môn", "Điểm A", "Điểm B", "Điểm C", "Điểm D", "Mã QĐ", "Phân vị"};
+                    String[] headers = { "Phương thức", "Tổ hợp", "Môn", "Điểm A", "Điểm B", "Điểm C", "Điểm D",
+                            "Mã QĐ", "Phân vị" };
                     for (int i = 0; i < headers.length; i++) {
                         row.createCell(i).setCellValue(headers[i]);
                     }
@@ -285,7 +279,7 @@ public class AdminPanel extends JFrame {
         });
 
         // Thêm nút vào thanh công cụ (toolbar) cạnh nút Import
-        toolbar.add(btnSearch);        
+        toolbar.add(btnSearch);
         toolbar.add(btnAdd);
         toolbar.add(btnUpdate);
         toolbar.add(btnDelete);
@@ -296,42 +290,6 @@ public class AdminPanel extends JFrame {
 
         panel.add(new JScrollPane(table), BorderLayout.CENTER);
         return panel;
-    }
-
-    // ... (Các hàm createHomePanel, createLeftNavBar giữ nguyên như cũ) ...
-    private JPanel createHomePanel() {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        JLabel lblWelcome = new JLabel("Hệ thống Quản lý Tuyển sinh - Admin!", SwingConstants.CENTER);
-        lblWelcome.setFont(new Font("Arial", Font.BOLD, 26));
-        panel.add(lblWelcome, BorderLayout.CENTER);
-        return panel;
-    }
-
-    private JPanel createLeftNavBar() {
-        JPanel navPanel = new JPanel();
-        navPanel.setLayout(new BoxLayout(navPanel, BoxLayout.Y_AXIS));
-        navPanel.setPreferredSize(new Dimension(220, 0));
-        navPanel.setBackground(new Color(44, 62, 80));
-        navPanel.setBorder(BorderFactory.createEmptyBorder(20, 10, 20, 10));
-
-        JButton btnHome = createNavButton("Trang chủ");
-        btnHome.addActionListener(e -> cardLayout.show(mainContentPanel, "TRANG_CHU"));
-
-        JButton btnQuyDoi = createNavButton("Quản lý Bảng quy đổi");
-        btnQuyDoi.addActionListener(e -> cardLayout.show(mainContentPanel, "BANG_QUY_DOI"));
-
-        navPanel.add(btnHome);
-        navPanel.add(Box.createRigidArea(new Dimension(0, 10)));
-        navPanel.add(btnQuyDoi);
-        return navPanel;
-    }
-
-    private JButton createNavButton(String text) {
-        JButton btn = new JButton(text);
-        btn.setMaximumSize(new Dimension(200, 40));
-        btn.setAlignmentX(java.awt.Component.CENTER_ALIGNMENT);
-        return btn;
     }
 
     public BangQuyDoiAppController getBangQuyDoiAppController() {

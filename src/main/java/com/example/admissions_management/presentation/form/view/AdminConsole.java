@@ -49,10 +49,7 @@ public class AdminConsole extends JFrame {
 
     private final AdminConsoleController controller;
     private final ObjectProvider<CombinationForm> combinationFormProvider;
-    private final AdminConsoleTableModel tableModel;
-    private final JTextField fullNameField = new JTextField();
-    private final JTextField emailField = new JTextField();
-    private final JTextField programField = new JTextField();
+    private final ObjectProvider<AdminPanel> adminPanelProvider;
     private final DiemCongConsoleController diemCongConsoleController;
     private final NguyenVongConsoleController nguyenVongConsoleController;
     private final UserManagementController userController;
@@ -70,10 +67,16 @@ public class AdminConsole extends JFrame {
     private final JLabel candidatePageLabel;
     private int candidatePage = 0;
     private String candidateQuery = "";
-	private final ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider;
+    private final ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider;
 
     private static final Logger logger = LoggerFactory.getLogger(AdminConsole.class);
-        
+
+    private JFrame userManagementFrame;
+    private JFrame candidateManagementFrame;
+    private JFrame majorManagementFrame;
+    private JFrame toHopManagementFrame;
+    private JFrame applicantFrame;
+
     private final DefaultTableModel majorTableModel;
     private final JTable majorTable;
     private final JTextField majorSearchField;
@@ -89,68 +92,33 @@ public class AdminConsole extends JFrame {
     private String toHopQuery = "";
 
     public AdminConsole(AdminConsoleController controller, ObjectProvider<CombinationForm> combinationFormProvider,
+            ObjectProvider<AdminPanel> adminPanelProvider,
             DiemCongConsoleController diemCongConsoleController,
             NguyenVongConsoleController nguyenVongConsoleController,
             UserManagementController userController,
             CandidateManagementController candidateController,
             MajorManagementController majorController,
-            ToHopMonThiManagementController toHopController) {
+            ToHopMonThiManagementController toHopController,
+            ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider) {
         this.controller = controller;
         this.combinationFormProvider = combinationFormProvider;
+        this.adminPanelProvider = adminPanelProvider;
         this.diemCongConsoleController = diemCongConsoleController;
         this.nguyenVongConsoleController = nguyenVongConsoleController;
         this.userController = userController;
-        this.tableModel = new AdminConsoleTableModel();
         this.candidateController = candidateController;
         this.majorController = majorController;
         this.toHopController = toHopController;
+        this.scoreManagementConsoleProvider = scoreManagementConsoleProvider;
 
         setTitle("Bảng Quản Trị Tuyển Sinh");
-        setSize(1280, 980);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setLocationRelativeTo(null);
-        setVisible(false); // Not visible by default
-
-        setTitle("Bảng Quản Trị Tuyển Sinh");
-        setSize(1400, 750);
+        setSize(1200, 600);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
         userSearchField = new JTextField(20);
         candidateSearchField = new JTextField(20);
         candidatePageLabel = new JLabel("Page: 1");
-
-        JPanel actionPanel = new JPanel(new GridLayout(1, 5, 8, 8));
-        JButton saveButton = new JButton("Lưu");
-        JButton refreshButton = new JButton("Làm mới");
-        JButton combinationsButton = new JButton("Tổ hợp");
-        JButton diemCongButton = new JButton("Điểm Cộng");
-        JButton nguyenVongButton = new JButton("Nguyện Vọng");
-
-        saveButton.addActionListener(e -> saveApplicant());
-        refreshButton.addActionListener(e -> refreshTable());
-        combinationsButton.addActionListener(e -> openCombinationManager());
-        diemCongButton.addActionListener(e -> openDiemCongForm());
-        nguyenVongButton.addActionListener(e -> openNguyenVongForm());
-		JButton importButton = new JButton("Import Applicants");
-		JButton scoreManagementButton = new JButton("Open Scores Form");
-
-		saveButton.addActionListener(e -> saveApplicant());
-		refreshButton.addActionListener(e -> refreshTable());
-		importButton.addActionListener(e -> importApplicants());
-		scoreManagementButton.addActionListener(e -> openScoreManagementForm());
-
-		actionPanel.add(saveButton);
-		actionPanel.add(refreshButton);
-		actionPanel.add(importButton);
-		actionPanel.add(scoreManagementButton);
-
-        actionPanel.add(saveButton);
-        actionPanel.add(refreshButton);
-        actionPanel.add(combinationsButton);
-        actionPanel.add(diemCongButton);
-        actionPanel.add(nguyenVongButton);
-        this.scoreManagementConsoleProvider = null;
 
         majorSearchField = new JTextField(20);
         majorPageLabel = new JLabel("Page: 1");
@@ -212,24 +180,107 @@ public class AdminConsole extends JFrame {
         };
         toHopTable = new JTable(toHopTableModel);
 
-        setLayout(new BorderLayout(10, 10));
-        add(buildTabPane(), BorderLayout.CENTER);
-
-        loadUsers();
-        loadCandidates();
-        loadMajors();
-        loadToHop();
+        setLayout(new BorderLayout(12, 12));
+        add(buildLauncherPanel(), BorderLayout.CENTER);
     }
 
-    private void saveApplicant() {
-        try {
-            controller.registerApplicant(
-                    fullNameField.getText().trim(),
-                    emailField.getText().trim(),
-                    programField.getText().trim());
-        } catch (Exception e) {
-            e.printStackTrace();
+    private JPanel buildLauncherPanel() {
+        List<JButton> buttons = Arrays.asList(
+                createLauncherButton("Quản lý người dùng", this::openUserManagementForm),
+                createLauncherButton("Quản lý thí sinh", this::openCandidateManagementForm),
+                createLauncherButton("Quản lý ngành", this::openMajorManagementForm),
+                createLauncherButton("Quản lý tổ hợp môn", this::openToHopManagementForm),
+                createLauncherButton("Bảng quy đổi", this::openBangQuyDoiForm),
+                createLauncherButton("Tổ hợp", this::openCombinationManager),
+                createLauncherButton("Điểm cộng", this::openDiemCongForm),
+                createLauncherButton("Nguyện vọng", this::openNguyenVongForm),
+                createLauncherButton("Quản lý điểm", this::openScoreManagementForm),
+                createLauncherButton("Đăng ký thí sinh", this::openApplicantForm));
+
+        int columns = (int) Math.ceil(buttons.size() / 2.0);
+        JPanel panel = new JPanel(new GridLayout(2, columns, 12, 12));
+        for (JButton button : buttons) {
+            panel.add(button);
         }
+        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        return panel;
+    }
+
+    private JButton createLauncherButton(String text, Runnable action) {
+        JButton button = new JButton(text);
+        button.addActionListener(e -> action.run());
+        return button;
+    }
+
+    private void openUserManagementForm() {
+        if (userManagementFrame == null) {
+            userManagementFrame = new JFrame("Quản lý người dùng");
+            userManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            userManagementFrame.add(buildUserPanel());
+            userManagementFrame.setSize(1200, 720);
+            userManagementFrame.setLocationRelativeTo(this);
+        }
+        loadUsers();
+        userManagementFrame.setVisible(true);
+        userManagementFrame.toFront();
+    }
+
+    private void openCandidateManagementForm() {
+        if (candidateManagementFrame == null) {
+            candidateManagementFrame = new JFrame("Quản lý thí sinh");
+            candidateManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            candidateManagementFrame.add(buildCandidatePanel());
+            candidateManagementFrame.setSize(1280, 760);
+            candidateManagementFrame.setLocationRelativeTo(this);
+        }
+        loadCandidates();
+        candidateManagementFrame.setVisible(true);
+        candidateManagementFrame.toFront();
+    }
+
+    private void openMajorManagementForm() {
+        if (majorManagementFrame == null) {
+            majorManagementFrame = new JFrame("Quản lý ngành tuyển sinh");
+            majorManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            majorManagementFrame.add(buildMajorPanel());
+            majorManagementFrame.setSize(1280, 760);
+            majorManagementFrame.setLocationRelativeTo(this);
+        }
+        loadMajors();
+        majorManagementFrame.setVisible(true);
+        majorManagementFrame.toFront();
+    }
+
+    private void openToHopManagementForm() {
+        if (toHopManagementFrame == null) {
+            toHopManagementFrame = new JFrame("Quản lý tổ hợp môn");
+            toHopManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            toHopManagementFrame.add(buildToHopPanel());
+            toHopManagementFrame.setSize(1280, 720);
+            toHopManagementFrame.setLocationRelativeTo(this);
+        }
+        loadToHop();
+        toHopManagementFrame.setVisible(true);
+        toHopManagementFrame.toFront();
+    }
+
+    private void openBangQuyDoiForm() {
+        AdminPanel panel = adminPanelProvider.getObject();
+        panel.setLocationRelativeTo(this);
+        panel.setVisible(true);
+        panel.toFront();
+    }
+
+    private void openApplicantForm() {
+        if (applicantFrame == null) {
+            applicantFrame = new JFrame("Đăng ký thí sinh");
+            applicantFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+            applicantFrame.add(new ApplicantPanel(controller));
+            applicantFrame.setSize(900, 600);
+            applicantFrame.setLocationRelativeTo(this);
+        }
+        applicantFrame.setVisible(true);
+        applicantFrame.toFront();
     }
 
     private void openCombinationManager() {
@@ -835,46 +886,16 @@ public class AdminConsole extends JFrame {
         }
     }
 
-	private void refreshTable() {
-		tableModel.setRows(controller.loadApplicants());
-	}
-
-	private void openScoreManagementForm() {
-		try {
-			ScoreManagementConsole scoreConsole = scoreManagementConsoleProvider.getObject();
-			scoreConsole.setVisible(true);
-			setVisible(false);
-		} catch (Exception ex) {
-		    logger.error("Open score form failed", ex);
-		    JOptionPane.showMessageDialog(this,
-			    "Không mở được form quản lý điểm: " + ex.getMessage() + "\n(Chi tiết xem logs)",
-			    "Open Form Failed",
-			    JOptionPane.ERROR_MESSAGE);
-		}
-	}
-
-	private void importApplicants() {
-		JFileChooser fileChooser = new JFileChooser();
-		fileChooser.setFileFilter(new FileNameExtensionFilter("Excel Files", "xlsx"));
-		fileChooser.setCurrentDirectory(new File(System.getProperty("user.home")));
-
-		int result = fileChooser.showOpenDialog(this);
-		if (result == JFileChooser.APPROVE_OPTION) {
-			File selectedFile = fileChooser.getSelectedFile();
-			try {
-				var importResult = controller.importApplicants(selectedFile);
-				JOptionPane.showMessageDialog(this,
-						importResult.toString(),
-						"Import Successful",
-						JOptionPane.INFORMATION_MESSAGE);
-				refreshTable();
-			} catch (Exception ex) {
-				logger.error("Import applicants failed", ex);
-				JOptionPane.showMessageDialog(this,
-						"Import failed: " + ex.getMessage() + "\n(Chi tiết xem logs)",
-						"Import Failed",
-						JOptionPane.ERROR_MESSAGE);
-			}
-		}
-	}
+    private void openScoreManagementForm() {
+        try {
+            ScoreManagementConsole scoreConsole = scoreManagementConsoleProvider.getObject();
+            scoreConsole.setVisible(true);
+        } catch (Exception ex) {
+            logger.error("Open score form failed", ex);
+            JOptionPane.showMessageDialog(this,
+                    "Không mở được form quản lý điểm: " + ex.getMessage() + "\n(Chi tiết xem logs)",
+                    "Open Form Failed",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
 }
