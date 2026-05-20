@@ -2,10 +2,11 @@ package com.example.admissions_management.application.service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.Normalizer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -17,6 +18,7 @@ import com.example.admissions_management.application.service.candidate.Combinati
 import com.example.admissions_management.application.service.candidate.CombinationSpec;
 import com.example.admissions_management.application.service.candidate.DgnlAspirationResult;
 import com.example.admissions_management.application.service.candidate.DgnlCalculationResult;
+import com.example.admissions_management.application.service.candidate.MajorConfig;
 import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
@@ -42,33 +44,40 @@ public class CandidatePortalService {
     private final SpringDataXtNguyenVongXetTuyenRepository aspirationRepository;
     private final MajorRepository majorRepository;
     private final BangQuyDoiService bangQuyDoiService;
-
-    // Các bản đồ hỗ trợ tính toán nhanh
+    private final Map<String, MajorConfig> majorByCode;
     private final Map<String, BigDecimal> priorityObjectPoint;
     private final Map<String, BigDecimal> priorityRegionPoint;
     private final Map<String, String> subjectLabelByCode;
 
     public CandidatePortalService(CandidateRepository candidateRepository,
-                                  SpringDataXtNguyenVongXetTuyenRepository aspirationRepository,
-                                  MajorRepository majorRepository,
-                                  BangQuyDoiService bangQuyDoiService) {
+            SpringDataXtNguyenVongXetTuyenRepository aspirationRepository,
+            MajorRepository majorRepository,
+            BangQuyDoiService bangQuyDoiService) {
         this.candidateRepository = candidateRepository;
         this.aspirationRepository = aspirationRepository;
         this.majorRepository = majorRepository;
         this.bangQuyDoiService = bangQuyDoiService;
-        
+        this.majorByCode = createMajors();
         this.priorityObjectPoint = createPriorityObjectPointMap();
         this.priorityRegionPoint = createPriorityRegionPointMap();
         this.subjectLabelByCode = createSubjectLabelMap();
     }
 
-    // --- CÁC PHƯƠNG THỨC LẤY OPTION CHO GIAO DIỆN ---
-
     public List<OptionItem> getMajorOptions() {
         List<OptionItem> options = new ArrayList<>();
-        List<XtNganhEntity> majors = majorRepository.findAll();
-        for (XtNganhEntity m : majors) {
-            options.add(new OptionItem(m.getMaNganh(), m.getMaNganh() + " - " + m.getTenNganh()));
+
+        majorRepository.findAll().stream()
+                .sorted((left, right) -> left.getMaNganh().compareToIgnoreCase(right.getMaNganh()))
+                .forEach(major -> options.add(new OptionItem(
+                        major.getMaNganh(),
+                        major.getMaNganh() + " - " + major.getTenNganh())));
+
+        if (!options.isEmpty()) {
+            return options;
+        }
+
+        for (MajorConfig major : majorByCode.values()) {
+            options.add(new OptionItem(major.code(), major.code() + " - " + major.name()));
         }
         return options;
     }
@@ -103,8 +112,6 @@ public class CandidatePortalService {
                 new OptionItem("GDCD", "GDCD"));
     }
 
-    // --- CHỨC NĂNG TRA CỨU KẾT QUẢ (DÙNG DATABASE) ---
-
     public CandidateLookupResult lookupResult(CandidateLookupForm form) {
         CandidateLookupResult result = new CandidateLookupResult();
         result.setSearched(true);
@@ -114,14 +121,16 @@ public class CandidatePortalService {
 
         if (username.isBlank() || inputBirthDate.isBlank()) {
             result.setFound(false);
-            result.setMessage("Vui lòng nhập đầy đủ mã thí sinh và ngày sinh.");
+            result.setAdmitted(false);
+            result.setMessage("Vui lòng nhập đầy đủ CCCD và ngày sinh.");
             return result;
         }
 
         Optional<XtThiSinhXetTuyen25Entity> candidateOptional = candidateRepository.findByCccd(username);
         if (candidateOptional.isEmpty()) {
             result.setFound(false);
-            result.setMessage("Không tìm thấy thí sinh với mã đã nhập.");
+            result.setAdmitted(false);
+            result.setMessage("Không tìm thấy thí sinh với CCCD đã nhập.");
             return result;
         }
 
@@ -129,185 +138,194 @@ public class CandidatePortalService {
         String storedBirthDate = normalizeBirthDate(candidate.getNgaySinh());
         if (!inputBirthDate.equals(storedBirthDate)) {
             result.setFound(false);
+            result.setAdmitted(false);
             result.setMessage("Ngày sinh không khớp với thông tin thí sinh.");
             return result;
         }
 
         result.setFound(true);
         result.setCccd(candidate.getCccd());
-        result.setFullName(candidate.getHo() + " " + candidate.getTen());
+        result.setFullName(buildFullName(candidate));
 
-        List<XtNguyenVongXetTuyenEntity> aspirations = aspirationRepository.findByNnCccdOrderByNvThuTuAsc(username);
+        List<XtNguyenVongXetTuyenEntity> aspirations =
+                aspirationRepository.findByNnCccdOrderByNvThuTuAsc(username);
+
         if (aspirations == null || aspirations.isEmpty()) {
             result.setAspirationResults(new ArrayList<>());
             result.setAdmitted(false);
-            result.setMessage("Thí sinh chưa có nguyện vọng xét tuyển.");
+            result.setMessage("Thí sinh chưa có dữ liệu nguyện vọng xét tuyển.");
             return result;
         }
 
         boolean admittedBefore = false;
         List<CandidateAspirationResult> aspirationResults = new ArrayList<>();
 
-        for (XtNguyenVongXetTuyenEntity asp : aspirations) {
-            CandidateAspirationResult ar = new CandidateAspirationResult();
-            ar.setMajorCode(asp.getNvMaNganh());
-            ar.setMajorName(majorRepository.findByMaNganh(asp.getNvMaNganh())
-                    .map(XtNganhEntity::getTenNganh)
-                    .orElse(asp.getNvMaNganh()));
-            ar.setScore(round(asp.getDiemXetTuyen()));
-            ar.setCombination(asp.getTtThm());
-            ar.setMethod(asp.getTtPhuongThuc());
-            ar.setNvThuTu(asp.getNvThuTu());
+        for (XtNguyenVongXetTuyenEntity aspiration : aspirations) {
+            CandidateAspirationResult row = new CandidateAspirationResult();
+            row.setMajorCode(aspiration.getNvMaNganh());
+            row.setMajorName(majorRepository.findByMaNganh(aspiration.getNvMaNganh())
+                    .map(major -> major.getTenNganh())
+                    .orElse(aspiration.getNvMaNganh()));
+            row.setScore(round(aspiration.getDiemXetTuyen()));
+            row.setCombination(normalizeDisplayValue(aspiration.getTtThm(), "Chưa cập nhật"));
+            row.setMethod(normalizeDisplayValue(aspiration.getTtPhuongThuc(), "Chưa cập nhật"));
+            row.setNvThuTu(aspiration.getNvThuTu());
 
             if (admittedBefore) {
-                ar.setAdmitted(false);
-                ar.setResultNote("Bỏ (Đã đậu NV trước)");
-            } else if (isAdmittedStatus(asp.getNvKetQua())) {
-                ar.setAdmitted(true);
-                ar.setResultNote("Trúng tuyển");
+                row.setAdmitted(false);
+                row.setResultNote("Không xét do đã trúng tuyển nguyện vọng trước");
+            } else if (isAdmittedAspiration(aspiration)) {
+                row.setAdmitted(true);
+                row.setResultNote("Trúng tuyển");
                 admittedBefore = true;
+                result.setMajorName(row.getMajorName());
+                result.setScore(row.getScore());
+                result.setCombination(row.getCombination());
+                result.setMethod(row.getMethod());
             } else {
-                ar.setAdmitted(false);
-                ar.setResultNote("Không trúng tuyển");
+                row.setAdmitted(false);
+                row.setResultNote("Không trúng tuyển");
             }
-            aspirationResults.add(ar);
+
+            aspirationResults.add(row);
         }
 
         result.setAspirationResults(aspirationResults);
         result.setAdmitted(admittedBefore);
-        result.setMessage(admittedBefore ? "Đã tìm thấy kết quả: Trúng tuyển" : "Đã tìm thấy kết quả: Chưa trúng tuyển");
+        result.setMessage(admittedBefore
+                ? "Đã tìm thấy kết quả xét tuyển của thí sinh."
+                : "Đã tìm thấy dữ liệu thí sinh, hiện chưa có nguyện vọng trúng tuyển.");
 
         return result;
     }
-
-    // --- CHỨC NĂNG TÍNH TOÁN DGNL (LOGIC CŨ + DB) ---
 
     public DgnlCalculationResult calculateDgnl(DgnlCalculatorForm form) {
         DgnlCalculationResult result = new DgnlCalculationResult();
         result.setCalculated(true);
 
-        Optional<XtNganhEntity> nganhOpt = majorRepository.findByMaNganh(form.getMajorCode());
-        if (nganhOpt.isEmpty()) {
-            result.setMessage("Ngành không tồn tại.");
+        MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
+        if (major == null) {
+            result.setMessage("Vui long chon nganh xet tuyen.");
             return result;
         }
-        XtNganhEntity nganh = nganhOpt.get();
-
         BigDecimal originalScore = clamp(nonNull(form.getDgnlScore()), BigDecimal.ZERO, DGNL_MAX_SCORE);
-        String toHop = nganh.getToHopGoc();
-        
-        // Logic chuẩn hóa tổ hợp cho DGNL
-        if ("A00".equals(toHop)) toHop = "A01";
-        if ("C00".equals(toHop)) toHop = "C01";
-
+        String majorCode = form.getMajorCode();
+        Optional<XtNganhEntity> nganh = majorRepository.findByMaNganh(majorCode);
+        String toHop =  nganh.get().getToHopGoc();
+        if(toHop == null || toHop.isBlank()) {
+            result.setMessage("Khong tim thay to hop goc cho nganh da chon.");
+            return result;
+        }
+        if(toHop.equals("A00"))
+        {
+            toHop = "A01";
+        }
+        if(toHop.equals("C00"))
+        {
+            toHop = "C01";
+        }
         BigDecimal converted30;
+        
         try {
             Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", toHop, originalScore);
-            converted30 = new BigDecimal(quyDoiMap.get("diemQuyDoi"));
+            String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
+            converted30 = new BigDecimal(diemQuyDoiStr);
         } catch (Exception e) {
+
+            // Xử lý lỗi an toàn nếu có vấn đề trong quá trình quy đổi điểm
+            System.err.println("Lỗi trong quá trình quy đổi điểm DGNL: " + e.getMessage());
             converted30 = BigDecimal.ZERO;
         }
-
+        
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
         BigDecimal totalScore = round(converted30.add(priorityScore).add(bonusScore));
+        if(totalScore.compareTo(new BigDecimal("30.00")) >= 0){
+            totalScore = new BigDecimal("30.00");
+        }
 
-        DgnlAspirationResult ar = new DgnlAspirationResult();
-        ar.setAspirationName("NV Dự tính");
-        ar.setMajorName(nganh.getTenNganh());
-        ar.setOriginalCombination(toHop);
-        ar.setConvertedScore(converted30);
-        ar.setPriorityScore(priorityScore);
-        ar.setBonusScore(bonusScore);
-        ar.setTotalScore(totalScore);
-        ar.setThresholdScore(nganh.getDiemSan());
-        ar.setAdmissionScore(nganh.getDiemTrungTuyen());
-        ar.setPassThreshold(totalScore.compareTo(nonNull(nganh.getDiemSan())) >= 0);
-        ar.setPassAdmission(nganh.getDiemTrungTuyen() != null && totalScore.compareTo(nganh.getDiemTrungTuyen()) >= 0);
+        DgnlAspirationResult aspirationResult = new DgnlAspirationResult();
+        aspirationResult.setAspirationName("NV1");
+        aspirationResult.setMajorName(major.name());
+        aspirationResult.setOriginalCombination(major.originalCombination());
+        aspirationResult.setConvertedScore(converted30);
+        aspirationResult.setPriorityScore(priorityScore);
+        aspirationResult.setBonusScore(bonusScore);
+        aspirationResult.setTotalScore(totalScore);
+        aspirationResult.setThresholdScore(major.dgnlThreshold());
+        aspirationResult.setAdmissionScore(major.dgnlAdmission());
+        aspirationResult.setPassThreshold(totalScore.compareTo(major.dgnlThreshold()) >= 0);
+        aspirationResult
+                .setPassAdmission(major.dgnlAdmission() != null && totalScore.compareTo(major.dgnlAdmission()) >= 0);
 
-        result.setMajorName(nganh.getTenNganh());
-        result.setRows(List.of(ar));
-        result.setMessage("Đã tính điểm DGNL dự tính.");
+        result.setMajorName(major.name());
+        result.setRows(List.of(aspirationResult));
+        result.setMessage("Đã hoàn tất tính điểm DGNL và đối chiếu với ngưỡng xét tuyển.");
         return result;
     }
-
-    // --- CHỨC NĂNG TÍNH TOÁN VSAT/THPT ---
 
     public VsatThptCalculationResult calculateVsatThpt(VsatThptCalculatorForm form) {
         VsatThptCalculationResult result = new VsatThptCalculationResult();
         result.setCalculated(true);
 
-        Optional<XtNganhEntity> nganhOpt = majorRepository.findByMaNganh(form.getMajorCode());
-        if (nganhOpt.isEmpty()) {
-            result.setMessage("Ngành không tồn tại.");
+        MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
+        if (major == null) {
+            result.setMessage("Vui lòng chọn ngành xét tuyển.");
             return result;
         }
-        XtNganhEntity nganh = nganhOpt.get();
 
-        boolean isVsat = "VSAT".equalsIgnoreCase(form.getMethodType());
+        boolean isVsat = "VSAT".equalsIgnoreCase(normalize(form.getMethodType()));
         Map<String, BigDecimal> subjectScores = normalizeSubjectScores(form, isVsat);
 
-        // Ưu tiên điểm quy đổi tiếng Anh nếu cao hơn điểm thi
-        BigDecimal englishConverted = round(clamp(nonNull(form.getEnglishConvertedScore()), BigDecimal.ZERO, THPT_MAX_SCORE));
+        BigDecimal englishConverted = round(
+                clamp(nonNull(form.getEnglishConvertedScore()), BigDecimal.ZERO, THPT_MAX_SCORE));
         if (englishConverted.compareTo(subjectScores.get("TIENG_ANH")) > 0) {
             subjectScores.put("TIENG_ANH", englishConverted);
         }
 
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
+        String bonusSubjectCode = normalize(form.getBonusSubjectCode());
 
-        // Giả lập danh sách tổ hợp dựa trên tổ hợp gốc của ngành (Vì DB hiện tại chỉ lưu 1 tổ hợp gốc)
-        List<CombinationSpec> specs = getSpecsFromCode(nganh.getToHopGoc());
         List<CombinationScoreResult> combinationResults = new ArrayList<>();
-
-        for (CombinationSpec combination : specs) {
+        for (CombinationSpec combination : major.combinations()) {
             BigDecimal total = subjectScores.get(combination.subjectCode1())
                     .add(subjectScores.get(combination.subjectCode2()))
                     .add(subjectScores.get(combination.subjectCode3()))
                     .add(priorityScore);
 
-            if (!"NONE".equalsIgnoreCase(form.getBonusSubjectCode()) && combination.containsSubject(form.getBonusSubjectCode())) {
+            if (!"NONE".equalsIgnoreCase(bonusSubjectCode) && combination.containsSubject(bonusSubjectCode)) {
                 total = total.add(bonusScore);
             }
 
-            CombinationScoreResult cr = new CombinationScoreResult();
-            cr.setCombinationCode(combination.code());
-            cr.setSubjectFormula(subjectLabelByCode.get(combination.subjectCode1()) + " + " + subjectLabelByCode.get(combination.subjectCode2()) + " + " + subjectLabelByCode.get(combination.subjectCode3()));
-            cr.setTotalScore(round(total));
-            cr.setThresholdScore(nganh.getDiemSan());
-            cr.setAdmissionScore(nganh.getDiemTrungTuyen());
-            cr.setPassThreshold(total.compareTo(nonNull(nganh.getDiemSan())) >= 0);
-            cr.setPassAdmission(nganh.getDiemTrungTuyen() != null && total.compareTo(nganh.getDiemTrungTuyen()) >= 0);
-            combinationResults.add(cr);
+            total = round(total);
+
+            CombinationScoreResult scoreResult = new CombinationScoreResult();
+            scoreResult.setCombinationCode(combination.code());
+            scoreResult.setSubjectFormula(subjectLabelByCode.get(combination.subjectCode1())
+                    + " + " + subjectLabelByCode.get(combination.subjectCode2())
+                    + " + " + subjectLabelByCode.get(combination.subjectCode3()));
+            scoreResult.setTotalScore(total);
+            scoreResult.setThresholdScore(major.regularThreshold());
+            scoreResult.setAdmissionScore(major.regularAdmission());
+            scoreResult.setPassThreshold(total.compareTo(major.regularThreshold()) >= 0);
+            scoreResult.setPassAdmission(
+                    major.regularAdmission() != null && total.compareTo(major.regularAdmission()) >= 0);
+            combinationResults.add(scoreResult);
         }
 
         result.setMethodType(isVsat ? "VSAT" : "THPT");
-        result.setMajorName(nganh.getTenNganh());
+        result.setMethodLabel(isVsat ? "VSAT (quy đổi từ thang 150 về thang 10)" : "THPT (sử dụng thang 10)");
+        result.setScaleNote(isVsat
+                ? "Điểm thi VSAT được quy đổi về thang 10 trước khi tính điểm xét tuyển."
+                : "Điểm thi THPT được sử dụng trực tiếp theo thang 10.");
+        result.setMajorName(major.name());
         result.setPriorityScore(priorityScore);
         result.setBonusScore(bonusScore);
+        result.setEnglishAppliedScore(subjectScores.get("TIENG_ANH"));
         result.setCombinationResults(combinationResults);
-        result.setMessage("Đã tính điểm xét tuyển theo tổ hợp môn.");
+        result.setMessage("Đã hoàn tất tính điểm xét tuyển cho các tổ hợp của ngành đã chọn.");
         return result;
-    }
-
-    // --- HELPER METHODS ---
-
-    private boolean isAdmittedStatus(String status) {
-        if (status == null) return false;
-        String val = status.toLowerCase().trim();
-        return val.contains("trung tuyen") || val.contains("dat") || val.equals("1") || val.equals("true");
-    }
-
-    private String normalizeCandidateCode(String value) {
-        return value == null ? "" : value.trim().toUpperCase();
-    }
-
-    private String normalizeBirthDate(String value) {
-        if (value == null) return "";
-        String digits = value.trim().replaceAll("[^0-9]", "");
-        if (digits.length() != 8) return digits;
-        // ddMMyyyy
-        return digits.substring(0, 2) + digits.substring(2, 4) + digits.substring(4, 8);
     }
 
     private Map<String, BigDecimal> normalizeSubjectScores(VsatThptCalculatorForm form, boolean isVsat) {
@@ -325,17 +343,88 @@ public class CandidatePortalService {
     }
 
     private BigDecimal normalizeSubject(BigDecimal score, boolean isVsat) {
-        BigDecimal val = nonNull(score);
+        BigDecimal bounded = clamp(nonNull(score), BigDecimal.ZERO, isVsat ? VSAT_MAX_SCORE : THPT_MAX_SCORE);
         if (isVsat) {
-            return val.divide(VSAT_TO_10_DIVISOR, 6, RoundingMode.HALF_UP);
+            return round(bounded.divide(VSAT_TO_10_DIVISOR, 6, RoundingMode.HALF_UP));
         }
-        return val;
+        return round(bounded);
     }
 
-    private BigDecimal calculatePriorityScore(String obj, String reg) {
-        BigDecimal p1 = priorityObjectPoint.getOrDefault(obj, BigDecimal.ZERO);
-        BigDecimal p2 = priorityRegionPoint.getOrDefault(reg, BigDecimal.ZERO);
-        return p1.add(p2);
+    private BigDecimal calculatePriorityScore(String objectCode, String regionCode) {
+        BigDecimal objectPoint = priorityObjectPoint.getOrDefault(normalize(objectCode), BigDecimal.ZERO);
+        BigDecimal regionPoint = priorityRegionPoint.getOrDefault(normalize(regionCode), BigDecimal.ZERO);
+        return round(objectPoint.add(regionPoint));
+    }
+
+    private boolean isAdmittedAspiration(XtNguyenVongXetTuyenEntity aspiration) {
+        if (aspiration == null || aspiration.getNvKetQua() == null) {
+            return false;
+        }
+
+        String value = normalizeAscii(aspiration.getNvKetQua());
+        return value.contains("trung tuyen")
+                || value.contains("dat")
+                || value.equals("1")
+                || value.equals("true");
+    }
+
+    private String buildFullName(XtThiSinhXetTuyen25Entity candidate) {
+        String firstName = candidate.getHo() == null ? "" : candidate.getHo().trim();
+        String lastName = candidate.getTen() == null ? "" : candidate.getTen().trim();
+        return (firstName + " " + lastName).trim();
+    }
+
+    private String normalizeDisplayValue(String value, String fallback) {
+        String normalized = normalize(value);
+        return normalized.isBlank() ? fallback : normalized;
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeCandidateCode(String value) {
+        return normalize(value).toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeBirthDate(String value) {
+        String digits = normalize(value).replaceAll("[^0-9]", "");
+        if (digits.length() == 8) {
+            String firstBlock = digits.substring(0, 4);
+            if (Integer.parseInt(firstBlock) > 1900) {
+                String yyyy = digits.substring(0, 4);
+                String mm = digits.substring(4, 6);
+                String dd = digits.substring(6, 8);
+                return dd + mm + yyyy;
+            }
+        }
+        return digits;
+    }
+
+    private String normalizeAscii(String value) {
+        String normalized = Normalizer.normalize(normalize(value), Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", "");
+        normalized = normalized.replace('đ', 'd').replace('Đ', 'D');
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private BigDecimal nonNull(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal round(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                : value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal clamp(BigDecimal value, BigDecimal min, BigDecimal max) {
+        if (value.compareTo(min) < 0) {
+            return min;
+        }
+        if (value.compareTo(max) > 0) {
+            return max;
+        }
+        return value;
     }
 
     private List<CombinationSpec> getSpecsFromCode(String code) {
@@ -349,33 +438,65 @@ public class CandidatePortalService {
         };
     }
 
+    private Map<String, MajorConfig> createMajors() {
+        Map<String, MajorConfig> map = new LinkedHashMap<>();
+        
+        // 1. Lấy toàn bộ danh sách ngành từ Repository
+        List<XtNganhEntity> entities = majorRepository.findAll();
+
+        for (XtNganhEntity entity : entities) {
+            // 2. Chuyển đổi mã tổ hợp gốc sang danh sách CombinationSpec
+            // Vì Entity chỉ có 1 cột toHopGoc, ta sẽ tạo danh sách chứa tổ hợp đó
+            List<CombinationSpec> combinations = getSpecsFromCode(entity.getToHopGoc());
+
+            // 3. Tạo record MajorConfig từ dữ liệu Entity
+            MajorConfig config = new MajorConfig(
+                entity.getMaNganh(),        // code
+                entity.getTenNganh(),       // name
+                entity.getToHopGoc(),       // originalCombination
+                entity.getDiemSan(),        // dgnlThreshold (Ánh xạ từ n_diemsan)
+                entity.getDiemTrungTuyen(), // dgnlAdmission (Ánh xạ từ n_diemtrungtuyen)
+                entity.getDiemSan(),        // regularThreshold
+                entity.getDiemTrungTuyen(), // regularAdmission
+                combinations                // List<CombinationSpec>
+            );
+
+            map.put(entity.getMaNganh(), config);
+        }
+        return map;
+    }
+
+    
+
     private Map<String, BigDecimal> createPriorityObjectPointMap() {
-        Map<String, BigDecimal> m = new HashMap<>();
-        m.put("NONE", BigDecimal.ZERO); m.put("UT1", new BigDecimal("2.0"));
-        m.put("UT2", new BigDecimal("1.0")); m.put("UT3", new BigDecimal("0.5"));
-        return m;
+        Map<String, BigDecimal> map = new LinkedHashMap<>();
+        map.put("NONE", BigDecimal.ZERO);
+        map.put("UT1", new BigDecimal("2.00"));
+        map.put("UT2", new BigDecimal("1.00"));
+        map.put("UT3", new BigDecimal("0.50"));
+        return map;
     }
 
     private Map<String, BigDecimal> createPriorityRegionPointMap() {
-        Map<String, BigDecimal> m = new HashMap<>();
-        m.put("KV3", BigDecimal.ZERO); m.put("KV2", new BigDecimal("0.25"));
-        m.put("KV2NT", new BigDecimal("0.5")); m.put("KV1", new BigDecimal("0.75"));
-        return m;
+        Map<String, BigDecimal> map = new LinkedHashMap<>();
+        map.put("KV3", BigDecimal.ZERO);
+        map.put("KV2", new BigDecimal("0.25"));
+        map.put("KV2NT", new BigDecimal("0.50"));
+        map.put("KV1", new BigDecimal("0.75"));
+        return map;
     }
 
     private Map<String, String> createSubjectLabelMap() {
-        Map<String, String> m = new HashMap<>();
-        m.put("TOAN", "Toán"); m.put("NGU_VAN", "Văn"); m.put("TIENG_ANH", "Anh");
-        m.put("VAT_LY", "Lý"); m.put("HOA_HOC", "Hóa"); m.put("SINH_HOC", "Sinh");
-        m.put("LICH_SU", "Sử"); m.put("DIA_LY", "Địa"); m.put("GDCD", "GDCD");
-        return m;
-    }
-
-    private BigDecimal nonNull(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
-    private BigDecimal round(BigDecimal v) { return v.setScale(2, RoundingMode.HALF_UP); }
-    private BigDecimal clamp(BigDecimal v, BigDecimal min, BigDecimal max) {
-        if (v.compareTo(min) < 0) return min;
-        if (v.compareTo(max) > 0) return max;
-        return v;
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("TOAN", "Toán");
+        map.put("NGU_VAN", "Ngữ văn");
+        map.put("TIENG_ANH", "Tiếng Anh");
+        map.put("VAT_LY", "Vật lý");
+        map.put("HOA_HOC", "Hóa học");
+        map.put("SINH_HOC", "Sinh học");
+        map.put("LICH_SU", "Lịch sử");
+        map.put("DIA_LY", "Địa lý");
+        map.put("GDCD", "GDCD");
+        return map;
     }
 }

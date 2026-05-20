@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
@@ -18,8 +18,8 @@
         <aside class="admin-sidebar">
             <div class="brand-block">
                 <p class="brand-kicker">Admissions Console</p>
-                <h1>Phần 7</h1>
-                <p class="brand-note">Quản lý điểm cộng xét tuyển được nhập từ file Excel.</p>
+                <h1>Phần 7 - Điểm cộng xét tuyển</h1>
+                <p class="brand-note">Quản lý dữ liệu cộng điểm, nhập nhanh từ Excel và theo dõi bản ghi theo từng đối tượng tuyển sinh.</p>
             </div>
 
             <nav class="menu-list">
@@ -29,21 +29,21 @@
             </nav>
 
             <div class="status-card">
-                <p class="status-title">Nguồn dữ liệu</p>
+                <p class="status-title">Nguồn nhập liệu</p>
                 <p class="status-value">Excel</p>
-                <p class="status-sub">Tải file Excel để nhập dữ liệu thật vào hệ thống.</p>
+                <p class="status-sub">Sử dụng tệp chuẩn để cập nhật nhanh dữ liệu điểm cộng và đồng bộ ngay vào hệ thống.</p>
             </div>
         </aside>
 
         <main class="admin-main">
             <header class="topbar">
                 <div>
-                    <p class="topbar-kicker">Quản trị xét tuyển</p>
-                    <h2>Quản lý điểm cộng xét tuyển</h2>
+                    <p class="topbar-kicker">Quản trị dữ liệu</p>
+                    <h2>Điểm cộng xét tuyển</h2>
                 </div>
                 <div class="topbar-actions">
                     <button type="button" class="btn ghost" id="downloadTemplate">Tải mẫu Excel</button>
-                    <button type="button" class="btn solid" id="reloadBtn">Làm mới</button>
+                    <button type="button" class="btn solid" id="reloadBtn">Làm mới dữ liệu</button>
                 </div>
             </header>
 
@@ -51,15 +51,15 @@
                 <div class="panel">
                     <div class="panel-head">
                         <div>
-                            <h3>Nhập điểm cộng</h3>
-                            <p class="muted">Chỉ nhận dữ liệu từ file Excel `.xls` hoặc `.xlsx`.</p>
+                            <h3>Nhập dữ liệu từ tệp</h3>
+                            <p class="muted">Hỗ trợ định dạng <code>.xls</code> và <code>.xlsx</code>. Hệ thống sẽ xử lý và cập nhật trực tiếp sau khi xác nhận.</p>
                         </div>
                         <span class="pill">Import</span>
                     </div>
 
                     <form id="uploadForm" class="form-grid">
                         <label class="field field-lg">
-                            <span>File Excel</span>
+                            <span>Tệp Excel</span>
                             <input class="file-input" type="file" id="excelFile" accept=".xlsx,.xls" required>
                         </label>
                         <div class="field">
@@ -73,21 +73,21 @@
                 <div class="panel">
                     <div class="panel-head">
                         <div>
-                            <h3>Tìm kiếm</h3>
-                            <p class="muted">Lọc nhanh theo CCCD hoặc mã ngành.</p>
+                            <h3>Bộ lọc danh sách</h3>
+                            <p class="muted">Tìm nhanh theo CCCD hoặc mã ngành để thu hẹp phạm vi hiển thị.</p>
                         </div>
-                        <span class="pill">Filter</span>
+                        <span class="pill">Bộ lọc</span>
                     </div>
                     <div class="form-grid">
                         <label class="field field-full">
                             <span>CCCD</span>
-                            <input type="text" id="searchCCCD" placeholder="Nhập CCCD">
+                            <input type="text" id="searchCCCD" placeholder="Nhập số CCCD">
                         </label>
                         <label class="field field-full">
                             <span>Mã ngành</span>
                             <input type="text" id="searchMaNganh" placeholder="Nhập mã ngành">
                         </label>
-                        <button class="btn solid field-full" type="button" id="searchBtn">Tìm kiếm</button>
+                        <button class="btn solid field-full" type="button" id="searchBtn">Áp dụng bộ lọc</button>
                     </div>
                 </div>
             </section>
@@ -101,6 +101,21 @@
                     <span class="pill">Phần 7</span>
                 </div>
 
+                <div class="table-toolbar">
+                    <div class="page-size-group">
+                        <label for="pageSize">Số dòng mỗi trang</label>
+                        <select id="pageSize">
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="pager" id="pagerTop">
+                        <button type="button" class="btn ghost small" id="prevPageTop">Trang trước</button>
+                        <span class="pager-status" id="pageStatusTop">Trang 1 / 1</span>
+                        <button type="button" class="btn ghost small" id="nextPageTop">Trang sau</button>
+                    </div>
+                </div>
+
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -109,7 +124,7 @@
                                 <th>Mã ngành</th>
                                 <th>Mã tổ hợp</th>
                                 <th>Phương thức</th>
-                                <th>Điểm CC</th>
+                                <th>Điểm cộng</th>
                                 <th>Điểm ưu tiên</th>
                                 <th>Tổng điểm</th>
                                 <th>Ghi chú</th>
@@ -123,23 +138,61 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="table-toolbar bottom">
+                    <div class="pager-meta" id="pagerMeta">Hiển thị 0 - 0 trên 0 bản ghi</div>
+                    <div class="pager" id="pagerBottom">
+                        <button type="button" class="btn ghost small" id="prevPageBottom">Trang trước</button>
+                        <span class="pager-status" id="pageStatusBottom">Trang 1 / 1</span>
+                        <button type="button" class="btn ghost small" id="nextPageBottom">Trang sau</button>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <script>
+        const basePath = '/admissions';
         const tbody = document.getElementById('dataTable');
         const tableSummary = document.getElementById('tableSummary');
         const uploadStatus = document.getElementById('uploadStatus');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const pageStatusTop = document.getElementById('pageStatusTop');
+        const pageStatusBottom = document.getElementById('pageStatusBottom');
+        const pagerMeta = document.getElementById('pagerMeta');
+        const prevButtons = [document.getElementById('prevPageTop'), document.getElementById('prevPageBottom')];
+        const nextButtons = [document.getElementById('nextPageTop'), document.getElementById('nextPageBottom')];
 
-        window.addEventListener('DOMContentLoaded', loadDiemCong);
-        document.getElementById('reloadBtn').addEventListener('click', loadDiemCong);
+        let currentRows = [];
+        let currentPage = 1;
+
+        window.addEventListener('DOMContentLoaded', () => loadDiemCong());
+        document.getElementById('reloadBtn').addEventListener('click', () => loadDiemCong());
+        document.getElementById('pageSize').addEventListener('change', () => {
+            currentPage = 1;
+            renderTable();
+        });
+
+        prevButtons.forEach(button => button.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage -= 1;
+                renderTable();
+            }
+        }));
+
+        nextButtons.forEach(button => button.addEventListener('click', () => {
+            const totalPages = getTotalPages();
+            if (currentPage < totalPages) {
+                currentPage += 1;
+                renderTable();
+            }
+        }));
 
         document.getElementById('uploadForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             const file = document.getElementById('excelFile').files[0];
             if (!file) {
-                showNotice(uploadStatus, 'Vui lòng chọn file Excel.', false);
+                showNotice(uploadStatus, 'Vui lòng chọn tệp Excel trước khi nhập dữ liệu.', false);
                 return;
             }
 
@@ -147,28 +200,28 @@
             formData.append('file', file);
 
             try {
-                const response = await fetch('/admin/diem-cong/api/import', {
+                const response = await fetch(basePath + '/admin/diem-cong/api/import', {
                     method: 'POST',
                     body: formData
                 });
                 const data = await response.json();
-                showNotice(uploadStatus, data.message || 'Đã xử lý file Excel.', data.success === true);
+                showNotice(uploadStatus, normalizeMessage(data.message, 'Đã tiếp nhận tệp Excel và xử lý dữ liệu.'), data.success === true);
                 if (data.success) {
                     event.target.reset();
                     loadDiemCong();
                 }
             } catch (error) {
-                showNotice(uploadStatus, 'Lỗi nhập dữ liệu: ' + error.message, false);
+                showNotice(uploadStatus, 'Không thể nhập dữ liệu từ tệp Excel: ' + error.message, false);
             }
         });
 
         document.getElementById('downloadTemplate').addEventListener('click', async () => {
             try {
-                const response = await fetch('/admin/diem-cong/api/download-template');
+                const response = await fetch(basePath + '/admin/diem-cong/api/download-template');
                 const blob = await response.blob();
                 downloadBlob(blob, 'diem-cong-template.xlsx');
             } catch (error) {
-                showNotice(uploadStatus, 'Lỗi tải mẫu Excel: ' + error.message, false);
+                showNotice(uploadStatus, 'Không thể tải tệp mẫu: ' + error.message, false);
             }
         });
 
@@ -176,37 +229,55 @@
             const cccd = document.getElementById('searchCCCD').value.trim();
             const maNganh = document.getElementById('searchMaNganh').value.trim();
 
-            let url = '/admin/diem-cong/api/all';
+            let url = basePath + '/admin/diem-cong/api/all';
             if (cccd) {
-                url = '/admin/diem-cong/api/by-cccd/' + encodeURIComponent(cccd);
+                url = basePath + '/admin/diem-cong/api/by-cccd/' + encodeURIComponent(cccd);
             } else if (maNganh) {
-                url = '/admin/diem-cong/api/by-nganh/' + encodeURIComponent(maNganh);
+                url = basePath + '/admin/diem-cong/api/by-nganh/' + encodeURIComponent(maNganh);
             }
 
             await loadDiemCong(url);
         });
 
-        async function loadDiemCong(url = '/admin/diem-cong/api/all') {
+        async function loadDiemCong(url = basePath + '/admin/diem-cong/api/all') {
             tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Đang tải dữ liệu...</td></tr>';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                displayTable(data);
+                currentRows = Array.isArray(data) ? data : [];
+                currentPage = 1;
+                renderTable();
             } catch (error) {
+                currentRows = [];
                 tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Không thể tải dữ liệu.</td></tr>';
-                tableSummary.textContent = 'Lỗi tải dữ liệu: ' + error.message;
+                tableSummary.textContent = 'Không thể kết nối để tải danh sách điểm cộng.';
+                pagerMeta.textContent = 'Hiển thị 0 - 0 trên 0 bản ghi';
+                updatePager(1, 1);
             }
         }
 
-        function displayTable(data) {
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Không có dữ liệu.</td></tr>';
-                tableSummary.textContent = 'Chưa có bản ghi phù hợp.';
+        function renderTable() {
+            if (!Array.isArray(currentRows) || currentRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="empty-row">Chưa có dữ liệu phù hợp.</td></tr>';
+                tableSummary.textContent = 'Không tìm thấy bản ghi phù hợp với điều kiện hiện tại.';
+                pagerMeta.textContent = 'Hiển thị 0 - 0 trên 0 bản ghi';
+                updatePager(1, 1);
                 return;
             }
 
-            tableSummary.textContent = 'Đang hiển thị ' + data.length + ' bản ghi.';
-            tbody.innerHTML = data.map(item => `
+            const pageSize = Number(pageSizeSelect.value) || 50;
+            const totalPages = getTotalPages();
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, currentRows.length);
+            const pageRows = currentRows.slice(startIndex, endIndex);
+
+            tableSummary.textContent = 'Danh sách hiện có ' + currentRows.length + ' bản ghi.';
+            pagerMeta.textContent = 'Hiển thị ' + (startIndex + 1) + ' - ' + endIndex + ' trên ' + currentRows.length + ' bản ghi';
+            updatePager(currentPage, totalPages);
+
+            tbody.innerHTML = pageRows.map(item => `
                 <tr>
                     <td>${escapeHtml(item.tsCccd)}</td>
                     <td>${escapeHtml(item.maNganh)}</td>
@@ -221,19 +292,39 @@
             `).join('');
         }
 
+        function getTotalPages() {
+            const pageSize = Number(pageSizeSelect.value) || 50;
+            return Math.max(1, Math.ceil(currentRows.length / pageSize));
+        }
+
+        function updatePager(page, totalPages) {
+            const label = 'Trang ' + page + ' / ' + totalPages;
+            pageStatusTop.textContent = label;
+            pageStatusBottom.textContent = label;
+            prevButtons.forEach(button => button.disabled = page <= 1);
+            nextButtons.forEach(button => button.disabled = page >= totalPages);
+        }
+
         async function deleteDiemCong(id) {
-            if (!Number.isFinite(id) || !confirm('Bạn chắc chắn muốn xóa bản ghi này?')) {
+            if (!Number.isFinite(id) || !confirm('Xác nhận xóa bản ghi điểm cộng này?')) {
                 return;
             }
 
             try {
-                const response = await fetch('/admin/diem-cong/api/' + id, { method: 'DELETE' });
+                const response = await fetch(basePath + '/admin/diem-cong/api/' + id, { method: 'DELETE' });
                 const data = await response.json();
-                showNotice(uploadStatus, data.message || 'Đã xóa bản ghi.', data.success === 'true');
+                showNotice(uploadStatus, normalizeMessage(data.message, 'Đã xóa bản ghi điểm cộng.'), data.success === true || data.success === 'true');
                 loadDiemCong();
             } catch (error) {
-                showNotice(uploadStatus, 'Lỗi xóa dữ liệu: ' + error.message, false);
+                showNotice(uploadStatus, 'Không thể xóa bản ghi: ' + error.message, false);
             }
+        }
+
+        function normalizeMessage(message, fallback) {
+            return String(message || fallback)
+                .replace(/^Import nhanh thành công:\s*/i, 'Nhập dữ liệu thành công: ')
+                .replace(/^Import thành công theo batch:\s*/i, 'Nhập dữ liệu thành công: ')
+                .replace(/^Xóa thành công$/i, 'Đã xóa bản ghi thành công.');
         }
 
         function showNotice(element, message, success) {
@@ -258,7 +349,7 @@
         }
 
         function escapeHtml(value) {
-            return String(value ?? '').replace(/[&<>"']/g, char => ({
+            return String(value ?? '').replace(/[&<>\"']/g, char => ({
                 '&': '&amp;',
                 '<': '&lt;',
                 '>': '&gt;',

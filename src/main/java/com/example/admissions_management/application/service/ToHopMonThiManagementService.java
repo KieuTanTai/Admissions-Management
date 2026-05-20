@@ -4,8 +4,16 @@ import com.example.admissions_management.infrastructure.persistence.entity.xettu
 import com.example.admissions_management.infrastructure.persistence.repository.ToHopMonThiRepository;
 import com.example.admissions_management.presentation.form.model.ToHopMonThiForm;
 import com.example.admissions_management.presentation.form.model.ToHopMonThiImportResult;
-import org.apache.poi.ss.usermodel.*;
-import org.springframework.data.domain.*;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -13,7 +21,13 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.Normalizer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -88,7 +102,7 @@ public class ToHopMonThiManagementService {
             List<XtToHopMonThiEntity> list = readExcel(inputStream);
 
             if (list.isEmpty()) {
-                result.addError("File không đọc được tổ hợp nào. Kiểm tra header MA_TO_HOP / TEN_TO_HOP.");
+                result.addError("File không đọc được tổ hợp môn nào. Kiểm tra các cột MATOHOP, th_mon1, th_mon2, th_mon3.");
                 return result;
             }
 
@@ -120,7 +134,7 @@ public class ToHopMonThiManagementService {
             int headerRowIndex = findHeaderRow(sheet, formatter);
 
             if (headerRowIndex < 0) {
-                throw new IOException("Không tìm thấy dòng header có cột MA_TO_HOP.");
+                throw new IOException("Không tìm thấy dòng tiêu đề chứa cột MATOHOP.");
             }
 
             Row headerRow = sheet.getRow(headerRowIndex);
@@ -162,8 +176,12 @@ public class ToHopMonThiManagementService {
                     "ma to hop",
                     "mã tổ hợp",
                     "ma_to_hop",
-                    "tentohop",
-                    "ten_to_hop"
+                    "th_mon1",
+                    "th_mon2",
+                    "th_mon3",
+                    "thmon1",
+                    "thmon2",
+                    "thmon3"
             )) {
                 return i;
             }
@@ -180,33 +198,41 @@ public class ToHopMonThiManagementService {
                 "ma_to_hop"
         );
 
-        String tenToHopCode = getValue(row, headerIndex, formatter,
+        String rawTenToHop = getValue(row, headerIndex, formatter,
                 "tentohop",
                 "ten to hop",
                 "tên tổ hợp",
-                "ten_to_hop"
+                "ten_to_hop",
+                "tb_keys"
         );
 
-        String maToHop = defaultIfBlank(tenToHopCode, extractToHopCode(rawMaToHop));
-
-        if (maToHop == null || maToHop.isBlank()) {
+        String maToHop = defaultIfBlank(extractToHopCode(rawMaToHop), extractToHopCode(rawTenToHop));
+        if (isBlank(maToHop)) {
             return null;
         }
 
-        String[] mons = parseSubjects(rawMaToHop);
+        String mon1 = getValue(row, headerIndex, formatter, "th_mon1", "thmon1", "mon1");
+        String mon2 = getValue(row, headerIndex, formatter, "th_mon2", "thmon2", "mon2");
+        String mon3 = getValue(row, headerIndex, formatter, "th_mon3", "thmon3", "mon3");
+
+        String[] mons = hasSubjectColumns(mon1, mon2, mon3)
+                ? new String[] {
+                        normalizeSubjectCode(mon1),
+                        normalizeSubjectCode(mon2),
+                        normalizeSubjectCode(mon3)
+                }
+                : parseSubjects(rawMaToHop);
 
         if (mons[0] == null || mons[1] == null || mons[2] == null) {
             return null;
         }
 
         XtToHopMonThiEntity entity = new XtToHopMonThiEntity();
-
         entity.setMaToHop(safe(maToHop, 45));
         entity.setMon1(safe(mons[0], 10));
         entity.setMon2(safe(mons[1], 10));
         entity.setMon3(safe(mons[2], 10));
-        entity.setTenToHop(safe(buildTenToHop(mons[0], mons[1], mons[2]), 100));
-
+        entity.setTenToHop(safe(defaultIfBlank(rawTenToHop, buildTenToHop(mons[0], mons[1], mons[2])), 100));
         return entity;
     }
 
@@ -266,28 +292,41 @@ public class ToHopMonThiManagementService {
 
     private String[] parseSubjects(String raw) {
         if (raw == null || raw.isBlank()) {
-            return new String[]{null, null, null};
+            return new String[] { null, null, null };
         }
 
         int start = raw.indexOf("(");
         int end = raw.indexOf(")");
 
         if (start < 0 || end < 0 || end <= start) {
-            return new String[]{null, null, null};
+            return new String[] { null, null, null };
         }
 
         String inside = raw.substring(start + 1, end);
         String[] parts = inside.split(",");
 
         if (parts.length < 3) {
-            return new String[]{null, null, null};
+            return new String[] { null, null, null };
         }
 
-        String mon1 = extractSubjectCode(parts[0]);
-        String mon2 = extractSubjectCode(parts[1]);
-        String mon3 = extractSubjectCode(parts[2]);
+        return new String[] {
+                extractSubjectCode(parts[0]),
+                extractSubjectCode(parts[1]),
+                extractSubjectCode(parts[2])
+        };
+    }
 
-        return new String[]{mon1, mon2, mon3};
+    private boolean hasSubjectColumns(String mon1, String mon2, String mon3) {
+        return !isBlank(mon1) && !isBlank(mon2) && !isBlank(mon3);
+    }
+
+    private String normalizeSubjectCode(String subject) {
+        if (subject == null) {
+            return null;
+        }
+
+        String cleaned = subject.trim().toUpperCase(Locale.ROOT);
+        return cleaned.isEmpty() ? null : cleaned;
     }
 
     private String extractSubjectCode(String part) {
@@ -296,7 +335,6 @@ public class ToHopMonThiManagementService {
         }
 
         String cleaned = part.trim();
-
         int dash = cleaned.indexOf("-");
 
         if (dash > 0) {
@@ -312,11 +350,15 @@ public class ToHopMonThiManagementService {
         }
 
         String cleaned = raw.trim();
+        int underscore = cleaned.lastIndexOf('_');
+        int openBracket = cleaned.indexOf("(");
 
-        int index = cleaned.indexOf("(");
+        if (underscore > 0 && underscore < cleaned.length() - 1) {
+            return cleaned.substring(underscore + 1).trim();
+        }
 
-        if (index > 0) {
-            return cleaned.substring(0, index).trim();
+        if (openBracket > 0) {
+            return cleaned.substring(0, openBracket).trim();
         }
 
         return cleaned;
@@ -331,7 +373,7 @@ public class ToHopMonThiManagementService {
             return "";
         }
 
-        return switch (code.trim().toUpperCase()) {
+        return switch (code.trim().toUpperCase(Locale.ROOT)) {
             case "TO" -> "Toán";
             case "LI" -> "Vật lí";
             case "HO" -> "Hóa học";
@@ -341,6 +383,7 @@ public class ToHopMonThiManagementService {
             case "DI" -> "Địa lí";
             case "N1" -> "Tiếng Anh";
             case "GD" -> "GDCD";
+            case "TI" -> "Tin học";
             case "NK1" -> "Kể chuyện - Đọc diễn cảm";
             case "NK2" -> "Hát - Nhạc";
             case "NK3" -> "Hình họa";
@@ -362,7 +405,6 @@ public class ToHopMonThiManagementService {
         }
 
         short lastCellNum = headerRow.getLastCellNum();
-
         if (lastCellNum < 0) {
             return map;
         }
@@ -405,14 +447,12 @@ public class ToHopMonThiManagementService {
 
     private boolean isRowEmpty(Row row, DataFormatter formatter) {
         short lastCellNum = row.getLastCellNum();
-
         if (lastCellNum < 0) {
             return true;
         }
 
         for (int i = 0; i < lastCellNum; i++) {
             Cell cell = row.getCell(i);
-
             if (cell != null && !formatter.formatCellValue(cell).trim().isEmpty()) {
                 return false;
             }
@@ -426,14 +466,9 @@ public class ToHopMonThiManagementService {
             return "";
         }
 
-        String normalized = Normalizer.normalize(
-                header.trim().toLowerCase(),
-                Normalizer.Form.NFD
-        );
-
+        String normalized = Normalizer.normalize(header.trim().toLowerCase(Locale.ROOT), Normalizer.Form.NFD);
         normalized = normalized.replaceAll("\\p{M}", "");
         normalized = normalized.replaceAll("[^a-z0-9]", "");
-
         return normalized;
     }
 
@@ -443,7 +478,6 @@ public class ToHopMonThiManagementService {
         }
 
         value = value.replace("\"", "").trim();
-
         return value.isEmpty() ? null : value;
     }
 
@@ -453,7 +487,6 @@ public class ToHopMonThiManagementService {
         }
 
         value = value.trim();
-
         if (value.isEmpty()) {
             return null;
         }
@@ -467,5 +500,9 @@ public class ToHopMonThiManagementService {
         }
 
         return value;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
     }
 }
