@@ -28,6 +28,11 @@ import java.awt.GridLayout;
 import java.io.File;
 import java.math.BigDecimal;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
+
+@ConditionalOnProperty(prefix = "app.swing", name = "enabled", havingValue = "true")
+@Lazy
 @Component
 public class ScoreManagementConsole extends JFrame {
 
