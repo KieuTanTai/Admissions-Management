@@ -1,7 +1,6 @@
 package com.example.admissions_management.application.service;
 
-import com.example.admissions_management.application.service.candidate.AdmissionDecision;
-import com.example.admissions_management.application.service.candidate.CandidateCredential;
+import com.example.admissions_management.application.dto.response.CandidateAspirationResult;
 import com.example.admissions_management.application.service.candidate.CandidateLookupResult;
 import com.example.admissions_management.application.service.candidate.CombinationScoreResult;
 import com.example.admissions_management.application.service.candidate.CombinationSpec;
@@ -10,6 +9,11 @@ import com.example.admissions_management.application.service.candidate.DgnlCalcu
 import com.example.admissions_management.application.service.candidate.MajorConfig;
 import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNguyenVongXetTuyenEntity;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtThiSinhXetTuyen25Entity;
+import com.example.admissions_management.infrastructure.persistence.repository.CandidateRepository;
+import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
+import com.example.admissions_management.infrastructure.persistence.repository.SpringDataXtNguyenVongXetTuyenRepository;
 import com.example.admissions_management.presentation.web.model.CandidateLookupForm;
 import com.example.admissions_management.presentation.web.model.DgnlCalculatorForm;
 import com.example.admissions_management.presentation.web.model.VsatThptCalculatorForm;
@@ -17,10 +21,13 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.Normalizer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 public class CandidatePortalService {
@@ -31,17 +38,21 @@ public class CandidatePortalService {
     private static final BigDecimal BONUS_MAX_SCORE = new BigDecimal("3");
     private static final BigDecimal VSAT_TO_10_DIVISOR = new BigDecimal("15");
 
-    private final Map<String, CandidateCredential> credentialByCccd;
-    private final Map<String, AdmissionDecision> admissionByCccd;
+    private final CandidateRepository candidateRepository;
+    private final SpringDataXtNguyenVongXetTuyenRepository aspirationRepository;
+    private final MajorRepository majorRepository;
     private final Map<String, MajorConfig> majorByCode;
     private final Map<String, BigDecimal> priorityObjectPoint;
     private final Map<String, BigDecimal> priorityRegionPoint;
     private final Map<String, String> subjectLabelByCode;
 
-    public CandidatePortalService() {
+    public CandidatePortalService(CandidateRepository candidateRepository,
+            SpringDataXtNguyenVongXetTuyenRepository aspirationRepository,
+            MajorRepository majorRepository) {
+        this.candidateRepository = candidateRepository;
+        this.aspirationRepository = aspirationRepository;
+        this.majorRepository = majorRepository;
         this.majorByCode = createMajors();
-        this.credentialByCccd = createCredentials();
-        this.admissionByCccd = createAdmissions();
         this.priorityObjectPoint = createPriorityObjectPointMap();
         this.priorityRegionPoint = createPriorityRegionPointMap();
         this.subjectLabelByCode = createSubjectLabelMap();
@@ -49,6 +60,17 @@ public class CandidatePortalService {
 
     public List<OptionItem> getMajorOptions() {
         List<OptionItem> options = new ArrayList<>();
+
+        majorRepository.findAll().stream()
+                .sorted((left, right) -> left.getMaNganh().compareToIgnoreCase(right.getMaNganh()))
+                .forEach(major -> options.add(new OptionItem(
+                        major.getMaNganh(),
+                        major.getMaNganh() + " - " + major.getTenNganh())));
+
+        if (!options.isEmpty()) {
+            return options;
+        }
+
         for (MajorConfig major : majorByCode.values()) {
             options.add(new OptionItem(major.code(), major.code() + " - " + major.name()));
         }
@@ -89,42 +111,86 @@ public class CandidatePortalService {
         CandidateLookupResult result = new CandidateLookupResult();
         result.setSearched(true);
 
-        String username = normalize(form.getUsername());
-        String password = normalize(form.getPassword());
+        String username = normalizeCandidateCode(form.getUsername());
+        String inputBirthDate = normalizeBirthDate(form.getPassword());
 
-        if (!username.matches("\\d{8,20}") || !password.matches("\\d{8}")) {
+        if (username.isBlank() || inputBirthDate.isBlank()) {
             result.setFound(false);
             result.setAdmitted(false);
-            result.setMessage("Thông tin đăng nhập chưa đúng định dạng.");
+            result.setMessage("Vui lòng nhập đầy đủ CCCD và ngày sinh.");
             return result;
         }
 
-        CandidateCredential credential = credentialByCccd.get(username);
-        if (credential == null || !credential.password().equals(password)) {
+        Optional<XtThiSinhXetTuyen25Entity> candidateOptional = candidateRepository.findByCccd(username);
+        if (candidateOptional.isEmpty()) {
             result.setFound(false);
             result.setAdmitted(false);
-            result.setMessage("Không tìm thấy kết quả phù hợp với thông tin đăng nhập.");
+            result.setMessage("Không tìm thấy thí sinh với CCCD đã nhập.");
+            return result;
+        }
+
+        XtThiSinhXetTuyen25Entity candidate = candidateOptional.get();
+        String storedBirthDate = normalizeBirthDate(candidate.getNgaySinh());
+        if (!inputBirthDate.equals(storedBirthDate)) {
+            result.setFound(false);
+            result.setAdmitted(false);
+            result.setMessage("Ngày sinh không khớp với thông tin thí sinh.");
             return result;
         }
 
         result.setFound(true);
-        result.setCccd(credential.cccd());
-        result.setFullName(credential.fullName());
+        result.setCccd(candidate.getCccd());
+        result.setFullName(buildFullName(candidate));
 
-        AdmissionDecision decision = admissionByCccd.get(username);
-        if (decision == null || !decision.admitted()) {
+        List<XtNguyenVongXetTuyenEntity> aspirations =
+                aspirationRepository.findByNnCccdOrderByNvThuTuAsc(username);
+
+        if (aspirations == null || aspirations.isEmpty()) {
+            result.setAspirationResults(new ArrayList<>());
             result.setAdmitted(false);
-            result.setMessage("Đã xác nhận thông tin thí sinh. Kết quả hiện tại: chưa trúng tuyển.");
+            result.setMessage("Thí sinh chưa có dữ liệu nguyện vọng xét tuyển.");
             return result;
         }
 
-        MajorConfig major = majorByCode.get(decision.majorCode());
-        result.setAdmitted(true);
-        result.setMajorName(major != null ? major.name() : decision.majorCode());
-        result.setScore(round(decision.score()));
-        result.setCombination(decision.combinationCode());
-        result.setMethod(decision.methodName());
-        result.setMessage("Đã tìm thấy kết quả: Trúng tuyển.");
+        boolean admittedBefore = false;
+        List<CandidateAspirationResult> aspirationResults = new ArrayList<>();
+
+        for (XtNguyenVongXetTuyenEntity aspiration : aspirations) {
+            CandidateAspirationResult row = new CandidateAspirationResult();
+            row.setMajorCode(aspiration.getNvMaNganh());
+            row.setMajorName(majorRepository.findByMaNganh(aspiration.getNvMaNganh())
+                    .map(major -> major.getTenNganh())
+                    .orElse(aspiration.getNvMaNganh()));
+            row.setScore(round(aspiration.getDiemXetTuyen()));
+            row.setCombination(normalizeDisplayValue(aspiration.getTtThm(), "Chưa cập nhật"));
+            row.setMethod(normalizeDisplayValue(aspiration.getTtPhuongThuc(), "Chưa cập nhật"));
+            row.setNvThuTu(aspiration.getNvThuTu());
+
+            if (admittedBefore) {
+                row.setAdmitted(false);
+                row.setResultNote("Không xét do đã trúng tuyển nguyện vọng trước");
+            } else if (isAdmittedAspiration(aspiration)) {
+                row.setAdmitted(true);
+                row.setResultNote("Trúng tuyển");
+                admittedBefore = true;
+                result.setMajorName(row.getMajorName());
+                result.setScore(row.getScore());
+                result.setCombination(row.getCombination());
+                result.setMethod(row.getMethod());
+            } else {
+                row.setAdmitted(false);
+                row.setResultNote("Không trúng tuyển");
+            }
+
+            aspirationResults.add(row);
+        }
+
+        result.setAspirationResults(aspirationResults);
+        result.setAdmitted(admittedBefore);
+        result.setMessage(admittedBefore
+                ? "Đã tìm thấy kết quả xét tuyển của thí sinh."
+                : "Đã tìm thấy dữ liệu thí sinh, hiện chưa có nguyện vọng trúng tuyển.");
+
         return result;
     }
 
@@ -256,20 +322,75 @@ public class CandidatePortalService {
         return round(objectPoint.add(regionPoint));
     }
 
-    private Map<String, CandidateCredential> createCredentials() {
-        Map<String, CandidateCredential> map = new LinkedHashMap<>();
-        map.put("079123456789", new CandidateCredential("079123456789", "Nguyen Van A", "15082007"));
-        map.put("079999999999", new CandidateCredential("079999999999", "Tran Thi B", "01012007"));
-        map.put("079111111111", new CandidateCredential("079111111111", "Le Van C", "24092007"));
-        return map;
+    private boolean isAdmittedAspiration(XtNguyenVongXetTuyenEntity aspiration) {
+        if (aspiration == null || aspiration.getNvKetQua() == null) {
+            return false;
+        }
+
+        String value = normalizeAscii(aspiration.getNvKetQua());
+        return value.contains("trung tuyen")
+                || value.contains("dat")
+                || value.equals("1")
+                || value.equals("true");
     }
 
-    private Map<String, AdmissionDecision> createAdmissions() {
-        Map<String, AdmissionDecision> map = new LinkedHashMap<>();
-        map.put("079123456789", new AdmissionDecision(true, "7480201", new BigDecimal("24.15"), "A00", "DGNL"));
-        map.put("079999999999", new AdmissionDecision(false, null, null, null, null));
-        map.put("079111111111", new AdmissionDecision(true, "7510605", new BigDecimal("22.40"), "D01", "THPT"));
-        return map;
+    private String buildFullName(XtThiSinhXetTuyen25Entity candidate) {
+        String firstName = candidate.getHo() == null ? "" : candidate.getHo().trim();
+        String lastName = candidate.getTen() == null ? "" : candidate.getTen().trim();
+        return (firstName + " " + lastName).trim();
+    }
+
+    private String normalizeDisplayValue(String value, String fallback) {
+        String normalized = normalize(value);
+        return normalized.isBlank() ? fallback : normalized;
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
+    }
+
+    private String normalizeCandidateCode(String value) {
+        return normalize(value).toUpperCase(Locale.ROOT);
+    }
+
+    private String normalizeBirthDate(String value) {
+        String digits = normalize(value).replaceAll("[^0-9]", "");
+        if (digits.length() == 8) {
+            String firstBlock = digits.substring(0, 4);
+            if (Integer.parseInt(firstBlock) > 1900) {
+                String yyyy = digits.substring(0, 4);
+                String mm = digits.substring(4, 6);
+                String dd = digits.substring(6, 8);
+                return dd + mm + yyyy;
+            }
+        }
+        return digits;
+    }
+
+    private String normalizeAscii(String value) {
+        String normalized = Normalizer.normalize(normalize(value), Normalizer.Form.NFD);
+        normalized = normalized.replaceAll("\\p{M}+", "");
+        normalized = normalized.replace('đ', 'd').replace('Đ', 'D');
+        return normalized.toLowerCase(Locale.ROOT);
+    }
+
+    private BigDecimal nonNull(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
+    }
+
+    private BigDecimal round(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                : value.setScale(2, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal clamp(BigDecimal value, BigDecimal min, BigDecimal max) {
+        if (value.compareTo(min) < 0) {
+            return min;
+        }
+        if (value.compareTo(max) > 0) {
+            return max;
+        }
+        return value;
     }
 
     private Map<String, MajorConfig> createMajors() {
@@ -347,27 +468,5 @@ public class CandidatePortalService {
         map.put("DIA_LY", "Địa lý");
         map.put("GDCD", "GDCD");
         return map;
-    }
-
-    private String normalize(String value) {
-        return value == null ? "" : value.trim();
-    }
-
-    private BigDecimal nonNull(BigDecimal value) {
-        return value == null ? BigDecimal.ZERO : value;
-    }
-
-    private BigDecimal round(BigDecimal value) {
-        return value.setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private BigDecimal clamp(BigDecimal value, BigDecimal min, BigDecimal max) {
-        if (value.compareTo(min) < 0) {
-            return min;
-        }
-        if (value.compareTo(max) > 0) {
-            return max;
-        }
-        return value;
     }
 }

@@ -78,14 +78,14 @@ public class CombinationForm extends JFrame {
 
 		prevButton = new JButton("< Trước");
 		prevButton.setFocusPainted(false);
-		prevButton.addActionListener(_ -> previousPage());
+		prevButton.addActionListener(e -> previousPage());
 
 		pageInfoLabel = new JLabel("Trang 1 / 1");
 		pageInfoLabel.setPreferredSize(new Dimension(170, 20));
 
 		nextButton = new JButton("Tiếp >");
 		nextButton.setFocusPainted(false);
-		nextButton.addActionListener(_ -> nextPage());
+		nextButton.addActionListener(e -> nextPage());
 
 		footerPanel.add(prevButton);
 		footerPanel.add(pageInfoLabel);
@@ -152,7 +152,7 @@ public class CombinationForm extends JFrame {
 
 		JButton searchButton = new JButton("Tìm kiếm");
 		searchButton.setFocusPainted(false);
-		searchButton.addActionListener(_ -> onSearch());
+		searchButton.addActionListener(e -> onSearch());
 
 		leftPanel.add(new JLabel("Tìm kiếm bằng mã ngành:"));
 		leftPanel.add(searchField);
@@ -180,9 +180,9 @@ public class CombinationForm extends JFrame {
 		JButton refreshButton = new JButton("Làm mới");
 		refreshButton.setFocusPainted(false);
 
-		insertButton.addActionListener(_ -> onInsert());
-		updateButton.addActionListener(_ -> onUpdateSelected());
-		refreshButton.addActionListener(_ -> refreshAll());
+		insertButton.addActionListener(e -> onInsert());
+		updateButton.addActionListener(e -> onUpdateSelected());
+		refreshButton.addActionListener(e -> refreshAll());
 
 		rightPanel.add(insertButton);
 		rightPanel.add(updateButton);

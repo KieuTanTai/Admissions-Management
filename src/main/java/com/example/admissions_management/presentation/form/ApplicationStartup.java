@@ -2,14 +2,13 @@ package com.example.admissions_management.presentation.form;
 
 import com.example.admissions_management.config.ApplicationConfig;
 import com.example.admissions_management.presentation.form.view.AdminConsole;
-import java.util.logging.Logger;
-
-import javax.swing.SwingUtilities;
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
+
+import javax.swing.SwingUtilities;
+import java.util.logging.Logger;
 
 @Component
 public class ApplicationStartup {

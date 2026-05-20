@@ -65,19 +65,25 @@ public class DiemCongPanel extends JPanel {
         panel.setBackground(SURFACE_COLOR);
         panel.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(LINE_COLOR),
-                BorderFactory.createEmptyBorder(8, 10, 8, 10)
-        ));
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
         GridBagConstraints c = new GridBagConstraints();
         c.insets = new Insets(6, 6, 6, 6);
 
         // Row 0: label + search field (expand)
-        c.gridx = 0; c.gridy = 0; c.anchor = GridBagConstraints.WEST; c.fill = GridBagConstraints.NONE; c.weightx = 0.0;
+        c.gridx = 0;
+        c.gridy = 0;
+        c.anchor = GridBagConstraints.WEST;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0.0;
         JLabel searchLabel = new JLabel("Tìm theo CCCD");
         searchLabel.setForeground(MUTED_COLOR);
         searchLabel.setFont(LABEL_FONT);
         panel.add(searchLabel, c);
 
-        c.gridx = 1; c.gridy = 0; c.fill = GridBagConstraints.HORIZONTAL; c.weightx = 1.0;
+        c.gridx = 1;
+        c.gridy = 0;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        c.weightx = 1.0;
         styleTextField(searchCccdField);
         panel.add(searchCccdField, c);
 
@@ -100,7 +106,10 @@ public class DiemCongPanel extends JPanel {
         rightButtons.add(importButton);
         rightButtons.add(deleteAllButton);
 
-        c.gridx = 2; c.gridy = 0; c.fill = GridBagConstraints.NONE; c.weightx = 0.0;
+        c.gridx = 2;
+        c.gridy = 0;
+        c.fill = GridBagConstraints.NONE;
+        c.weightx = 0.0;
         panel.add(rightButtons, c);
 
         searchButton.addActionListener(e -> search());
@@ -127,42 +136,57 @@ public class DiemCongPanel extends JPanel {
 
         // Section 1: ID Info
         JPanel section1 = createFieldSection("Thông Tin Chính", new Object[][] {
-            { "ID", idField },
-            { "CCCD", tsCccdField }
+                { "ID", idField },
+                { "CCCD", tsCccdField }
         });
-        gc.gridx = 0; gc.gridy = 0; gc.weightx = 1.0; contentPanel.add(section1, gc);
+        gc.gridx = 0;
+        gc.gridy = 0;
+        gc.weightx = 1.0;
+        contentPanel.add(section1, gc);
 
         // Section 2: Ngành và Tổ Hợp
         JPanel section2 = createFieldSection("Ngành & Tổ Hợp", new Object[][] {
-            { "Mã Ngành", maNganhField },
-            { "Mã Tổ Hợp", maToHopField }
+                { "Mã Ngành", maNganhField },
+                { "Mã Tổ Hợp", maToHopField }
         });
-        gc.gridy = 1; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section2, gc);
+        gc.gridy = 1;
+        gc.insets = new Insets(10, 0, 0, 0);
+        contentPanel.add(section2, gc);
 
         // Section 3: Phương thức
         JPanel section3 = createFieldSection("Xét Tuyển", new Object[][] {
-            { "Phương Thức", phuongThucField }
+                { "Phương Thức", phuongThucField }
         });
-        gc.gridy = 2; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section3, gc);
+        gc.gridy = 2;
+        gc.insets = new Insets(10, 0, 0, 0);
+        contentPanel.add(section3, gc);
 
         // Section 4: Điểm
         JPanel section4 = createFieldSection("Điểm", new Object[][] {
-            { "Điểm CC", diemCcField },
-            { "Điểm UT", diemUtxtField },
-            { "Tổng Điểm", diemTongField }
+                { "Điểm CC", diemCcField },
+                { "Điểm UT", diemUtxtField },
+                { "Tổng Điểm", diemTongField }
         });
-        gc.gridy = 3; gc.insets = new Insets(10, 0, 0, 0); contentPanel.add(section4, gc);
+        gc.gridy = 3;
+        gc.insets = new Insets(10, 0, 0, 0);
+        contentPanel.add(section4, gc);
 
         // Section 5: Ghi Chú
         JPanel section5 = createFieldSection("Ghi Chú", new Object[][] {
-            { "Nội Dung", ghiChuArea }
+                { "Nội Dung", ghiChuArea }
         });
-        gc.gridy = 4; gc.insets = new Insets(10, 0, 0, 0); gc.weighty = 1.0; contentPanel.add(section5, gc);
+        gc.gridy = 4;
+        gc.insets = new Insets(10, 0, 0, 0);
+        gc.weighty = 1.0;
+        contentPanel.add(section5, gc);
 
         // Filler
-        gc.gridy = 5; gc.weighty = 1.0; contentPanel.add(new JPanel(), gc);
+        gc.gridy = 5;
+        gc.weighty = 1.0;
+        contentPanel.add(new JPanel(), gc);
 
-        JScrollPane scrollPane = new JScrollPane(contentPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        JScrollPane scrollPane = new JScrollPane(contentPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.setBorder(null);
         outer.add(scrollPane, BorderLayout.CENTER);
 
@@ -176,11 +200,11 @@ public class DiemCongPanel extends JPanel {
         styleButton(saveButton, PRIMARY_COLOR, Color.WHITE);
         styleButton(deleteButton, DANGER_COLOR, Color.WHITE);
         styleButton(clearButton, SURFACE_COLOR, TEXT_COLOR);
-        
+
         saveButton.setPreferredSize(new Dimension(80, 32));
         deleteButton.setPreferredSize(new Dimension(80, 32));
         clearButton.setPreferredSize(new Dimension(80, 32));
-        
+
         btnPanel.add(saveButton);
         btnPanel.add(deleteButton);
         btnPanel.add(clearButton);
@@ -204,8 +228,7 @@ public class DiemCongPanel extends JPanel {
                 javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
                 javax.swing.border.TitledBorder.DEFAULT_POSITION,
                 SECTION_TITLE_FONT,
-                TEXT_COLOR
-        ));
+                TEXT_COLOR));
         panel.setBackground(SOFT_COLOR);
 
         GridBagConstraints gc = new GridBagConstraints();
@@ -233,7 +256,7 @@ public class DiemCongPanel extends JPanel {
             gc.weightx = 1.0;
             gc.gridwidth = GridBagConstraints.REMAINDER;
             gc.anchor = GridBagConstraints.WEST;
-            
+
             if (comp instanceof JComponent) {
                 JComponent jcomp = (JComponent) comp;
                 if (jcomp instanceof JTextArea) {
@@ -244,7 +267,7 @@ public class DiemCongPanel extends JPanel {
                     area.setMargin(new Insets(6, 8, 6, 8));
                     area.setBackground(SURFACE_COLOR);
                     area.setBorder(BorderFactory.createLineBorder(LINE_COLOR, 1));
-                    
+
                     JScrollPane scrollPane = new JScrollPane(area);
                     scrollPane.setPreferredSize(AREA_SIZE);
                     scrollPane.setMinimumSize(AREA_SIZE);
@@ -295,8 +318,7 @@ public class DiemCongPanel extends JPanel {
         button.setForeground(foreground);
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(LINE_COLOR),
-                BorderFactory.createEmptyBorder(6, 12, 6, 12)
-        ));
+                BorderFactory.createEmptyBorder(6, 12, 6, 12)));
     }
 
     private void search() {
@@ -322,8 +344,7 @@ public class DiemCongPanel extends JPanel {
                     diemCcField.getText(),
                     diemUtxtField.getText(),
                     diemTongField.getText(),
-                    ghiChuArea.getText()
-            );
+                    ghiChuArea.getText());
             refreshTable();
             clearFields();
         } catch (Exception ex) {
@@ -387,14 +408,14 @@ public class DiemCongPanel extends JPanel {
                 "Bạn có chắc chắn muốn xóa tất cả dữ liệu? Hành động này không thể hoàn tác!",
                 "Xác nhận xóa tất cả",
                 JOptionPane.YES_NO_OPTION,
-                JOptionPane.WARNING_MESSAGE
-        );
+                JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 controller.deleteAll();
                 refreshTable();
                 clearFields();
-                JOptionPane.showMessageDialog(this, "Xóa tất cả dữ liệu thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Xóa tất cả dữ liệu thành công!", "Thành công",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, ex.getMessage(), "Xóa thất bại", JOptionPane.ERROR_MESSAGE);
             }
@@ -405,26 +426,26 @@ public class DiemCongPanel extends JPanel {
         JFileChooser fileChooser = new JFileChooser();
         fileChooser.setDialogTitle("Chọn file Excel để import");
         fileChooser.setFileFilter(new javax.swing.filechooser.FileNameExtensionFilter("Excel Files (*.xlsx)", "xlsx"));
-        
+
         int result = fileChooser.showOpenDialog(this);
         if (result != JFileChooser.APPROVE_OPTION) {
             return;
         }
-        
+
         java.io.File selectedFile = fileChooser.getSelectedFile();
-        
+
         try {
             DiemCongImportSummary summary = controller.importExcelFile(selectedFile);
             refreshTable();
             clearFields();
             JOptionPane.showMessageDialog(this,
-                summary.toMessage(),
-                "Nhập thành công",
-                JOptionPane.INFORMATION_MESSAGE);
+                    summary.toMessage(),
+                    "Nhập thành công",
+                    JOptionPane.INFORMATION_MESSAGE);
         } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Lỗi khi nhập dữ liệu: " + ex.getMessage(), 
-                    "Nhập thất bại", 
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi nhập dữ liệu: " + ex.getMessage(),
+                    "Nhập thất bại",
                     JOptionPane.ERROR_MESSAGE);
         }
     }

@@ -17,7 +17,7 @@ public interface CandidateRepository extends JpaRepository<XtThiSinhXetTuyen25En
             String ten,
             Pageable pageable
     );
-
     Optional<XtThiSinhXetTuyen25Entity> findByCccd(String cccd);
+    Optional<XtThiSinhXetTuyen25Entity> findByCccdAndNgaySinh(String cccd, String ngaySinh);
     List<XtThiSinhXetTuyen25Entity> findByCccdIn(Collection<String> cccdList);
 }

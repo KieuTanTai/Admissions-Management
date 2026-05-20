@@ -1,6 +1,9 @@
 package com.example.admissions_management.application.service.candidate;
 
 import java.math.BigDecimal;
+import java.util.List;
+
+import com.example.admissions_management.application.dto.response.CandidateAspirationResult;
 
 public class CandidateLookupResult {
 
@@ -94,4 +97,8 @@ public class CandidateLookupResult {
     public void setMethod(String method) {
         this.method = method;
     }
+    private List<CandidateAspirationResult> aspirationResults;
+
+public List<CandidateAspirationResult> getAspirationResults() { return aspirationResults; }
+public void setAspirationResults(List<CandidateAspirationResult> aspirationResults) { this.aspirationResults = aspirationResults; }
 }

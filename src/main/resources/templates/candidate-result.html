@@ -1,0 +1,25 @@
+<h2>Kết quả xét tuyển</h2>
+<p>Thí sinh: <span th:text="${lookupResult.fullName}"></span> - <span th:text="${lookupResult.cccd}"></span></p>
+
+<table class="table table-bordered mt-3">
+    <thead>
+        <tr>
+            <th>Thứ tự NV</th>
+            <th>Ngành</th>
+            <th>Điểm</th>
+            <th>Tổ hợp</th>
+            <th>Phương thức</th>
+            <th>Kết quả</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr th:each="asp : ${lookupResult.aspirationResults}">
+            <td th:text="${asp.nvThuTu}">1</td>
+            <td th:text="${asp.majorName}">Ngành</td>
+            <td th:text="${asp.score}">Điểm</td>
+            <td th:text="${asp.combination}">Tổ hợp</td>
+            <td th:text="${asp.method}">Phương thức</td>
+            <td th:text="${asp.resultNote}">Kết quả</td>
+        </tr>
+    </tbody>
+</table>

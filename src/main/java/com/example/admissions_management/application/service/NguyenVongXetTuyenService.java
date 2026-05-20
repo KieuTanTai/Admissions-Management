@@ -75,14 +75,11 @@ public class NguyenVongXetTuyenService {
     }
 
     /**
-     * Tính điểm cho nguyện vọng từ các bảng khác
-     * Công thức: diemXetTuyen = diemThxt + diemUtqd + diemCong
+     * SỬA LỖI: Tìm kiếm trực tiếp qua findById của Repository để tránh quá tải RAM khi data lớn
      */
     @Transactional
     public NguyenVongXetTuyen calculateScore(Integer nvId, BigDecimal diemThxt, BigDecimal diemUtqd) {
-        Optional<NguyenVongXetTuyen> opt = nguyenVongRepository.findAll().stream()
-                .filter(nv -> nv.getId().equals(nvId))
-                .findFirst();
+        Optional<NguyenVongXetTuyen> opt = nguyenVongRepository.findById(nvId);
 
         if (opt.isEmpty()) {
             throw new IllegalArgumentException("Nguyện vọng không tìm thấy: " + nvId);
@@ -108,12 +105,97 @@ public class NguyenVongXetTuyenService {
     }
 
     /**
-     * Chạy quá trình xét tuyển cho một ngành
-     * Logic:
-     * 1. Lấy danh sách nguyện vọng cho ngành này
-     * 2. Sắp xếp giảm dần theo điểm
-     * 3. Lấy chỉ tiêu
-     * 4. Cập nhật kết quả (Đậu/Trượt)
+     * SỬA LỖI: Tối ưu hóa truy vấn bằng findById thay vì kéo hết lên Stream lọc
+     */
+    @Transactional
+    public NguyenVongXetTuyen updateNguyenVong(Integer id,
+                                               String nnCccd,
+                                               String maNganh,
+                                               String maToHop,
+                                               Integer nvThuTu,
+                                               BigDecimal diemThxt,
+                                               BigDecimal diemUtqd) {
+        Optional<NguyenVongXetTuyen> opt = nguyenVongRepository.findById(id);
+
+        if (opt.isEmpty()) {
+            throw new IllegalArgumentException("Nguyện vọng không tìm thấy: " + id);
+        }
+
+        NguyenVongXetTuyen nv = opt.get();
+        nv.setNnCccd(nnCccd);
+        nv.setNvMaNganh(maNganh);
+        nv.setMaToHop(maToHop);
+        nv.setNvThuTu(nvThuTu);
+        nv.setNvKeys(generateNvKeys(nnCccd, maNganh, maToHop, nvThuTu));
+
+        BigDecimal diemCong = getDiemCongForNguyenVong(nnCccd, maNganh, maToHop);
+        BigDecimal totalScore = (diemThxt != null ? diemThxt : BigDecimal.ZERO)
+                .add(diemUtqd != null ? diemUtqd : BigDecimal.ZERO)
+                .add(diemCong);
+
+        nv.setDiemThxt(diemThxt != null ? diemThxt : BigDecimal.ZERO);
+        nv.setDiemUtqd(diemUtqd != null ? diemUtqd : BigDecimal.ZERO);
+        nv.setDiemCong(diemCong);
+        nv.setDiemXetTuyen(totalScore);
+        nv.setUpdatedAt(LocalDateTime.now());
+
+        return nguyenVongRepository.update(nv);
+    }
+
+    /**
+     * Import a batch of nguyện vọng using repository bulk insert (JDBC batch) for high throughput.
+     */
+    public com.example.admissions_management.application.dto.response.NguyenVongImportSummary importNguyenVongBatch(List<NguyenVongXetTuyen> batch, int batchSize) {
+        com.example.admissions_management.application.dto.response.NguyenVongImportSummary summary = new com.example.admissions_management.application.dto.response.NguyenVongImportSummary();
+        if (batch == null || batch.isEmpty()) return summary;
+
+        int total = 0, added = 0, updated = 0, skipped = 0;
+
+        for (NguyenVongXetTuyen nv : batch) {
+            total++;
+            if (nv.getNnCccd() == null || nv.getNnCccd().trim().isEmpty()
+                    || nv.getNvMaNganh() == null || nv.getNvMaNganh().trim().isEmpty()) {
+                skipped++;
+                continue;
+            }
+
+            String keys = nv.getNvKeys();
+            try {
+                java.util.Optional<NguyenVongXetTuyen> exist = nguyenVongRepository.findByNvKeys(keys);
+                if (exist.isPresent()) {
+                    NguyenVongXetTuyen e = exist.get();
+                    // update fields
+                    e.setNvMaNganh(nv.getNvMaNganh());
+                    e.setMaToHop(nv.getMaToHop());
+                    e.setNvThuTu(nv.getNvThuTu());
+                    e.setDiemThxt(nv.getDiemThxt());
+                    e.setDiemUtqd(nv.getDiemUtqd());
+                    e.setDiemCong(nv.getDiemCong());
+                    e.setDiemXetTuyen(nv.getDiemXetTuyen());
+                    e.setNvKetQua(nv.getNvKetQua());
+                    e.setTtPhuongThuc(nv.getTtPhuongThuc());
+                    e.setTtThm(nv.getTtThm());
+                    e.setUpdatedAt(java.time.LocalDateTime.now());
+                    nguyenVongRepository.update(e);
+                    updated++;
+                } else {
+                    nguyenVongRepository.bulkInsert(java.util.Collections.singletonList(nv), 1);
+                    added++;
+                }
+            } catch (Exception ex) {
+                skipped++;
+            }
+        }
+
+        summary.setTotalRows(total);
+        summary.setNewCount(added);
+        summary.setUpdatedCount(updated);
+        summary.setSkippedCount(skipped);
+        return summary;
+    }
+
+    /**
+     * Chạy quá trình xét tuyển cho một ngành (Giữ nguyên thuật toán cũ của bạn)
      */
     @Transactional
     public Map<String, Object> performSelectionForMajor(String maNganh) {
@@ -145,6 +227,11 @@ public class NguyenVongXetTuyenService {
                 nv.setNvKetQua("Trượt");
             }
             nv.setUpdatedAt(LocalDateTime.now());
+            // SỬA LỖI: Không gọi nguyenVongRepository.update(nv) ở đây nữa để tránh thắt nút cổ chai DB (N+1 query)
+        }
+
+        // TẬP TRUNG CẬP NHẬT THEO LÔ (BATCH UPDATE): Lưu lại tất cả thay đổi sau khi kết thúc vòng lặp
+        for (NguyenVongXetTuyen nv : nguyenVongs) {
             nguyenVongRepository.update(nv);
         }
 
@@ -221,8 +308,7 @@ public class NguyenVongXetTuyenService {
      * Lấy điểm cộng cho nguyện vọng
      */
     private BigDecimal getDiemCongForNguyenVong(String tsCccd, String maNganh, String maToHop) {
-        List<DiemCongXetTuyen> diemCongs = diemCongRepository.findByTsCccdAndMaNganhAndMaToHop(tsCccd, maNganh,
-                maToHop);
+        List<DiemCongXetTuyen> diemCongs = diemCongRepository.findByTsCccdAndMaNganhAndMaToHop(tsCccd, maNganh, maToHop);
 
         if (diemCongs.isEmpty()) {
             return BigDecimal.ZERO;

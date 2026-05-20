@@ -14,7 +14,7 @@ public class SwingStartupConfig {
     @Bean
     @ConditionalOnProperty(prefix = "app.swing.admin-console", name = "enabled", havingValue = "true")
     CommandLineRunner swingAdminConsoleLauncher(AdminConsole adminConsole) {
-        return _ -> {
+        return args -> {
             System.setProperty("java.awt.headless", "false");
             SwingUtilities.invokeLater(() -> adminConsole.setVisible(true));
         };

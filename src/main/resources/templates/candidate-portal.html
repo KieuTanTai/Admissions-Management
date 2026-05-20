@@ -76,18 +76,44 @@
                         th:classappend="${lookupResult.found} ? (${lookupResult.admitted} ? ' status-ok' : ' status-warn') : ' status-danger'"
                         th:text="${lookupResult.message}"></span>
 
-                    <div th:if="${lookupResult.found and lookupResult.admitted}">
+                    <div th:if="${lookupResult.found}">
                         <p class="meta"><strong>Thí sinh:</strong> <span th:text="${lookupResult.fullName}"></span> - <span th:text="${lookupResult.cccd}"></span></p>
-                        <p class="meta"><strong>Kết quả:</strong> Trúng tuyển</p>
-                        <p class="meta"><strong>Ngành:</strong> <span th:text="${lookupResult.majorName}"></span></p>
-                        <p class="meta"><strong>Điểm:</strong> <span th:text="${lookupResult.score}"></span></p>
+                        <p class="meta"><strong>Trạng thái:</strong> <span th:text="${lookupResult.admitted} ? 'Trúng tuyển' : 'Chưa trúng tuyển'"></span></p>
+                    </div>
+
+                    <div th:if="${lookupResult.found and lookupResult.admitted}">
+                        <p class="meta"><strong>Ngành trúng tuyển:</strong> <span th:text="${lookupResult.majorName}"></span></p>
+                        <p class="meta"><strong>Điểm xét tuyển:</strong> <span th:text="${lookupResult.score}"></span></p>
                         <p class="meta"><strong>Tổ hợp:</strong> <span th:text="${lookupResult.combination}"></span></p>
                         <p class="meta"><strong>Phương thức:</strong> <span th:text="${lookupResult.method}"></span></p>
                     </div>
 
-                    <div th:if="${lookupResult.found and !lookupResult.admitted}">
-                        <p class="meta"><strong>Thí sinh:</strong> <span th:text="${lookupResult.fullName}"></span> - <span th:text="${lookupResult.cccd}"></span></p>
-                        <p class="meta"><strong>Kết quả:</strong> Chưa trúng tuyển</p>
+                    <div class="table-wrap"
+                        th:if="${lookupResult.aspirationResults != null and !lookupResult.aspirationResults.isEmpty()}">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>NV</th>
+                                    <th>Mã ngành</th>
+                                    <th>Tên ngành</th>
+                                    <th>Điểm xét tuyển</th>
+                                    <th>Tổ hợp</th>
+                                    <th>Phương thức</th>
+                                    <th>Kết quả</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="row : ${lookupResult.aspirationResults}">
+                                    <td th:text="${row.nvThuTu}"></td>
+                                    <td th:text="${row.majorCode}"></td>
+                                    <td th:text="${row.majorName}"></td>
+                                    <td th:text="${row.score}"></td>
+                                    <td th:text="${row.combination}"></td>
+                                    <td th:text="${row.method}"></td>
+                                    <td th:text="${row.resultNote}"></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </section>
