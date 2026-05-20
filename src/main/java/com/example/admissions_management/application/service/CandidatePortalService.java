@@ -1,5 +1,14 @@
 package com.example.admissions_management.application.service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Service;
+
 import com.example.admissions_management.application.service.candidate.AdmissionDecision;
 import com.example.admissions_management.application.service.candidate.CandidateCredential;
 import com.example.admissions_management.application.service.candidate.CandidateLookupResult;
@@ -10,17 +19,11 @@ import com.example.admissions_management.application.service.candidate.DgnlCalcu
 import com.example.admissions_management.application.service.candidate.MajorConfig;
 import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
+import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
 import com.example.admissions_management.presentation.web.model.CandidateLookupForm;
 import com.example.admissions_management.presentation.web.model.DgnlCalculatorForm;
 import com.example.admissions_management.presentation.web.model.VsatThptCalculatorForm;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
 
 @Service
 public class CandidatePortalService {
@@ -38,7 +41,12 @@ public class CandidatePortalService {
     private final Map<String, BigDecimal> priorityRegionPoint;
     private final Map<String, String> subjectLabelByCode;
 
-    public CandidatePortalService() {
+    private final BangQuyDoiService bangQuyDoiService;
+    private final MajorRepository majorRepository;
+
+    public CandidatePortalService(BangQuyDoiService bangQuyDoiService, MajorRepository majorRepository) {
+        this.bangQuyDoiService = bangQuyDoiService;
+        this.majorRepository = majorRepository;
         this.majorByCode = createMajors();
         this.credentialByCccd = createCredentials();
         this.admissionByCccd = createAdmissions();
@@ -137,9 +145,20 @@ public class CandidatePortalService {
             result.setMessage("Vui long chon nganh xet tuyen.");
             return result;
         }
+        BigDecimal originalScore = clamp(nonNull(form.getDgnlScore()), BigDecimal.ZERO, DGNL_MAX_SCORE);
+        BigDecimal converted30;
+        
+        try {
+            Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", "A01", originalScore);
+            String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
+            converted30 = new BigDecimal(diemQuyDoiStr);
+        } catch (Exception e) {
 
-        BigDecimal dgnlScore = clamp(nonNull(form.getDgnlScore()), BigDecimal.ZERO, DGNL_MAX_SCORE);
-        BigDecimal converted30 = round(dgnlScore.divide(new BigDecimal("40"), 6, RoundingMode.HALF_UP));
+            // Xử lý lỗi an toàn nếu có vấn đề trong quá trình quy đổi điểm
+            System.err.println("Lỗi trong quá trình quy đổi điểm DGNL: " + e.getMessage());
+            converted30 = BigDecimal.ZERO;
+        }
+        
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
         BigDecimal totalScore = round(converted30.add(priorityScore).add(bonusScore));
@@ -274,47 +293,46 @@ public class CandidatePortalService {
 
     private Map<String, MajorConfig> createMajors() {
         Map<String, MajorConfig> map = new LinkedHashMap<>();
+        
+        // 1. Lấy toàn bộ danh sách ngành từ Repository
+        List<XtNganhEntity> entities = majorRepository.findAll();
 
-        map.put("7480201", new MajorConfig(
-                "7480201",
-                "Cong nghe thong tin",
-                "A00",
-                new BigDecimal("20.50"),
-                new BigDecimal("23.75"),
-                new BigDecimal("18.00"),
-                new BigDecimal("24.00"),
-                List.of(
-                        new CombinationSpec("A00", "TOAN", "VAT_LY", "HOA_HOC"),
-                        new CombinationSpec("A01", "TOAN", "VAT_LY", "TIENG_ANH"),
-                        new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH"))));
+        for (XtNganhEntity entity : entities) {
+            // 2. Chuyển đổi mã tổ hợp gốc sang danh sách CombinationSpec
+            // Vì Entity chỉ có 1 cột toHopGoc, ta sẽ tạo danh sách chứa tổ hợp đó
+            List<CombinationSpec> combinations = getSpecsFromCode(entity.getToHopGoc());
 
-        map.put("7310101", new MajorConfig(
-                "7310101",
-                "Kinh te",
-                "D01",
-                new BigDecimal("18.50"),
-                new BigDecimal("22.00"),
-                new BigDecimal("17.00"),
-                new BigDecimal("22.50"),
-                List.of(
-                        new CombinationSpec("A00", "TOAN", "VAT_LY", "HOA_HOC"),
-                        new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH"),
-                        new CombinationSpec("C00", "NGU_VAN", "LICH_SU", "DIA_LY"))));
+            // 3. Tạo record MajorConfig từ dữ liệu Entity
+            MajorConfig config = new MajorConfig(
+                entity.getMaNganh(),        // code
+                entity.getTenNganh(),       // name
+                entity.getToHopGoc(),       // originalCombination
+                entity.getDiemSan(),        // dgnlThreshold (Ánh xạ từ n_diemsan)
+                entity.getDiemTrungTuyen(), // dgnlAdmission (Ánh xạ từ n_diemtrungtuyen)
+                entity.getDiemSan(),        // regularThreshold
+                entity.getDiemTrungTuyen(), // regularAdmission
+                combinations                // List<CombinationSpec>
+            );
 
-        map.put("7510605", new MajorConfig(
-                "7510605",
-                "Logistics va quan ly chuoi cung ung",
-                "A01",
-                new BigDecimal("19.00"),
-                null,
-                new BigDecimal("17.50"),
-                null,
-                List.of(
-                        new CombinationSpec("A01", "TOAN", "VAT_LY", "TIENG_ANH"),
-                        new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH"),
-                        new CombinationSpec("C00", "NGU_VAN", "LICH_SU", "DIA_LY"))));
-
+            map.put(entity.getMaNganh(), config);
+        }
         return map;
+    }
+
+    private List<CombinationSpec> getSpecsFromCode(String code) {
+        if (code == null || code.isBlank()) return List.of();
+        
+        // Logic mapping các tổ hợp phổ biến
+        CombinationSpec spec = switch (code.toUpperCase().trim()) {
+            case "A00" -> new CombinationSpec("A00", "TOAN", "VAT_LY", "HOA_HOC");
+            case "A01" -> new CombinationSpec("A01", "TOAN", "VAT_LY", "TIENG_ANH");
+            case "D01" -> new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH");
+            case "C00" -> new CombinationSpec("C00", "NGU_VAN", "LICH_SU", "DIA_LY");
+            case "B00" -> new CombinationSpec("B00", "TOAN", "HOA_HOC", "SINH_HOC");
+            default -> new CombinationSpec(code, "TOAN", "VAT_LY", "HOA_HOC"); // Mặc định nếu không khớp
+        };
+        
+        return List.of(spec);
     }
 
     private Map<String, BigDecimal> createPriorityObjectPointMap() {
