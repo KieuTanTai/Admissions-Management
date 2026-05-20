@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 
 public class NguyenVongTableModel extends AbstractTableModel {
 
-    private final String[] columns = {"ID", "CCCD", "Mã Ngành", "Mã Tổ Hợp", "NV TT", "Điểm THXT", "Điểm UTQD", "Điểm Cộng", "Điểm Xét Tuyển", "Kết Quả", "NV Keys", "Phương Thức", "TT THM"};
+    private final String[] columns = {"ID", "CCCD", "Mã Ngành", "NV TT", "Điểm THXT", "Điểm UTQD", "Điểm Cộng", "Điểm Xét Tuyển", "Kết Quả", "NV Keys", "Phương Thức", "TT THM"};
     private List<NguyenVongXetTuyen> rows = new ArrayList<>();
 
     public void setRows(List<NguyenVongXetTuyen> rows) {
@@ -43,16 +43,15 @@ public class NguyenVongTableModel extends AbstractTableModel {
             case 0 -> row.getId();
             case 1 -> row.getNnCccd();
             case 2 -> row.getNvMaNganh();
-            case 3 -> row.getMaToHop();
-            case 4 -> row.getNvThuTu();
-            case 5 -> formatDecimal(row.getDiemThxt());
-            case 6 -> formatDecimal(row.getDiemUtqd());
-            case 7 -> formatDecimal(row.getDiemCong());
-            case 8 -> formatDecimal(row.getDiemXetTuyen());
-            case 9 -> row.getNvKetQua();
-            case 10 -> row.getNvKeys();
-            case 11 -> row.getTtPhuongThuc();
-            case 12 -> row.getTtThm();
+            case 3 -> row.getNvThuTu();
+            case 4 -> formatDecimal(row.getDiemThxt());
+            case 5 -> formatDecimal(row.getDiemUtqd());
+            case 6 -> formatDecimal(row.getDiemCong());
+            case 7 -> formatDecimal(row.getDiemXetTuyen());
+            case 8 -> row.getNvKetQua();
+            case 9 -> row.getNvKeys();
+            case 10 -> row.getTtPhuongThuc();
+            case 11 -> row.getTtThm();
             default -> "";
         };
     }

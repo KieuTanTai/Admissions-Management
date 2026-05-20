@@ -5,9 +5,16 @@ import com.example.admissions_management.application.dto.response.DiemCongImport
 import com.example.admissions_management.domain.model.NguyenVongXetTuyen;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.apache.poi.openxml4j.opc.OPCPackage;
+import org.apache.poi.openxml4j.opc.PackageAccess;
 import org.springframework.stereotype.Service;
+import org.apache.poi.util.IOUtils;
 import org.springframework.web.multipart.MultipartFile;
 import javax.sql.DataSource;
+import org.apache.poi.xssf.eventusermodel.ReadOnlySharedStringsTable;
+import org.apache.poi.xssf.eventusermodel.XSSFReader;
+import org.apache.poi.xssf.eventusermodel.XSSFSheetXMLHandler;
+import org.apache.poi.xssf.model.StylesTable;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -19,15 +26,35 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.LinkedHashMap;
+
+import org.xml.sax.InputSource;
+import org.xml.sax.XMLReader;
+import javax.xml.parsers.SAXParserFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ExcelService {
+    private static final SAXParserFactory SAX_FACTORY = SAXParserFactory.newInstance();
+    private static final Logger LOGGER = LoggerFactory.getLogger(ExcelService.class);
+
+    static {
+        SAX_FACTORY.setNamespaceAware(true);
+    }
+
     private final DataSource dataSource;
     private final DiemCongXetTuyenService diemCongService;
 
     public ExcelService(DataSource dataSource, DiemCongXetTuyenService diemCongService) {
         this.dataSource = dataSource;
         this.diemCongService = diemCongService;
+        // Increase POI byte-array allocation limit to allow larger Excel files
+        try {
+            IOUtils.setByteArrayMaxOverride(200_000_000);
+        } catch (Throwable t) {
+            // ignore when unavailable or restricted
+        }
     }
 
     private static class DiemCongColumnIndexes {
@@ -65,6 +92,7 @@ public class ExcelService {
         public int importDiemCongFromFileBulk(File file) throws Exception {
             int processed = 0;
             File csv = File.createTempFile("diemcong_import_", ".csv");
+            java.util.List<com.example.admissions_management.application.dto.request.DiemCongImportRequest> parsedRecords = new java.util.ArrayList<>();
             try (InputStream is = new FileInputStream(file);
                  Workbook workbook = WorkbookFactory.create(is);
                  java.io.BufferedWriter bw = new java.io.BufferedWriter(new java.io.OutputStreamWriter(new java.io.FileOutputStream(csv), java.nio.charset.StandardCharsets.UTF_8))) {
@@ -94,14 +122,11 @@ public class ExcelService {
                         String diemTong = indexes.idxDiemTong >= 0 ? normalizeDecimalString(getCellStringValueFast(row, indexes.idxDiemTong)) : "0";
                         String ghiChu = indexes.idxGhiChu >= 0 ? getCellStringValueFast(row, indexes.idxGhiChu) : "";
 
-                        if ((tsCccd == null || tsCccd.isEmpty()) && (maNganh == null || maNganh.isEmpty())) {
+                            if (tsCccd == null || tsCccd.isEmpty() || maNganh == null || maNganh.isEmpty()) {
                             continue;
                         }
 
-                        if (tsCccd.isEmpty() || maNganh.isEmpty()) {
-                            // skip invalid rows in bulk mode
-                            continue;
-                        }
+                        
 
                         String dcKeys = tsCccd + "_" + maNganh + "_" + (maToHop == null ? "" : maToHop);
 
@@ -120,6 +145,14 @@ public class ExcelService {
 
                         bw.write(line);
                         bw.newLine();
+                        // also collect parsed record for fallback bulk upsert paths
+                        java.math.BigDecimal bdDiemCc = parseDecimalOrZero(diemCc);
+                        java.math.BigDecimal bdDiemUtxt = parseDecimalOrZero(diemUtxt);
+                        java.math.BigDecimal bdDiemTong = parseDecimalOrZero(diemTong);
+                        Long idLong = parseLongOrNull(idVal);
+                        parsedRecords.add(new com.example.admissions_management.application.dto.request.DiemCongImportRequest(
+                                idLong, tsCccd, maNganh, maToHop, phuongThuc, bdDiemCc, bdDiemUtxt, bdDiemTong, ghiChu
+                        ));
                         processed++;
 
                     } catch (Exception ex) {
@@ -136,13 +169,27 @@ public class ExcelService {
             try {
                 conn = dataSource.getConnection();
                 st = conn.createStatement();
+                String dbProduct = null;
+                try {
+                    dbProduct = conn.getMetaData().getDatabaseProductName();
+                } catch (Exception ignored) {}
                 // Windows path needs escaping backslashes
                 String csvPath = csv.getAbsolutePath().replace("\\", "\\\\");
-                String sql = "LOAD DATA LOCAL INFILE '" + csvPath + "' IGNORE INTO TABLE xt_diemcongxetuyen "
-                        + "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' "
-                    + "(@iddiemcong,ts_cccd,manganh,matohop,phuongthuc,diemCC,diemUtxt,diemTong,ghichu,dc_keys) "
-                    + "SET iddiemcong = NULLIF(@iddiemcong, '')";
-                st.execute(sql);
+                if (dbProduct != null && (dbProduct.toLowerCase().contains("mysql") || dbProduct.toLowerCase().contains("maria"))) {
+                    // MySQL/MariaDB: use LOAD DATA LOCAL INFILE for maximum speed
+                    String sql = "LOAD DATA LOCAL INFILE '" + csvPath + "' IGNORE INTO TABLE xt_diemcongxetuyen "
+                            + "FIELDS TERMINATED BY ',' ENCLOSED BY '\"' LINES TERMINATED BY '\n' "
+                            + "(@iddiemcong,ts_cccd,manganh,matohop,phuongthuc,diemCC,diemUtxt,diemTong,ghichu,dc_keys) "
+                            + "SET iddiemcong = NULLIF(@iddiemcong, '')";
+                    st.execute(sql);
+                } else {
+                    // Non-MySQL (H2, others): fallback to service batched upsert which uses optimized JDBC batching
+                    if (!parsedRecords.isEmpty()) {
+                        // choose a large batch size to minimize round-trips
+                        int effectiveBatch = 2000;
+                        diemCongService.importInBatches(parsedRecords, effectiveBatch);
+                    }
+                }
             } finally {
                 if (st != null) try { st.close(); } catch (Exception e) {}
                 if (conn != null) try { conn.close(); } catch (Exception e) {}
@@ -158,72 +205,251 @@ public class ExcelService {
          * Uses fast path - NO formula evaluation (skips expensive parsing).
          */
         public DiemCongImportSummary importDiemCongFromFileBatch(File file, int batchSize) throws Exception {
-            DiemCongImportSummary summary = new DiemCongImportSummary();
-            try (InputStream is = new FileInputStream(file);
-                 Workbook workbook = WorkbookFactory.create(is)) {
+            int effectiveBatchSize = batchSize > 0 ? batchSize : 1000;
+            try {
+                IOUtils.setByteArrayMaxOverride(200_000_000);
+            } catch (Throwable ignored) {
+            }
 
-                Sheet sheet = workbook.getSheetAt(0);
-                if (sheet == null) return summary;
+            long t0 = System.currentTimeMillis();
+            try (OPCPackage opcPackage = OPCPackage.open(file, PackageAccess.READ)) {
+                XSSFReader reader = new XSSFReader(opcPackage);
+                StylesTable stylesTable = reader.getStylesTable();
+                ReadOnlySharedStringsTable sharedStringsTable = new ReadOnlySharedStringsTable(opcPackage);
+                DiemCongStreamingImportHandler handler = new DiemCongStreamingImportHandler(diemCongService, effectiveBatchSize);
 
-                DiemCongColumnIndexes indexes = resolveDiemCongColumnIndexes(sheet);
+                XMLReader parser = SAX_FACTORY.newSAXParser().getXMLReader();
+                parser.setContentHandler(new XSSFSheetXMLHandler(stylesTable, null, sharedStringsTable, handler, new DataFormatter(), false));
 
-                int firstRow = indexes.headerRowIndex + 1;
-                List<DiemCongImportRequest> batch = new java.util.ArrayList<>(batchSize);
-                for (int i = firstRow; i <= sheet.getLastRowNum(); i++) {
-                    Row row = sheet.getRow(i);
-                    if (row == null) continue;
-
-                    try {
-                        Long id = indexes.idxId >= 0 ? parseLongOrNull(getCellStringValueFast(row, indexes.idxId)) : null;
-                        String cccdVal = indexes.idxCccd >= 0 ? getCellStringValueFast(row, indexes.idxCccd) : "";
-                        String tsCccd = (cccdVal != null ? cccdVal : "").trim();
-                        String nganhVal = indexes.idxMaNganh >= 0 ? getCellStringValueFast(row, indexes.idxMaNganh) : "";
-                        String maNganh = (nganhVal != null ? nganhVal : "").trim();
-                        
-                        String toHopVal = indexes.idxMaToHop >= 0 ? getCellStringValueFast(row, indexes.idxMaToHop) : "";
-                        String maToHop = (toHopVal != null ? toHopVal : "").trim();
-                        String phuongThucVal = indexes.idxPhuongThuc >= 0 ? getCellStringValueFast(row, indexes.idxPhuongThuc) : "";
-                        String phuongThuc = (phuongThucVal != null ? phuongThucVal : "").trim();
-                        
-                        BigDecimal diemCc = indexes.idxDiemCc >= 0 ? getCellBigDecimalValueFast(row, indexes.idxDiemCc) : BigDecimal.ZERO;
-                        BigDecimal diemUtxt = indexes.idxDiemUtxt >= 0 ? getCellBigDecimalValueFast(row, indexes.idxDiemUtxt) : BigDecimal.ZERO;
-                        BigDecimal diemTong = indexes.idxDiemTong >= 0 ? getCellBigDecimalValueFast(row, indexes.idxDiemTong) : BigDecimal.ZERO;
-                        String ghiChuVal = indexes.idxGhiChu >= 0 ? getCellStringValueFast(row, indexes.idxGhiChu) : "";
-                        String ghiChu = (ghiChuVal != null ? ghiChuVal : "");
-
-                        if (tsCccd.isEmpty() && maNganh.isEmpty()) {
-                            summary.setSkippedCount(summary.getSkippedCount() + 1);
-                            continue;
-                        }
-
-                        batch.add(new DiemCongImportRequest(id, tsCccd, maNganh, maToHop, phuongThuc, diemCc, diemUtxt, diemTong, ghiChu));
-
-                        if (batch.size() >= batchSize) {
-                            DiemCongImportSummary batchSummary = diemCongService.importInBatches(batch, batchSize);
-                            summary.setTotalRows(summary.getTotalRows() + batchSummary.getTotalRows());
-                            summary.setNewCount(summary.getNewCount() + batchSummary.getNewCount());
-                            summary.setUpdatedCount(summary.getUpdatedCount() + batchSummary.getUpdatedCount());
-                            summary.setSkippedCount(summary.getSkippedCount() + batchSummary.getSkippedCount());
-                            batch.clear();
-                        }
-
-                    } catch (Exception ex) {
-                        // skip problematic row
-                        summary.setSkippedCount(summary.getSkippedCount() + 1);
-                    }
+                try (InputStream sheetData = reader.getSheetsData().next()) {
+                    parser.parse(new InputSource(sheetData));
                 }
 
-                if (!batch.isEmpty()) {
-                    DiemCongImportSummary batchSummary = diemCongService.importInBatches(batch, batchSize);
-                    summary.setTotalRows(summary.getTotalRows() + batchSummary.getTotalRows());
-                    summary.setNewCount(summary.getNewCount() + batchSummary.getNewCount());
-                    summary.setUpdatedCount(summary.getUpdatedCount() + batchSummary.getUpdatedCount());
-                    summary.setSkippedCount(summary.getSkippedCount() + batchSummary.getSkippedCount());
-                    batch.clear();
+                DiemCongImportSummary res = handler.finish();
+                long took = System.currentTimeMillis() - t0;
+                LOGGER.info("importDiemCongFromFileBatch: file={} totalRows={} new={} updated={} skipped={} took={}ms",
+                    file.getName(), res.getTotalRows(), res.getNewCount(), res.getUpdatedCount(), res.getSkippedCount(), took);
+                return res;
+            }
+        }
+
+        private static final class RowSnapshot {
+            private final int rowNum;
+            private final Map<Integer, String> cells;
+
+            private RowSnapshot(int rowNum, Map<Integer, String> cells) {
+                this.rowNum = rowNum;
+                this.cells = cells;
+            }
+        }
+
+        private final class DiemCongStreamingImportHandler implements XSSFSheetXMLHandler.SheetContentsHandler {
+            private final DiemCongXetTuyenService service;
+            private final int batchSize;
+            private final DiemCongImportSummary summary = new DiemCongImportSummary();
+            private final Map<Integer, RowSnapshot> bufferedRows = new LinkedHashMap<>();
+            private final List<DiemCongImportRequest> batch;
+
+            private Map<Integer, String> currentRowValues = new HashMap<>(16);
+            private boolean headerResolved = false;
+            private int headerRowIndex = -1;
+            private DiemCongColumnIndexes indexes;
+
+            private DiemCongStreamingImportHandler(DiemCongXetTuyenService service, int batchSize) {
+                this.service = service;
+                this.batchSize = Math.max(1, batchSize);
+                this.batch = new ArrayList<>(this.batchSize);
+            }
+
+            @Override
+            public void startRow(int rowNum) {
+                currentRowValues = new HashMap<>(16);
+            }
+
+            @Override
+            public void endRow(int rowNum) {
+                bufferedRows.put(rowNum, new RowSnapshot(rowNum, new HashMap<>(currentRowValues)));
+
+                if (!headerResolved && rowNum >= 30) {
+                    resolveHeaderAndDrain();
+                }
+
+                if (headerResolved && rowNum > headerRowIndex) {
+                    processSnapshot(bufferedRows.remove(rowNum));
                 }
             }
 
-            return summary;
+            @Override
+            public void cell(String cellReference, String formattedValue, org.apache.poi.xssf.usermodel.XSSFComment comment) {
+                if (cellReference != null) {
+                    int columnIndex = columnToIndex(cellReference);
+                    if (columnIndex >= 0) {
+                        currentRowValues.put(columnIndex, formattedValue == null ? "" : formattedValue.trim());
+                    }
+                }
+            }
+
+            @Override
+            public void headerFooter(String text, boolean isHeader, String tagName) {
+                // no-op
+            }
+
+            private DiemCongImportSummary finish() {
+                if (!headerResolved) {
+                    resolveHeaderAndDrain();
+                }
+                flushBatch();
+                return summary;
+            }
+
+            private void resolveHeaderAndDrain() {
+                if (headerResolved || bufferedRows.isEmpty()) {
+                    return;
+                }
+
+                int bestRow = -1;
+                int bestScore = -1;
+                for (RowSnapshot snapshot : bufferedRows.values()) {
+                    Map<String, Integer> headerMap = buildNormalizedHeaderMap(snapshot.cells);
+                    int score = scoreHeader(headerMap);
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestRow = snapshot.rowNum;
+                    }
+                }
+
+                if (bestRow < 0 || bestScore < 3) {
+                    // Defer until more rows arrive, or finish() will resolve if the file is small.
+                    return;
+                }
+
+                headerRowIndex = bestRow;
+                try {
+                    indexes = resolveIndexes(bufferedRows.get(bestRow).cells);
+                } catch (Exception ex) {
+                    // failed to resolve indexes for detected header, defer
+                    return;
+                }
+                headerResolved = true;
+
+                for (RowSnapshot snapshot : bufferedRows.values()) {
+                    if (snapshot.rowNum > headerRowIndex) {
+                        processSnapshot(snapshot);
+                    }
+                }
+                bufferedRows.clear();
+            }
+
+            private void processSnapshot(RowSnapshot snapshot) {
+                if (snapshot == null || indexes == null) {
+                    return;
+                }
+
+                summary.setTotalRows(summary.getTotalRows() + 1);
+
+                try {
+                    Long id = indexes.idxId >= 0 ? parseLongOrNull(getCellValue(snapshot.cells, indexes.idxId)) : null;
+                    String tsCccd = indexes.idxCccd >= 0 ? getCellValue(snapshot.cells, indexes.idxCccd).trim() : "";
+                    String maNganh = indexes.idxMaNganh >= 0 ? getCellValue(snapshot.cells, indexes.idxMaNganh).trim() : "";
+                    String maToHop = indexes.idxMaToHop >= 0 ? getCellValue(snapshot.cells, indexes.idxMaToHop).trim() : "";
+                    String phuongThuc = indexes.idxPhuongThuc >= 0 ? getCellValue(snapshot.cells, indexes.idxPhuongThuc).trim() : "";
+                    BigDecimal diemCc = indexes.idxDiemCc >= 0 ? parseDecimalOrZero(getCellValue(snapshot.cells, indexes.idxDiemCc)) : BigDecimal.ZERO;
+                    BigDecimal diemUtxt = indexes.idxDiemUtxt >= 0 ? parseDecimalOrZero(getCellValue(snapshot.cells, indexes.idxDiemUtxt)) : BigDecimal.ZERO;
+                    BigDecimal diemTong = indexes.idxDiemTong >= 0 ? parseDecimalOrZero(getCellValue(snapshot.cells, indexes.idxDiemTong)) : BigDecimal.ZERO;
+                    String ghiChu = indexes.idxGhiChu >= 0 ? getCellValue(snapshot.cells, indexes.idxGhiChu).trim() : "";
+
+                    if ((tsCccd == null || tsCccd.isEmpty()) && (maNganh == null || maNganh.isEmpty())) {
+                        summary.setSkippedCount(summary.getSkippedCount() + 1);
+                        return;
+                    }
+
+                    if (tsCccd == null || tsCccd.isEmpty() || maNganh == null || maNganh.isEmpty()) {
+                        summary.setSkippedCount(summary.getSkippedCount() + 1);
+                        return;
+                    }
+
+                    batch.add(new DiemCongImportRequest(id, tsCccd, maNganh, maToHop, phuongThuc, diemCc, diemUtxt, diemTong, ghiChu));
+                    if (batch.size() >= batchSize) {
+                        flushBatch();
+                    }
+                } catch (Exception ex) {
+                    summary.setSkippedCount(summary.getSkippedCount() + 1);
+                }
+            }
+
+            private void flushBatch() {
+                if (batch.isEmpty()) {
+                    return;
+                }
+                DiemCongImportSummary batchSummary = service.importInBatches(batch, batchSize);
+                summary.setNewCount(summary.getNewCount() + batchSummary.getNewCount());
+                summary.setUpdatedCount(summary.getUpdatedCount() + batchSummary.getUpdatedCount());
+                summary.setSkippedCount(summary.getSkippedCount() + batchSummary.getSkippedCount());
+                batch.clear();
+            }
+
+            private DiemCongColumnIndexes resolveIndexes(Map<Integer, String> headerCells) throws Exception {
+                Map<String, Integer> headerMap = buildNormalizedHeaderMap(headerCells);
+                DiemCongColumnIndexes idx = new DiemCongColumnIndexes();
+                idx.headerRowIndex = headerRowIndex;
+                idx.idxId = findColumnIndex(headerMap, new String[]{"id", "iddiemcong", "ma", "stt"});
+                idx.idxCccd = findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh", "cccd thí sinh", "tscccd", "cmnd", "cmt"});
+                idx.idxMaNganh = findColumnIndex(headerMap, new String[]{"manganh", "ma nganh", "mã ngành"});
+                idx.idxMaToHop = findColumnIndex(headerMap, new String[]{"matohop", "ma to hop", "mato hop", "mã tổ hợp"});
+                idx.idxPhuongThuc = findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc", "phuongthucxettuyen", "phuong thuc xet tuyen", "phương thức"});
+                idx.idxDiemCc = findColumnIndex(headerMap, new String[]{"diemcc", "diem cc", "diemccxt", "diemchungchi", "diem chung chi", "điểm cc"});
+                idx.idxDiemUtxt = findColumnIndex(headerMap, new String[]{"diemut", "diem ut", "diemutxt", "diem utxt", "diemuutien", "diem uu tien", "diemuutiendacbiet", "diemutqd", "diem uutien xettuyen", "diemuutienxettuyen", "điểm ut", "điểm ưu tiên"});
+                idx.idxDiemTong = findColumnIndex(headerMap, new String[]{"tongdiem", "tong diem", "diemtong", "tongdiemxettuyen", "tongdiemcong", "tongdiem", "tổng điểm", "điểm tổng"});
+                idx.idxGhiChu = findColumnIndex(headerMap, new String[]{"ghichu", "ghi chu", "ghichuthongtin", "note", "ghi chú"});
+
+                if (idx.idxCccd < 0 || idx.idxMaNganh < 0) {
+                    throw new Exception("Không nhận dạng được cột bắt buộc (CCCD, Mã Ngành). Vui lòng kiểm tra lại header file Excel.");
+                }
+                return idx;
+            }
+
+            private Map<String, Integer> buildNormalizedHeaderMap(Map<Integer, String> headerCells) {
+                Map<String, Integer> headerMap = new HashMap<>();
+                for (Map.Entry<Integer, String> entry : headerCells.entrySet()) {
+                    String normalized = normalizeHeader(entry.getValue());
+                    if (!normalized.isEmpty() && !headerMap.containsKey(normalized)) {
+                        headerMap.put(normalized, entry.getKey());
+                    }
+                }
+                return headerMap;
+            }
+
+            private int scoreHeader(Map<String, Integer> headerMap) {
+                int score = 0;
+                if (findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh", "cccd thí sinh", "tscccd"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"manganh", "ma nganh", "mã ngành"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"matohop", "ma to hop", "mã tổ hợp"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc", "phương thức"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"diemcc", "diem cc", "điểm cc"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"diemut", "diem ut", "diemutxt", "diemuutien", "điểm ut", "điểm ưu tiên"}) >= 0) score++;
+                if (findColumnIndex(headerMap, new String[]{"tongdiem", "diemtong", "tong diem", "tongdiemxettuyen", "tổng điểm", "điểm tổng"}) >= 0) score++;
+                return score;
+            }
+
+            private String getCellValue(Map<Integer, String> row, int index) {
+                if (index < 0 || row == null) {
+                    return "";
+                }
+                return row.getOrDefault(index, "");
+            }
+
+            private int columnToIndex(String cellReference) {
+                int col = 0;
+                for (int i = 0; i < cellReference.length(); i++) {
+                    char ch = cellReference.charAt(i);
+                    if (Character.isLetter(ch)) {
+                        col = col * 26 + (Character.toUpperCase(ch) - 'A' + 1);
+                    } else {
+                        break;
+                    }
+                }
+                return col - 1;
+            }
         }
 
     /**
@@ -359,12 +585,12 @@ public class ExcelService {
                 String ghiChu = (ghiChuVal != null ? ghiChuVal : "");
 
                 // Skip completely empty rows
-                if (tsCccd.isEmpty() && maNganh.isEmpty()) {
+                if ((tsCccd == null || tsCccd.isEmpty()) && (maNganh == null || maNganh.isEmpty())) {
                     continue;
                 }
 
                 // Validate required fields
-                if (tsCccd.isEmpty() || maNganh.isEmpty()) {
+                if (tsCccd == null || tsCccd.isEmpty() || maNganh == null || maNganh.isEmpty()) {
                     throw new IllegalArgumentException("Row " + (i + 1) + ": CCCD và Mã Ngành không được để trống");
                 }
 
@@ -402,11 +628,11 @@ public class ExcelService {
         DiemCongColumnIndexes idx = new DiemCongColumnIndexes();
         idx.headerRowIndex = headerRowIndex;
         idx.idxId = findColumnIndex(headerMap, new String[]{"id", "iddiemcong", "ma", "stt"});
-        idx.idxCccd = findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh", "cmnd", "cmt"});
-        idx.idxMaNganh = findColumnIndex(headerMap, new String[]{"manganh", "ma nganh"});
-        idx.idxMaToHop = findColumnIndex(headerMap, new String[]{"matohop", "ma to hop", "mato hop"});
-        idx.idxPhuongThuc = findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc", "phuongthucxettuyen", "phuong thuc xet tuyen"});
-        idx.idxDiemCc = findColumnIndex(headerMap, new String[]{"diemcc", "diem cc", "diemccxt", "diemchungchi", "diem chung chi"});
+        idx.idxCccd = findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh", "cccd thí sinh", "tscccd", "cmnd", "cmt"});
+        idx.idxMaNganh = findColumnIndex(headerMap, new String[]{"manganh", "ma nganh", "mã ngành"});
+        idx.idxMaToHop = findColumnIndex(headerMap, new String[]{"matohop", "ma to hop", "mato hop", "mã tổ hợp"});
+        idx.idxPhuongThuc = findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc", "phuongthucxettuyen", "phuong thuc xet tuyen", "phương thức"});
+        idx.idxDiemCc = findColumnIndex(headerMap, new String[]{"diemcc", "diem cc", "diemccxt", "diemchungchi", "diem chung chi", "điểm cc"});
         idx.idxDiemUtxt = findColumnIndex(headerMap, new String[]{
                 "diemut",
                 "diem ut",
@@ -417,10 +643,12 @@ public class ExcelService {
                 "diemuutiendacbiet",
                 "diemutqd",
                 "diem uutien xettuyen",
-                "diemuutienxettuyen"
+                "diemuutienxettuyen",
+                "điểm ut",
+                "điểm ưu tiên"
         });
-        idx.idxDiemTong = findColumnIndex(headerMap, new String[]{"tongdiem", "tong diem", "diemtong", "tongdiemxettuyen", "tongdiemcong", "Tổng Điểm"});
-        idx.idxGhiChu = findColumnIndex(headerMap, new String[]{"ghichu", "ghi chu", "ghichuthongtin", "note"});
+            idx.idxDiemTong = findColumnIndex(headerMap, new String[]{"tongdiem", "tong diem", "diemtong", "tongdiemxettuyen", "tongdiemcong", "tổng điểm", "điểm tổng"});
+            idx.idxGhiChu = findColumnIndex(headerMap, new String[]{"ghichu", "ghi chu", "ghichuthongtin", "note", "ghi chú"});
 
         if (idx.idxCccd < 0 || idx.idxMaNganh < 0) {
             throw new Exception("Không nhận dạng được cột bắt buộc (CCCD, Mã Ngành). Vui lòng kiểm tra lại header file Excel.");
@@ -444,13 +672,13 @@ public class ExcelService {
             }
 
             int score = 0;
-            if (findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"manganh", "ma nganh"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"matohop", "ma to hop"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"diemcc", "diem cc"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"diemut", "diem ut", "diemutxt", "diemuutien"}) >= 0) score++;
-            if (findColumnIndex(headerMap, new String[]{"tongdiem", "diemtong", "tong diem", "Tổng Điểm"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"cccd", "cccdthisinh", "cccd thi sinh", "cccd thí sinh", "tscccd"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"manganh", "ma nganh", "mã ngành"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"matohop", "ma to hop", "mã tổ hợp"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"phuongthuc", "phuong thuc", "phương thức"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"diemcc", "diem cc", "điểm cc"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"diemut", "diem ut", "diemutxt", "diemuutien", "điểm ut", "điểm ưu tiên"}) >= 0) score++;
+            if (findColumnIndex(headerMap, new String[]{"tongdiem", "diemtong", "tong diem", "tổng điểm", "điểm tổng"}) >= 0) score++;
 
             if (score > bestScore) {
                 bestScore = score;
@@ -549,6 +777,39 @@ public class ExcelService {
             return bos.toByteArray();
             
         }
+    }
+
+    /**
+     * Optimized import: attempt fast bulk path (CSV -> LOAD DATA LOCAL INFILE) when supported,
+     * otherwise fallback to safe streaming batch import.
+     */
+    public DiemCongImportSummary importDiemCongOptimized(File file, int batchSize) throws Exception {
+        // Try detecting DB product and attempting bulk import first for MySQL/MariaDB
+        String dbProduct = null;
+        try (java.sql.Connection conn = dataSource.getConnection()) {
+            try {
+                dbProduct = conn.getMetaData().getDatabaseProductName();
+            } catch (Exception ignored) {}
+        }
+
+        if (dbProduct != null) {
+            String db = dbProduct.toLowerCase();
+            if (db.contains("mysql") || db.contains("maria")) {
+                try {
+                    int processed = importDiemCongFromFileBulk(file);
+                    DiemCongImportSummary summary = new DiemCongImportSummary();
+                    summary.setTotalRows(processed);
+                    summary.setNewCount(processed);
+                    return summary;
+                } catch (Exception ex) {
+                    LOGGER.warn("Bulk import failed (will fallback to batch). dbProduct={}, error={}", dbProduct, ex.getMessage());
+                    // fallthrough to batch fallback
+                }
+            }
+        }
+
+        // Fallback to streaming batch import
+        return importDiemCongFromFileBatch(file, batchSize);
     }
 
     /**
@@ -662,6 +923,7 @@ public class ExcelService {
         }
     }
 
+    @SuppressWarnings("unused")
     private String getCellStringValue(Row row, int cellIndex, DataFormatter formatter, FormulaEvaluator evaluator) {
         Cell cell = row.getCell(cellIndex);
         if (cell == null) return "";
@@ -713,6 +975,7 @@ public class ExcelService {
         return BigDecimal.ZERO;
     }
 
+    @SuppressWarnings("unused")
     private BigDecimal getCellBigDecimalValue(Row row, int cellIndex, DataFormatter formatter, FormulaEvaluator evaluator) {
         Cell cell = row.getCell(cellIndex);
         if (cell == null || cell.getCellType() == CellType.BLANK) {

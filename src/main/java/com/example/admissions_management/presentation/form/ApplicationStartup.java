@@ -2,13 +2,9 @@ package com.example.admissions_management.presentation.form;
 
 import com.example.admissions_management.config.ApplicationConfig;
 import com.example.admissions_management.presentation.form.view.AdminConsole;
-import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
 import java.util.logging.Logger;
-
 import javax.swing.SwingUtilities;
-
 import org.springframework.boot.context.event.ApplicationReadyEvent;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 

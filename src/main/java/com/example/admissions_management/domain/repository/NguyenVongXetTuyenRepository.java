@@ -7,6 +7,8 @@ import java.util.Optional;
 public interface NguyenVongXetTuyenRepository {
 
     List<NguyenVongXetTuyen> findAll();
+    Optional<NguyenVongXetTuyen> findById(Integer id);
+    
 
     List<NguyenVongXetTuyen> findByNnCccd(String nnCccd);
 
@@ -29,4 +31,8 @@ public interface NguyenVongXetTuyenRepository {
     void deleteAll();
 
     void updateBatch(List<NguyenVongXetTuyen> nguyenVongs);
+    /**
+     * Bulk insert domain objects using efficient JDBC batch insert.
+     */
+    void bulkInsert(List<NguyenVongXetTuyen> nguyenVongs, int batchSize);
 }

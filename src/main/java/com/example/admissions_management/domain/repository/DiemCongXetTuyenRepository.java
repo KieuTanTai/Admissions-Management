@@ -27,6 +27,7 @@ public interface DiemCongXetTuyenRepository {
     List<DiemCongXetTuyen> findByDcKeysIn(List<String> dcKeys);
 
     void saveAll(List<DiemCongXetTuyen> diemCongs);
+    void bulkUpsert(List<DiemCongXetTuyen> diemCongs, int batchSize);
     
     void deleteAll();
 }

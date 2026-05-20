@@ -1,9 +1,18 @@
 package com.example.admissions_management.application.service;
 
+import com.example.admissions_management.domain.repository.ApplicantRepository;
+import com.example.admissions_management.domain.repository.PreferenceRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNguyenVongXetTuyenEntity;
 import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
 import com.example.admissions_management.presentation.form.model.MajorForm;
 import com.example.admissions_management.presentation.form.model.MajorImportResult;
+
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
+
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -24,64 +33,28 @@ public class MajorManagementService {
 
     private final MajorRepository majorRepository;
 
+    @PersistenceContext
+    private EntityManager entityManager;
+
     public MajorManagementService(MajorRepository majorRepository) {
         this.majorRepository = majorRepository;
     }
 
     public List<XtNganhEntity> searchMajors(String query, int page) {
-        Pageable pageable = PageRequest.of(
-                Math.max(0, page),
-                PAGE_SIZE,
-                Sort.by(Sort.Direction.ASC, "maNganh")
-        );
-
+        Pageable pageable = PageRequest.of(Math.max(0, page), PAGE_SIZE, Sort.by(Sort.Direction.ASC, "maNganh"));
         Page<XtNganhEntity> results;
-
         if (query == null || query.isBlank()) {
             results = majorRepository.findAll(pageable);
         } else {
-            results = majorRepository.findByMaNganhContainingIgnoreCaseOrTenNganhContainingIgnoreCase(
-                    query.trim(),
-                    query.trim(),
-                    pageable
-            );
+            results = majorRepository.findByMaNganhContainingIgnoreCaseOrTenNganhContainingIgnoreCase(query.trim(), query.trim(), pageable);
         }
-
         return results.get().collect(Collectors.toList());
     }
 
     public Optional<XtNganhEntity> getMajorById(Integer id) {
         return majorRepository.findById(id);
     }
-
-    public void saveMajor(MajorForm form) {
-        XtNganhEntity entity;
-
-        if (form.getIdnganh() != null) {
-            entity = majorRepository.findById(form.getIdnganh())
-                    .orElse(new XtNganhEntity());
-        } else if (form.getManganh() != null && !form.getManganh().isBlank()) {
-            entity = majorRepository.findByMaNganh(form.getManganh().trim())
-                    .orElse(new XtNganhEntity());
-        } else {
-            entity = new XtNganhEntity();
-        }
-
-        entity.setMaNganh(safe(form.getManganh(), 45));
-        entity.setTenNganh(safe(defaultIfBlank(form.getTennganh(), "Chưa có tên ngành"), 100));
-        entity.setToHopGoc(safe(form.getnTohopgoc(), 3));
-        entity.setChiTieu(form.getnChitieu() == null ? 0 : form.getnChitieu());
-        entity.setDiemSan(form.getnDiemsan());
-        entity.setDiemTrungTuyen(form.getnDiemtrungtuyen());
-        entity.setTuyenThang(safe(form.getnTuyenthang(), 1));
-        entity.setDgnl(safe(form.getnDgnl(), 1));
-        entity.setThpt(safe(form.getnThpt(), 1));
-        entity.setVsat(safe(form.getnVsat(), 1));
-        entity.setSlXtt(form.getSlXtt());
-        entity.setSlDgnl(form.getSlDgnl());
-        entity.setSlVsat(form.getSlVsat());
-        entity.setSlThpt(safe(form.getSlThpt(), 45));
-
+    public void saveMajor(XtNganhEntity entity) {
         majorRepository.save(entity);
     }
 
@@ -95,70 +68,68 @@ public class MajorManagementService {
 
     public MajorImportResult importExcelFile(Path path) {
         MajorImportResult result = new MajorImportResult();
-
         try (InputStream inputStream = Files.newInputStream(path)) {
             List<XtNganhEntity> majors = readExcel(inputStream);
-
             if (majors.isEmpty()) {
                 result.addError("File không đọc được dòng ngành nào. Kiểm tra lại header.");
                 return result;
             }
-
             saveImportedMajors(majors, result);
+            updateMajorStatsFromNguyenVong();
         } catch (Exception ex) {
             result.addError("Lỗi import file " + path + ": " + ex.getMessage());
         }
-
-        result.setMessage("Import hoàn tất: "
-                + result.getImportedCount()
-                + " mới, "
-                + result.getUpdatedCount()
-                + " cập nhật.");
-
+        result.setMessage("Import hoàn tất: " + result.getImportedCount() + " mới, " + result.getUpdatedCount() + " cập nhật.");
         return result;
+    }
+
+    @Transactional
+    public void updateMajorStatsFromNguyenVong() {
+        List<XtNganhEntity> majors = majorRepository.findAll();
+        List<String> maNganhList = majors.stream().map(XtNganhEntity::getMaNganh).collect(Collectors.toList());
+
+        String jpql = "SELECT nv FROM XtNguyenVongXetTuyenEntity nv WHERE nv.nvMaNganh IN :maNganhList";
+        List<XtNguyenVongXetTuyenEntity> nguyenVongs = entityManager.createQuery(jpql, XtNguyenVongXetTuyenEntity.class)
+                .setParameter("maNganhList", maNganhList)
+                .getResultList();
+
+        Map<String, List<XtNguyenVongXetTuyenEntity>> mapNguyenVong = nguyenVongs.stream()
+        .collect(Collectors.groupingBy(XtNguyenVongXetTuyenEntity::getNvMaNganh));
+
+        for (XtNganhEntity nganh : majors) {
+            List<XtNguyenVongXetTuyenEntity> dsNV = mapNguyenVong.getOrDefault(nganh.getMaNganh(), List.of());
+
+            int slThpt = (int) dsNV.stream().filter(nv -> "THPT".equalsIgnoreCase(nv.getTtPhuongThuc())).count();
+            int slDgnl = (int) dsNV.stream().filter(nv -> "ĐGNL".equalsIgnoreCase(nv.getTtPhuongThuc())).count();
+            int slVsat = (int) dsNV.stream().filter(nv -> "V-SAT".equalsIgnoreCase(nv.getTtPhuongThuc())).count();
+            
+            BigDecimal diemTrungTuyen = dsNV.stream()
+                .filter(nv -> "Trúng tuyển".equalsIgnoreCase(nv.getNvKetQua())) // lọc người trúng
+                .map(XtNguyenVongXetTuyenEntity::getDiemXetTuyen)
+                .filter(d -> d != null && d.compareTo(nganh.getDiemSan()) >= 0) // >= điểm sàn
+                .min(BigDecimal::compareTo)
+                .orElse(nganh.getDiemSan()); // nếu không có ai trúng, dùng điểm sàn
+            nganh.setDiemTrungTuyen(diemTrungTuyen);
+        }
+
+        majorRepository.saveAll(majors);
+        majorRepository.flush();
     }
 
     private List<XtNganhEntity> readExcel(InputStream inputStream) throws IOException {
         List<XtNganhEntity> majors = new ArrayList<>();
-
-        try (Workbook workbook = WorkbookFactory.create(inputStream)) {
-            Sheet sheet = workbook.getSheetAt(0);
-
-            if (sheet == null) {
-                throw new IOException("Không tìm thấy sheet.");
-            }
-
-            DataFormatter formatter = new DataFormatter();
-
-            int headerRowIndex = findHeaderRow(sheet, formatter);
-
-            if (headerRowIndex < 0) {
-                throw new IOException("Không tìm thấy dòng header có cột mã ngành.");
-            }
-
-            Row headerRow = sheet.getRow(headerRowIndex);
-            Map<String, Integer> headerIndex = buildHeaderIndex(headerRow, formatter);
-
-            System.out.println("HEADER ROW INDEX = " + headerRowIndex);
-            System.out.println("HEADER MAP = " + headerIndex);
-
-            for (int i = headerRowIndex + 1; i <= sheet.getLastRowNum(); i++) {
-                Row row = sheet.getRow(i);
-
-                if (row == null || isRowEmpty(row, formatter)) {
-                    continue;
-                }
-
-                XtNganhEntity entity = parseRow(row, headerIndex, formatter);
-
-                if (entity != null) {
-                    majors.add(entity);
-                }
-            }
+        Workbook workbook = WorkbookFactory.create(inputStream);
+        Sheet sheet = workbook.getSheetAt(0);
+        DataFormatter formatter = new DataFormatter();
+        int headerRowIndex = findHeaderRow(sheet, formatter);
+        Row headerRow = sheet.getRow(headerRowIndex);
+        Map<String, Integer> headerIndex = buildHeaderIndex(headerRow, formatter);
+        for (int i = headerRowIndex + 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if (row == null || isRowEmpty(row, formatter)) continue;
+            XtNganhEntity entity = parseRow(row, headerIndex, formatter);
+            if (entity != null) majors.add(entity);
         }
-
-        System.out.println("Tổng số dòng đọc được từ Excel = " + majors.size());
-
         return majors;
     }
 
