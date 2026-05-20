@@ -2,64 +2,53 @@ package com.example.admissions_management.presentation.form;
 
 import com.example.admissions_management.config.ApplicationConfig;
 import com.example.admissions_management.presentation.form.view.AdminConsole;
-import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
 import java.util.logging.Logger;
 
 import javax.swing.SwingUtilities;
 
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import com.example.admissions_management.presentation.form.view.AdminPanel;
-
-/**
- * Component để khởi động Swing Form khi Spring Boot application sẵn sàng
- * Điều này cho phép chạy cả Swing GUI lẫn Spring Web MVC server cùng lúc
- *
- * Swing UI chạy trên riêng Event Dispatch Thread (EDT)
- * Spring Web MVC server chạy trên servlet container
- */
 @Component
 public class ApplicationStartup {
 
     private static final Logger logger = Logger.getLogger(ApplicationStartup.class.getName());
 
-    private final AdminConsole adminConsole;
-    private final AdminPanel adminPanel;
+    private final ObjectProvider<AdminConsole> adminConsoleProvider;
     private final ApplicationConfig applicationConfig;
 
-    public ApplicationStartup(AdminConsole adminConsole,AdminPanel adminPanel, ApplicationConfig applicationConfig) {
-        this.adminConsole = adminConsole;
-        this.adminPanel = adminPanel;
+    public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider,
+            ApplicationConfig applicationConfig) {
+        this.adminConsoleProvider = adminConsoleProvider;
         this.applicationConfig = applicationConfig;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         logger.info("================================");
-        logger.info("Spring Boot Application đã khởi động thành công!");
+        logger.info("Spring Boot application da khoi dong thanh cong!");
         logger.info("Web Server: http://localhost:8080/admissions");
         logger.info("================================");
 
-        if (applicationConfig.getSwing().isEnabled()) {
-            if (adminConsole == null) {
-                logger.warning("Swing UI được bật nhưng không tìm thấy bean CombinationForm (có thể chạy ở chế độ headless).");
-                return;
-            }
-            logger.info("Đang khởi động Swing Combination Form...");
-            SwingUtilities.invokeLater(() -> {
-                adminPanel.setVisible(true);
-                logger.info("✓ Admin Console Swing Form đã được hiển thị");
-            });
-
-        } else {
-            logger.info("Swing UI bị vô hiệu hóa. Chỉ chạy Web Server.");
-            logger.info("Để bật Swing UI, thiết lập: app.swing.enabled=true");
+        if (!applicationConfig.getSwing().isEnabled()) {
+            logger.info("Swing UI bi vo hieu hoa. Chi chay Web Server.");
+            logger.info("De bat Swing UI, thiet lap: app.swing.enabled=true");
+            return;
         }
+
+        AdminConsole adminConsole = adminConsoleProvider.getIfAvailable();
+        if (adminConsole == null) {
+            logger.warning("Swing UI duoc bat nhung khong tim thay bean AdminConsole.");
+            return;
+        }
+
+        logger.info("Dang khoi dong Swing admin console...");
+        SwingUtilities.invokeLater(() -> {
+            adminConsole.setVisible(true);
+            adminConsole.toFront();
+            logger.info("Admin console da duoc hien thi.");
+        });
     }
 }
-
-
-

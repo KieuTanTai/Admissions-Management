@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
@@ -18,8 +18,8 @@
         <aside class="admin-sidebar">
             <div class="brand-block">
                 <p class="brand-kicker">Admissions Console</p>
-                <h1>Phần 8</h1>
-                <p class="brand-note">Quản lý nguyện vọng, chạy xét tuyển và xuất kết quả Excel.</p>
+                <h1>Phần 8 - Nguyện vọng và xét tuyển</h1>
+                <p class="brand-note">Điều hành quy trình xét tuyển, theo dõi kết quả theo ngành và xuất dữ liệu phục vụ tổng hợp.</p>
             </div>
 
             <nav class="menu-list">
@@ -29,21 +29,21 @@
             </nav>
 
             <div class="status-card">
-                <p class="status-title">Kết quả</p>
+                <p class="status-title">Đầu ra dữ liệu</p>
                 <p class="status-value">XLSX</p>
-                <p class="status-sub">Có thể xuất toàn bộ kết quả hoặc theo từng mã ngành.</p>
+                <p class="status-sub">Có thể xuất kết quả cho toàn bộ danh sách hoặc theo từng mã ngành đã chọn.</p>
             </div>
         </aside>
 
         <main class="admin-main">
             <header class="topbar">
                 <div>
-                    <p class="topbar-kicker">Quản trị xét tuyển</p>
+                    <p class="topbar-kicker">Vận hành xét tuyển</p>
                     <h2>Quản lý nguyện vọng và kết quả xét tuyển</h2>
                 </div>
                 <div class="topbar-actions">
                     <button type="button" class="btn ghost" id="exportResults">Xuất Excel</button>
-                    <button type="button" class="btn solid" id="reloadBtn">Làm mới</button>
+                    <button type="button" class="btn solid" id="reloadBtn">Làm mới dữ liệu</button>
                 </div>
             </header>
 
@@ -52,17 +52,17 @@
                     <div class="panel-head">
                         <div>
                             <h3>Điều khiển xét tuyển</h3>
-                            <p class="muted">Nhập mã ngành để xét một ngành hoặc để trống khi xuất toàn bộ kết quả.</p>
+                            <p class="muted">Nhập mã ngành để xử lý riêng từng ngành hoặc để trống khi muốn xuất dữ liệu tổng hợp.</p>
                         </div>
-                        <span class="pill">Process</span>
+                        <span class="pill">Xử lý</span>
                     </div>
                     <div class="form-grid">
                         <label class="field field-lg">
                             <span>Mã ngành</span>
                             <input type="text" id="maNganhSelect" placeholder="Ví dụ: 7480201">
                         </label>
-                        <button type="button" class="btn accent" id="processOneMajor">Xét một ngành</button>
-                        <button type="button" class="btn danger field-full" id="processAllMajor">Xét tất cả ngành</button>
+                        <button type="button" class="btn accent" id="processOneMajor">Xét tuyển theo ngành</button>
+                        <button type="button" class="btn danger field-full" id="processAllMajor">Xét tuyển toàn bộ</button>
                     </div>
                     <div id="processStatus" class="notice"></div>
                 </div>
@@ -70,21 +70,21 @@
                 <div class="panel">
                     <div class="panel-head">
                         <div>
-                            <h3>Tìm kiếm</h3>
-                            <p class="muted">Lọc theo CCCD hoặc mã ngành.</p>
+                            <h3>Bộ lọc danh sách</h3>
+                            <p class="muted">Tìm kiếm nhanh theo CCCD hoặc mã ngành để kiểm tra từng nhóm hồ sơ.</p>
                         </div>
-                        <span class="pill">Filter</span>
+                        <span class="pill">Bộ lọc</span>
                     </div>
                     <div class="form-grid">
                         <label class="field field-full">
                             <span>CCCD</span>
-                            <input type="text" id="searchCCCD" placeholder="Nhập CCCD">
+                            <input type="text" id="searchCCCD" placeholder="Nhập số CCCD">
                         </label>
                         <label class="field field-full">
                             <span>Mã ngành</span>
                             <input type="text" id="searchMaNganh" placeholder="Nhập mã ngành">
                         </label>
-                        <button class="btn solid field-full" type="button" id="searchBtn">Tìm kiếm</button>
+                        <button class="btn solid field-full" type="button" id="searchBtn">Áp dụng bộ lọc</button>
                     </div>
                 </div>
             </section>
@@ -98,6 +98,21 @@
                     <span class="pill">Phần 8</span>
                 </div>
 
+                <div class="table-toolbar">
+                    <div class="page-size-group">
+                        <label for="pageSize">Số dòng mỗi trang</label>
+                        <select id="pageSize">
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    <div class="pager">
+                        <button type="button" class="btn ghost small" id="prevPageTop">Trang trước</button>
+                        <span class="pager-status" id="pageStatusTop">Trang 1 / 1</span>
+                        <button type="button" class="btn ghost small" id="nextPageTop">Trang sau</button>
+                    </div>
+                </div>
+
                 <div class="table-wrap">
                     <table>
                         <thead>
@@ -105,7 +120,7 @@
                                 <th>CCCD</th>
                                 <th>Mã ngành</th>
                                 <th>Mã tổ hợp</th>
-                                <th>NV</th>
+                                <th>Nguyện vọng</th>
                                 <th>Điểm thi</th>
                                 <th>Điểm ưu tiên</th>
                                 <th>Điểm cộng</th>
@@ -122,66 +137,106 @@
                         </tbody>
                     </table>
                 </div>
+
+                <div class="table-toolbar bottom">
+                    <div class="pager-meta" id="pagerMeta">Hiển thị 0 - 0 trên 0 bản ghi</div>
+                    <div class="pager">
+                        <button type="button" class="btn ghost small" id="prevPageBottom">Trang trước</button>
+                        <span class="pager-status" id="pageStatusBottom">Trang 1 / 1</span>
+                        <button type="button" class="btn ghost small" id="nextPageBottom">Trang sau</button>
+                    </div>
+                </div>
             </section>
         </main>
     </div>
 
     <script>
+        const basePath = '/admissions';
         const tbody = document.getElementById('dataTable');
         const tableSummary = document.getElementById('tableSummary');
         const processStatus = document.getElementById('processStatus');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const pageStatusTop = document.getElementById('pageStatusTop');
+        const pageStatusBottom = document.getElementById('pageStatusBottom');
+        const pagerMeta = document.getElementById('pagerMeta');
+        const prevButtons = [document.getElementById('prevPageTop'), document.getElementById('prevPageBottom')];
+        const nextButtons = [document.getElementById('nextPageTop'), document.getElementById('nextPageBottom')];
 
-        window.addEventListener('DOMContentLoaded', loadNguyenVong);
-        document.getElementById('reloadBtn').addEventListener('click', loadNguyenVong);
+        let currentRows = [];
+        let currentPage = 1;
+
+        window.addEventListener('DOMContentLoaded', () => loadNguyenVong());
+        document.getElementById('reloadBtn').addEventListener('click', () => loadNguyenVong());
+        pageSizeSelect.addEventListener('change', () => {
+            currentPage = 1;
+            renderTable();
+        });
+
+        prevButtons.forEach(button => button.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage -= 1;
+                renderTable();
+            }
+        }));
+
+        nextButtons.forEach(button => button.addEventListener('click', () => {
+            const totalPages = getTotalPages();
+            if (currentPage < totalPages) {
+                currentPage += 1;
+                renderTable();
+            }
+        }));
 
         document.getElementById('processOneMajor').addEventListener('click', async () => {
             const maNganh = document.getElementById('maNganhSelect').value.trim();
             if (!maNganh) {
-                showNotice(processStatus, 'Vui lòng nhập mã ngành để xét tuyển.', false);
+                showNotice(processStatus, 'Vui lòng nhập mã ngành trước khi chạy xét tuyển.', false);
                 return;
             }
 
             try {
-                const response = await fetch('/admin/nguyen-vong/api/process-selection/' + encodeURIComponent(maNganh), {
+                const response = await fetch(basePath + '/admin/nguyen-vong/api/process-selection/' + encodeURIComponent(maNganh), {
                     method: 'POST'
                 });
                 const data = await response.json();
                 if (data.success) {
-                    showNotice(processStatus,
-                        `Xét tuyển thành công. Chỉ tiêu: ${data.chiTieu ?? 0}, đậu: ${data.passCount ?? 0}, trượt: ${data.failCount ?? 0}.`,
-                        true);
+                    showNotice(
+                        processStatus,
+                        `Đã hoàn tất xét tuyển ngành ${maNganh}. Chỉ tiêu: ${data.chiTieu ?? 0}, trúng tuyển: ${data.passCount ?? 0}, chưa đạt: ${data.failCount ?? 0}.`,
+                        true
+                    );
                     loadNguyenVong();
                 } else {
-                    showNotice(processStatus, data.message || 'Không thể xét tuyển ngành này.', false);
+                    showNotice(processStatus, normalizeMessage(data.message, 'Không thể xử lý xét tuyển cho ngành đã chọn.'), false);
                 }
             } catch (error) {
-                showNotice(processStatus, 'Lỗi xét tuyển: ' + error.message, false);
+                showNotice(processStatus, 'Không thể chạy xét tuyển: ' + error.message, false);
             }
         });
 
         document.getElementById('processAllMajor').addEventListener('click', async () => {
-            if (!confirm('Xét tuyển cho tất cả ngành? Hành động này sẽ cập nhật kết quả hiện có.')) {
+            if (!confirm('Xác nhận chạy xét tuyển cho toàn bộ ngành? Kết quả hiện tại sẽ được cập nhật lại.')) {
                 return;
             }
 
             try {
-                const response = await fetch('/admin/nguyen-vong/api/process-selection-all', { method: 'POST' });
+                const response = await fetch(basePath + '/admin/nguyen-vong/api/process-selection-all', { method: 'POST' });
                 const data = await response.json();
                 if (data.success) {
                     const count = Array.isArray(data.results) ? data.results.length : 0;
-                    showNotice(processStatus, `${data.message || 'Xét tuyển thành công.'} (${count} ngành)`, true);
+                    showNotice(processStatus, `Đã hoàn tất xét tuyển cho ${count} ngành.`, true);
                     loadNguyenVong();
                 } else {
-                    showNotice(processStatus, data.message || 'Không thể xét tuyển tất cả ngành.', false);
+                    showNotice(processStatus, normalizeMessage(data.message, 'Không thể xử lý xét tuyển toàn bộ ngành.'), false);
                 }
             } catch (error) {
-                showNotice(processStatus, 'Lỗi xét tuyển: ' + error.message, false);
+                showNotice(processStatus, 'Không thể chạy xét tuyển: ' + error.message, false);
             }
         });
 
         document.getElementById('exportResults').addEventListener('click', async () => {
             const maNganh = document.getElementById('maNganhSelect').value.trim();
-            let url = '/admin/nguyen-vong/api/export';
+            let url = basePath + '/admin/nguyen-vong/api/export';
             if (maNganh) {
                 url += '?maNganh=' + encodeURIComponent(maNganh);
             }
@@ -191,7 +246,7 @@
                 const blob = await response.blob();
                 downloadBlob(blob, maNganh ? 'ket-qua-' + maNganh + '.xlsx' : 'ket-qua-xet-tuyen.xlsx');
             } catch (error) {
-                showNotice(processStatus, 'Lỗi xuất Excel: ' + error.message, false);
+                showNotice(processStatus, 'Không thể xuất tệp Excel: ' + error.message, false);
             }
         });
 
@@ -199,37 +254,55 @@
             const cccd = document.getElementById('searchCCCD').value.trim();
             const maNganh = document.getElementById('searchMaNganh').value.trim();
 
-            let url = '/admin/nguyen-vong/api/all';
+            let url = basePath + '/admin/nguyen-vong/api/all';
             if (cccd) {
-                url = '/admin/nguyen-vong/api/by-cccd/' + encodeURIComponent(cccd);
+                url = basePath + '/admin/nguyen-vong/api/by-cccd/' + encodeURIComponent(cccd);
             } else if (maNganh) {
-                url = '/admin/nguyen-vong/api/by-nganh/' + encodeURIComponent(maNganh);
+                url = basePath + '/admin/nguyen-vong/api/by-nganh/' + encodeURIComponent(maNganh);
             }
 
             await loadNguyenVong(url);
         });
 
-        async function loadNguyenVong(url = '/admin/nguyen-vong/api/all') {
+        async function loadNguyenVong(url = basePath + '/admin/nguyen-vong/api/all') {
             tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Đang tải dữ liệu...</td></tr>';
             try {
                 const response = await fetch(url);
                 const data = await response.json();
-                displayTable(data);
+                currentRows = Array.isArray(data) ? data : [];
+                currentPage = 1;
+                renderTable();
             } catch (error) {
+                currentRows = [];
                 tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Không thể tải dữ liệu.</td></tr>';
-                tableSummary.textContent = 'Lỗi tải dữ liệu: ' + error.message;
+                tableSummary.textContent = 'Không thể kết nối để tải danh sách nguyện vọng.';
+                pagerMeta.textContent = 'Hiển thị 0 - 0 trên 0 bản ghi';
+                updatePager(1, 1);
             }
         }
 
-        function displayTable(data) {
-            if (!Array.isArray(data) || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Không có dữ liệu.</td></tr>';
-                tableSummary.textContent = 'Chưa có bản ghi phù hợp.';
+        function renderTable() {
+            if (!Array.isArray(currentRows) || currentRows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="11" class="empty-row">Chưa có dữ liệu phù hợp.</td></tr>';
+                tableSummary.textContent = 'Không tìm thấy bản ghi phù hợp với điều kiện hiện tại.';
+                pagerMeta.textContent = 'Hiển thị 0 - 0 trên 0 bản ghi';
+                updatePager(1, 1);
                 return;
             }
 
-            tableSummary.textContent = 'Đang hiển thị ' + data.length + ' bản ghi.';
-            tbody.innerHTML = data.map(item => {
+            const pageSize = Number(pageSizeSelect.value) || 50;
+            const totalPages = getTotalPages();
+            currentPage = Math.min(Math.max(currentPage, 1), totalPages);
+
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = Math.min(startIndex + pageSize, currentRows.length);
+            const pageRows = currentRows.slice(startIndex, endIndex);
+
+            tableSummary.textContent = 'Danh sách hiện có ' + currentRows.length + ' bản ghi.';
+            pagerMeta.textContent = 'Hiển thị ' + (startIndex + 1) + ' - ' + endIndex + ' trên ' + currentRows.length + ' bản ghi';
+            updatePager(currentPage, totalPages);
+
+            tbody.innerHTML = pageRows.map(item => {
                 const result = normalizeResult(item.nvKetQua);
                 return `
                     <tr>
@@ -249,31 +322,51 @@
             }).join('');
         }
 
+        function getTotalPages() {
+            const pageSize = Number(pageSizeSelect.value) || 50;
+            return Math.max(1, Math.ceil(currentRows.length / pageSize));
+        }
+
+        function updatePager(page, totalPages) {
+            const label = 'Trang ' + page + ' / ' + totalPages;
+            pageStatusTop.textContent = label;
+            pageStatusBottom.textContent = label;
+            prevButtons.forEach(button => button.disabled = page <= 1);
+            nextButtons.forEach(button => button.disabled = page >= totalPages);
+        }
+
         async function deleteNguyenVong(id) {
-            if (!Number.isFinite(id) || !confirm('Bạn chắc chắn muốn xóa nguyện vọng này?')) {
+            if (!Number.isFinite(id) || !confirm('Xác nhận xóa nguyện vọng này?')) {
                 return;
             }
 
             try {
-                const response = await fetch('/admin/nguyen-vong/api/' + id, { method: 'DELETE' });
+                const response = await fetch(basePath + '/admin/nguyen-vong/api/' + id, { method: 'DELETE' });
                 const data = await response.json();
-                showNotice(processStatus, data.message || 'Đã xóa nguyện vọng.', data.success === 'true');
+                showNotice(processStatus, normalizeMessage(data.message, 'Đã xóa nguyện vọng thành công.'), data.success === true || data.success === 'true');
                 loadNguyenVong();
             } catch (error) {
-                showNotice(processStatus, 'Lỗi xóa dữ liệu: ' + error.message, false);
+                showNotice(processStatus, 'Không thể xóa dữ liệu: ' + error.message, false);
             }
         }
 
         function normalizeResult(value) {
-            const label = String(value || 'Đang xét');
+            const label = String(value || 'Đang xử lý');
             const lower = label.toLowerCase();
-            if (lower.includes('đậu') || lower.includes('dau')) {
-                return { label, className: 'success' };
+            if (lower.includes('đậu') || lower.includes('trúng') || lower.includes('dau')) {
+                return { label: 'Đạt', className: 'success' };
             }
-            if (lower.includes('trượt') || lower.includes('truot')) {
-                return { label, className: 'danger' };
+            if (lower.includes('trượt') || lower.includes('không đạt') || lower.includes('truot')) {
+                return { label: 'Không đạt', className: 'danger' };
             }
-            return { label, className: 'warning' };
+            return { label: 'Đang xử lý', className: 'warning' };
+        }
+
+        function normalizeMessage(message, fallback) {
+            return String(message || fallback)
+                .replace(/^Xét tuyển ngành\s+/i, 'Đã hoàn tất xét tuyển ngành ')
+                .replace(/^Xét tuyển tất cả ngành thành công$/i, 'Đã hoàn tất xét tuyển cho toàn bộ ngành.')
+                .replace(/^Xóa thành công$/i, 'Đã xóa bản ghi thành công.');
         }
 
         function showNotice(element, message, success) {
@@ -298,7 +391,7 @@
         }
 
         function escapeHtml(value) {
-            return String(value ?? '').replace(/[&<>"']/g, char => ({
+            return String(value ?? '').replace(/[&<>\"']/g, char => ({
                 '&': '&amp;',
                 '<': '&lt;',
                 '>': '&gt;',

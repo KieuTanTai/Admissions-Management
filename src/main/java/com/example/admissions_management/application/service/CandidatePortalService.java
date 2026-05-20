@@ -57,31 +57,31 @@ public class CandidatePortalService {
 
     public List<OptionItem> getPriorityObjectOptions() {
         return List.of(
-                new OptionItem("NONE", "Khong uu tien (0.00)"),
-                new OptionItem("UT1", "Doi tuong uu tien 1 (+2.00)"),
-                new OptionItem("UT2", "Doi tuong uu tien 2 (+1.00)"),
-                new OptionItem("UT3", "Doi tuong uu tien 3 (+0.50)"));
+                new OptionItem("NONE", "Không ưu tiên (0.00)"),
+                new OptionItem("UT1", "Đối tượng ưu tiên 1 (+2.00)"),
+                new OptionItem("UT2", "Đối tượng ưu tiên 2 (+1.00)"),
+                new OptionItem("UT3", "Đối tượng ưu tiên 3 (+0.50)"));
     }
 
     public List<OptionItem> getPriorityRegionOptions() {
         return List.of(
-                new OptionItem("KV3", "Khu vuc 3 (0.00)"),
-                new OptionItem("KV2", "Khu vuc 2 (+0.25)"),
-                new OptionItem("KV2NT", "Khu vuc 2-NT (+0.50)"),
-                new OptionItem("KV1", "Khu vuc 1 (+0.75)"));
+                new OptionItem("KV3", "Khu vực 3 (0.00)"),
+                new OptionItem("KV2", "Khu vực 2 (+0.25)"),
+                new OptionItem("KV2NT", "Khu vực 2-NT (+0.50)"),
+                new OptionItem("KV1", "Khu vực 1 (+0.75)"));
     }
 
     public List<OptionItem> getBonusSubjectOptions() {
         return List.of(
-                new OptionItem("NONE", "Khong cong"),
-                new OptionItem("TOAN", "Toan"),
-                new OptionItem("VAT_LY", "Vat ly"),
-                new OptionItem("HOA_HOC", "Hoa hoc"),
-                new OptionItem("NGU_VAN", "Ngu van"),
-                new OptionItem("TIENG_ANH", "Tieng Anh"),
-                new OptionItem("SINH_HOC", "Sinh hoc"),
-                new OptionItem("LICH_SU", "Lich su"),
-                new OptionItem("DIA_LY", "Dia ly"),
+                new OptionItem("NONE", "Không cộng"),
+                new OptionItem("TOAN", "Toán"),
+                new OptionItem("VAT_LY", "Vật lý"),
+                new OptionItem("HOA_HOC", "Hóa học"),
+                new OptionItem("NGU_VAN", "Ngữ văn"),
+                new OptionItem("TIENG_ANH", "Tiếng Anh"),
+                new OptionItem("SINH_HOC", "Sinh học"),
+                new OptionItem("LICH_SU", "Lịch sử"),
+                new OptionItem("DIA_LY", "Địa lý"),
                 new OptionItem("GDCD", "GDCD"));
     }
 
@@ -95,7 +95,7 @@ public class CandidatePortalService {
         if (!username.matches("\\d{8,20}") || !password.matches("\\d{8}")) {
             result.setFound(false);
             result.setAdmitted(false);
-            result.setMessage("Thong tin dang nhap khong dung dinh dang.");
+            result.setMessage("Thông tin đăng nhập chưa đúng định dạng.");
             return result;
         }
 
@@ -103,7 +103,7 @@ public class CandidatePortalService {
         if (credential == null || !credential.password().equals(password)) {
             result.setFound(false);
             result.setAdmitted(false);
-            result.setMessage("Khong tim thay ket qua phu hop voi thong tin dang nhap.");
+            result.setMessage("Không tìm thấy kết quả phù hợp với thông tin đăng nhập.");
             return result;
         }
 
@@ -114,7 +114,7 @@ public class CandidatePortalService {
         AdmissionDecision decision = admissionByCccd.get(username);
         if (decision == null || !decision.admitted()) {
             result.setAdmitted(false);
-            result.setMessage("Da tim thay thi sinh, ket qua: Khong trung tuyen.");
+            result.setMessage("Đã xác nhận thông tin thí sinh. Kết quả hiện tại: chưa trúng tuyển.");
             return result;
         }
 
@@ -124,7 +124,7 @@ public class CandidatePortalService {
         result.setScore(round(decision.score()));
         result.setCombination(decision.combinationCode());
         result.setMethod(decision.methodName());
-        result.setMessage("Da tim thay ket qua: Trung tuyen.");
+        result.setMessage("Đã tìm thấy kết quả: Trúng tuyển.");
         return result;
     }
 
@@ -134,7 +134,7 @@ public class CandidatePortalService {
 
         MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
         if (major == null) {
-            result.setMessage("Vui long chon nganh xet tuyen.");
+            result.setMessage("Vui lòng chọn ngành xét tuyển.");
             return result;
         }
 
@@ -160,7 +160,7 @@ public class CandidatePortalService {
 
         result.setMajorName(major.name());
         result.setRows(List.of(aspirationResult));
-        result.setMessage("Da tinh diem DGNL va doi sanh voi diem nguong/diem trung tuyen.");
+        result.setMessage("Đã hoàn tất tính điểm DGNL và đối chiếu với ngưỡng xét tuyển.");
         return result;
     }
 
@@ -170,7 +170,7 @@ public class CandidatePortalService {
 
         MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
         if (major == null) {
-            result.setMessage("Vui long chon nganh xet tuyen.");
+            result.setMessage("Vui lòng chọn ngành xét tuyển.");
             return result;
         }
 
@@ -215,16 +215,16 @@ public class CandidatePortalService {
         }
 
         result.setMethodType(isVsat ? "VSAT" : "THPT");
-        result.setMethodLabel(isVsat ? "VSAT (quy doi tu thang 150 ve thang 10)" : "THPT (su dung thang 10)");
+        result.setMethodLabel(isVsat ? "VSAT (quy đổi từ thang 150 về thang 10)" : "THPT (sử dụng thang 10)");
         result.setScaleNote(isVsat
-                ? "Diem thi VSAT da duoc quy doi ve thang 10 truoc khi tinh diem xet tuyen."
-                : "Diem thi THPT duoc su dung truc tiep theo thang 10.");
+                ? "Điểm thi VSAT được quy đổi về thang 10 trước khi tính điểm xét tuyển."
+                : "Điểm thi THPT được sử dụng trực tiếp theo thang 10.");
         result.setMajorName(major.name());
         result.setPriorityScore(priorityScore);
         result.setBonusScore(bonusScore);
         result.setEnglishAppliedScore(subjectScores.get("TIENG_ANH"));
         result.setCombinationResults(combinationResults);
-        result.setMessage("Da tinh diem xet tuyen cac to hop mon cua nganh da chon.");
+        result.setMessage("Đã hoàn tất tính điểm xét tuyển cho các tổ hợp của ngành đã chọn.");
         return result;
     }
 
@@ -277,7 +277,7 @@ public class CandidatePortalService {
 
         map.put("7480201", new MajorConfig(
                 "7480201",
-                "Cong nghe thong tin",
+                "Công nghệ thông tin",
                 "A00",
                 new BigDecimal("20.50"),
                 new BigDecimal("23.75"),
@@ -290,7 +290,7 @@ public class CandidatePortalService {
 
         map.put("7310101", new MajorConfig(
                 "7310101",
-                "Kinh te",
+                "Kinh tế",
                 "D01",
                 new BigDecimal("18.50"),
                 new BigDecimal("22.00"),
@@ -303,7 +303,7 @@ public class CandidatePortalService {
 
         map.put("7510605", new MajorConfig(
                 "7510605",
-                "Logistics va quan ly chuoi cung ung",
+                "Logistics và quản lý chuỗi cung ứng",
                 "A01",
                 new BigDecimal("19.00"),
                 null,
@@ -337,14 +337,14 @@ public class CandidatePortalService {
 
     private Map<String, String> createSubjectLabelMap() {
         Map<String, String> map = new LinkedHashMap<>();
-        map.put("TOAN", "Toan");
-        map.put("NGU_VAN", "Ngu van");
-        map.put("TIENG_ANH", "Tieng Anh");
-        map.put("VAT_LY", "Vat ly");
-        map.put("HOA_HOC", "Hoa hoc");
-        map.put("SINH_HOC", "Sinh hoc");
-        map.put("LICH_SU", "Lich su");
-        map.put("DIA_LY", "Dia ly");
+        map.put("TOAN", "Toán");
+        map.put("NGU_VAN", "Ngữ văn");
+        map.put("TIENG_ANH", "Tiếng Anh");
+        map.put("VAT_LY", "Vật lý");
+        map.put("HOA_HOC", "Hóa học");
+        map.put("SINH_HOC", "Sinh học");
+        map.put("LICH_SU", "Lịch sử");
+        map.put("DIA_LY", "Địa lý");
         map.put("GDCD", "GDCD");
         return map;
     }

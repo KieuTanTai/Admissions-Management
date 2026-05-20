@@ -100,6 +100,7 @@ public class NguyenVongXetTuyenRepositoryImpl implements NguyenVongXetTuyenRepos
         domain.setId(entity.getId());
         domain.setNvMaNganh(entity.getNvMaNganh());
         domain.setNnCccd(entity.getNnCccd());
+        domain.setMaToHop(extractMaToHop(entity.getNvKeys()));
         domain.setNvThuTu(entity.getNvThuTu());
         domain.setDiemThxt(entity.getDiemThxt());
         domain.setDiemUtqd(entity.getDiemUtqd());
@@ -116,6 +117,7 @@ public class NguyenVongXetTuyenRepositoryImpl implements NguyenVongXetTuyenRepos
         XtNguyenVongXetTuyenEntity entity = new XtNguyenVongXetTuyenEntity();
         entity.setId(domain.getId());
         entity.setNnCccd(domain.getNnCccd());
+        entity.setNvMaNganh(domain.getNvMaNganh());
         entity.setNvThuTu(domain.getNvThuTu());
         entity.setDiemThxt(domain.getDiemThxt());
         entity.setDiemUtqd(domain.getDiemUtqd());
@@ -126,5 +128,18 @@ public class NguyenVongXetTuyenRepositoryImpl implements NguyenVongXetTuyenRepos
         entity.setTtThm(domain.getTtThm());
         entity.setNvKeys(domain.getNvKeys());
         return entity;
+    }
+
+    private String extractMaToHop(String nvKeys) {
+        if (nvKeys == null || nvKeys.isBlank()) {
+            return "";
+        }
+
+        String[] parts = nvKeys.split("_");
+        if (parts.length < 4) {
+            return "";
+        }
+
+        return parts[parts.length - 2].trim();
     }
 }
