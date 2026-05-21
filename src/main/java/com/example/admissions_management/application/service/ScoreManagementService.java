@@ -50,22 +50,26 @@ public class ScoreManagementService {
     private static final Map<String, String> SUBJECT_LABELS = new LinkedHashMap<>();
 
     static {
-        SUBJECT_LABELS.put("TO", "Toan (TO)");
-        SUBJECT_LABELS.put("LI", "Vat Ly (LI)");
-        SUBJECT_LABELS.put("HO", "Hoa Hoc (HO)");
-        SUBJECT_LABELS.put("SI", "Sinh Hoc (SI)");
-        SUBJECT_LABELS.put("SU", "Lich Su (SU)");
-        SUBJECT_LABELS.put("DI", "Dia Ly (DI)");
-        SUBJECT_LABELS.put("VA", "Ngu Van (VA)");
-        SUBJECT_LABELS.put("N1_THI", "Ngoai Ngu 1 Thi (N1_THI)");
-        SUBJECT_LABELS.put("N1_CC", "Ngoai Ngu 1 Chung Chi (N1_CC)");
-        SUBJECT_LABELS.put("CNCN", "Cong nghe cong nghiep (CNCN)");
-        SUBJECT_LABELS.put("CNNN", "Cong nghe nong nghiep (CNNN)");
-        SUBJECT_LABELS.put("TI", "Tin hoc (TI)");
-        SUBJECT_LABELS.put("KTPL", "Kinh te va phap luat (KTPL)");
-        SUBJECT_LABELS.put("NL1", "Diem DGNL (NL1)");
-        SUBJECT_LABELS.put("NK1", "Nang khieu 1 (NK1)");
-        SUBJECT_LABELS.put("NK2", "Nang khieu 2 (NK2)");
+        SUBJECT_LABELS.put("TO", "Toán (TO)");
+        SUBJECT_LABELS.put("LI", "Vật lí (LI)");
+        SUBJECT_LABELS.put("HO", "Hóa học (HO)");
+        SUBJECT_LABELS.put("SI", "Sinh học (SI)");
+        SUBJECT_LABELS.put("SU", "Lịch sử (SU)");
+        SUBJECT_LABELS.put("DI", "Địa lí (DI)");
+        SUBJECT_LABELS.put("VA", "Ngữ văn (VA)");
+        SUBJECT_LABELS.put("N1_THI", "Ngoại ngữ 1 thi (N1_THI)");
+        SUBJECT_LABELS.put("N1_CC", "Ngoại ngữ 1 chứng chỉ (N1_CC)");
+        SUBJECT_LABELS.put("CNCN", "Công nghệ công nghiệp (CNCN)");
+        SUBJECT_LABELS.put("CNNN", "Công nghệ nông nghiệp (CNNN)");
+        SUBJECT_LABELS.put("TI", "Tin học (TI)");
+        SUBJECT_LABELS.put("KTPL", "Kinh tế pháp luật (KTPL)");
+        SUBJECT_LABELS.put("NL1", "Điểm DGNL (NL1)");
+        SUBJECT_LABELS.put("NK1", "Kể chuyện - Đọc diễn cảm (NK1)");
+        SUBJECT_LABELS.put("NK2", "Hát - Nhạc (NK2)");
+        SUBJECT_LABELS.put("NK3", "Hình họa (NK3)");
+        SUBJECT_LABELS.put("NK4", "Trang trí (NK4)");
+        SUBJECT_LABELS.put("NK5", "Hát - Nhạc cụ (NK5)");
+        SUBJECT_LABELS.put("NK6", "Tiết tấu (NK6)");
     }
 
     private final SpringDataXtDiemThiXetTuyenRepository repository;

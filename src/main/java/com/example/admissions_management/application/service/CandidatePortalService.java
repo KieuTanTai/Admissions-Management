@@ -13,14 +13,14 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.example.admissions_management.application.dto.response.CandidateAspirationResult;
-import com.example.admissions_management.application.service.candidate.CandidateLookupResult;
-import com.example.admissions_management.application.service.candidate.CombinationScoreResult;
-import com.example.admissions_management.application.service.candidate.CombinationSpec;
-import com.example.admissions_management.application.service.candidate.DgnlAspirationResult;
-import com.example.admissions_management.application.service.candidate.DgnlCalculationResult;
-import com.example.admissions_management.application.service.candidate.MajorConfig;
-import com.example.admissions_management.application.service.candidate.OptionItem;
-import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
+import com.example.admissions_management.application.service.dto.CandidateLookupResult;
+import com.example.admissions_management.application.service.dto.CombinationScoreResult;
+import com.example.admissions_management.application.service.dto.CombinationSpec;
+import com.example.admissions_management.application.service.dto.DgnlAspirationResult;
+import com.example.admissions_management.application.service.dto.DgnlCalculationResult;
+import com.example.admissions_management.application.service.dto.MajorConfig;
+import com.example.admissions_management.application.service.dto.OptionItem;
+import com.example.admissions_management.application.service.dto.VsatThptCalculationResult;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNguyenVongXetTuyenEntity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtThiSinhXetTuyen25Entity;
@@ -427,15 +427,13 @@ public class CandidatePortalService {
         return value;
     }
 
-    private List<CombinationSpec> getSpecsFromCode(String code) {
-        if (code == null) return List.of();
-        return switch (code.toUpperCase()) {
-            case "A01" -> List.of(new CombinationSpec("A01", "TOAN", "VAT_LY", "TIENG_ANH"));
-            case "B00" -> List.of(new CombinationSpec("B00", "TOAN", "HOA_HOC", "SINH_HOC"));
-            case "C01" -> List.of(new CombinationSpec("C01", "TOAN", "NGU_VAN", "VAT_LY"));
-            case "D01" -> List.of(new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH"));
-            default -> List.of(new CombinationSpec(code, "TOAN", "NGU_VAN", "TIENG_ANH"));
-        };
+    private Map<String, BigDecimal> createPriorityRegionPointMap() {
+        Map<String, BigDecimal> map = new LinkedHashMap<>();
+        map.put("KV3", BigDecimal.ZERO);
+        map.put("KV2", new BigDecimal("0.25"));
+        map.put("KV2NT", new BigDecimal("0.50"));
+        map.put("KV1", new BigDecimal("0.75"));
+        return map;
     }
 
     private Map<String, MajorConfig> createMajors() {
@@ -477,13 +475,27 @@ public class CandidatePortalService {
         return map;
     }
 
-    private Map<String, BigDecimal> createPriorityRegionPointMap() {
-        Map<String, BigDecimal> map = new LinkedHashMap<>();
-        map.put("KV3", BigDecimal.ZERO);
-        map.put("KV2", new BigDecimal("0.25"));
-        map.put("KV2NT", new BigDecimal("0.50"));
-        map.put("KV1", new BigDecimal("0.75"));
-        return map;
+    private List<CombinationSpec> getSpecsFromCode(String code) {
+        if (code == null || code.isBlank()) {
+            return List.of();
+        }
+
+        return switch (code.trim().toUpperCase(Locale.ROOT)) {
+            case "A00" -> List.of(new CombinationSpec("A00", "TOAN", "VAT_LY", "HOA_HOC"));
+            case "A01" -> List.of(new CombinationSpec("A01", "TOAN", "VAT_LY", "TIENG_ANH"));
+            case "A02" -> List.of(new CombinationSpec("A02", "TOAN", "VAT_LY", "SINH_HOC"));
+            case "B00" -> List.of(new CombinationSpec("B00", "TOAN", "HOA_HOC", "SINH_HOC"));
+            case "B01" -> List.of(new CombinationSpec("B01", "TOAN", "HOA_HOC", "NGU_VAN"));
+            case "C00" -> List.of(new CombinationSpec("C00", "NGU_VAN", "LICH_SU", "DIA_LY"));
+            case "C01" -> List.of(new CombinationSpec("C01", "TOAN", "NGU_VAN", "VAT_LY"));
+            case "D01" -> List.of(new CombinationSpec("D01", "TOAN", "NGU_VAN", "TIENG_ANH"));
+            case "D03" -> List.of(new CombinationSpec("D03", "NGU_VAN", "TOAN", "TIENG_ANH"));
+            case "D07" -> List.of(new CombinationSpec("D07", "TOAN", "HOA_HOC", "TIENG_ANH"));
+            case "D14" -> List.of(new CombinationSpec("D14", "NGU_VAN", "LICH_SU", "TIENG_ANH"));
+            case "D15" -> List.of(new CombinationSpec("D15", "NGU_VAN", "DIA_LY", "TIENG_ANH"));
+            case "D66" -> List.of(new CombinationSpec("D66", "NGU_VAN", "GDCD", "TIENG_ANH"));
+            default -> List.of(new CombinationSpec(code.trim().toUpperCase(Locale.ROOT), "TOAN", "NGU_VAN", "TIENG_ANH"));
+        };
     }
 
     private Map<String, String> createSubjectLabelMap() {
@@ -497,6 +509,10 @@ public class CandidatePortalService {
         map.put("LICH_SU", "Lịch sử");
         map.put("DIA_LY", "Địa lý");
         map.put("GDCD", "GDCD");
+        map.put("TI", "Tin học");
+        map.put("CNCN", "Công nghệ công nghiệp");
+        map.put("CNNN", "Công nghệ nông nghiệp");
+        map.put("KTPL", "Kinh tế pháp luật");
         return map;
     }
 }

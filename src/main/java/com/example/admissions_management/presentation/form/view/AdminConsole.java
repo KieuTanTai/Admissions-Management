@@ -286,7 +286,6 @@ public class AdminConsole extends JFrame {
     private void openCombinationManager() {
         CombinationForm form = combinationFormProvider.getObject();
         form.setVisible(true);
-        this.setEnabled(false);
         form.setParentFrame(this);
         form.setTrackingEnableForParentFrame();
         form.toFront();

@@ -3,9 +3,9 @@ package com.example.admissions_management.application.service;
 import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
 import com.example.admissions_management.application.dto.response.CombinationResult;
 import com.example.admissions_management.application.dto.response.ScoreResultResponse;
-import com.example.admissions_management.application.service.candidate.CombinationSpec;
-import com.example.admissions_management.application.service.candidate.MajorConfig;
-import com.example.admissions_management.application.service.candidate.OptionItem;
+import com.example.admissions_management.application.service.dto.CombinationSpec;
+import com.example.admissions_management.application.service.dto.MajorConfig;
+import com.example.admissions_management.application.service.dto.OptionItem;
 import com.example.admissions_management.domain.model.Combination;
 import com.example.admissions_management.domain.repository.ICombinationRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
@@ -55,22 +55,24 @@ public class VsatScoreServiceImpl implements VsatScoreService {
 
     @Override
     public List<String> getConvertibleSubjectCodes() {
-        // start from interval-supported subjects
         LinkedHashSet<String> codes = new LinkedHashSet<>(intervalsBySubject.keySet());
         try {
             var all = bangQuyDoiService.getAll();
             if (all != null) {
                 for (var b : all) {
-                    if (b == null) continue;
-                    if (!METHOD_VSAT.equalsIgnoreCase(normalize(b.getPhuongThuc()))) continue;
+                    if (b == null) {
+                        continue;
+                    }
+                    if (!METHOD_VSAT.equalsIgnoreCase(normalize(b.getPhuongThuc()))) {
+                        continue;
+                    }
                     String mon = b.getMon();
                     if (mon != null && !mon.isBlank()) {
                         codes.add(normalizeSubjectCode(mon));
                     }
                 }
             }
-        } catch (Exception e) {
-            // ignore and fall back to intervals-only
+        } catch (Exception ignored) {
         }
         return new ArrayList<>(codes);
     }
@@ -264,17 +266,13 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         }
 
         if (score <= 0.0d) {
-            // If user explicitly left field null or entered 0, treat as "missing" (not provided)
             if (provided) {
-                // Provided true but score <=0 (edge case) — keep the default warning
                 warnings.add(label + ": " + DEFAULT_WARNING);
                 return new SubjectConversion(subjectCode, true, score, 0.0d, label + ": " + DEFAULT_WARNING);
             }
-            // Not provided (null or 0) -> mark as missing without percentile warning
             return new SubjectConversion(subjectCode, false, score, 0.0d, label + ": không có dữ liệu (được coi là thiếu)");
         }
 
-        // Prefer database conversion rules (xt_bangquydoi) to match official lookup site
         try {
             Map<String, String> ketqua = bangQuyDoiService.quyDoiDiemKhaoThi(METHOD_VSAT, subjectCode, BigDecimal.valueOf(score));
             if (ketqua != null && ketqua.containsKey("diemQuyDoi")) {
@@ -743,6 +741,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", "Sinh học");
         map.put("LICH_SU", "Lịch sử");
         map.put("DIA_LY", "Địa lí");
+        map.put("TI", "Tin học");
+        map.put("CNCN", "Công nghệ công nghiệp");
+        map.put("CNNN", "Công nghệ nông nghiệp");
+        map.put("KTPL", "Kinh tế pháp luật");
         return map;
     }
 
@@ -829,15 +831,19 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private String normalizeSubjectCode(String subjectCode) {
         String value = normalize(subjectCode);
         return switch (value) {
-            case "N1" -> "NGU_VAN";
+            case "N1" -> "TIENG_ANH";
             case "TO" -> "TOAN";
             case "LI" -> "VAT_LY";
             case "HO" -> "HOA_HOC";
             case "SI" -> "SINH_HOC";
             case "SU" -> "LICH_SU";
             case "DI" -> "DIA_LY";
-            case "TI" -> "TIENG_ANH";
             case "VA", "VAN" -> "NGU_VAN";
+            case "TI" -> "TI";
+            case "CNCN" -> "CNCN";
+            case "CNNN" -> "CNNN";
+            case "KTPL" -> "KTPL";
+            case "GD" -> "GDCD";
             default -> value;
         };
     }

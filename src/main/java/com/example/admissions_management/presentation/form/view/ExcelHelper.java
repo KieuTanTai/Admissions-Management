@@ -150,7 +150,11 @@ public class ExcelHelper {
         if (normalized.contains("SU_VS") || normalized.equals("M6") || normalized.contains("LICHSU")) return "LICH_SU";
         if (normalized.contains("DI_VS") || normalized.equals("M7") || normalized.contains("DIALY")) return "DIA_LY";
         if (normalized.contains("VA_VS") || normalized.equals("M5") || normalized.contains("NGUVAN")) return "NGU_VAN";
-        if (normalized.contains("N1_VS") || normalized.equals("M8") || normalized.contains("TIENGANH")) return "TIENG_ANH";
+        if (normalized.contains("N1_VS") || normalized.equals("M8") || normalized.equals("N1") || normalized.contains("TIENGANH")) return "TIENG_ANH";
+        if (normalized.equals("TI") || normalized.contains("TINHOC")) return "TI";
+        if (normalized.equals("CNCN") || normalized.contains("CONGNGHECONGNGHIEP")) return "CNCN";
+        if (normalized.equals("CNNN") || normalized.contains("CONGNGHENONGNGHIEP")) return "CNNN";
+        if (normalized.equals("KTPL") || normalized.contains("KINHTEPHAPLUAT")) return "KTPL";
         String ten = normalizeHeader(tenMon);
         if (ten.contains("TOAN")) return "TOAN";
         if (ten.contains("VATLY")) return "VAT_LY";
@@ -160,6 +164,10 @@ public class ExcelHelper {
         if (ten.contains("DIALY")) return "DIA_LY";
         if (ten.contains("NGUVAN")) return "NGU_VAN";
         if (ten.contains("TIENGANH")) return "TIENG_ANH";
+        if (ten.contains("TINHOC")) return "TI";
+        if (ten.contains("CONGNGHECONGNGHIEP")) return "CNCN";
+        if (ten.contains("CONGNGHENONGNGHIEP")) return "CNNN";
+        if (ten.contains("KINHTEPHAPLUAT")) return "KTPL";
         return monThi == null ? "" : monThi.trim();
     }
 
