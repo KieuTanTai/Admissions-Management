@@ -268,6 +268,30 @@ form {
     gap: 14px;
 }
 
+.compact-subject-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 249, 247, 0.92) 100%);
+}
+
+.compact-subject-grid .field {
+    gap: 6px;
+    grid-column: auto;
+}
+
+.compact-subject-grid label {
+    font-size: 12px;
+    letter-spacing: 0.01em;
+}
+
+.compact-subject-grid input {
+    min-height: 46px;
+    padding: 10px 12px;
+}
+
 .field-wide {
     grid-column: 1 / -1;
 }
@@ -432,6 +456,10 @@ tbody tr:hover {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .compact-subject-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .hero-copy,
     .hero-aside {
         width: 100%;
@@ -466,6 +494,11 @@ tbody tr:hover {
         grid-template-columns: 1fr 1fr;
     }
 
+    .compact-subject-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        padding: 14px;
+    }
+
     .actions {
         flex-direction: column;
         align-items: stretch;
@@ -486,6 +519,10 @@ tbody tr:hover {
     }
 
     .grid-subject {
+        grid-template-columns: 1fr;
+    }
+
+    .compact-subject-grid {
         grid-template-columns: 1fr;
     }
 
