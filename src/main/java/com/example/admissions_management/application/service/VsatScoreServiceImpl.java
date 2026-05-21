@@ -1,5 +1,19 @@
 package com.example.admissions_management.application.service;
 
+import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
+import com.example.admissions_management.application.dto.response.CombinationResult;
+import com.example.admissions_management.application.dto.response.ScoreResultResponse;
+import com.example.admissions_management.application.service.candidate.CombinationSpec;
+import com.example.admissions_management.application.service.candidate.MajorConfig;
+import com.example.admissions_management.application.service.candidate.OptionItem;
+import com.example.admissions_management.domain.model.Combination;
+import com.example.admissions_management.domain.repository.ICombinationRepository;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
+import com.example.admissions_management.application.service.BangQuyDoiService;
+import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -11,19 +25,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
-import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
-import com.example.admissions_management.application.dto.response.CombinationResult;
-import com.example.admissions_management.application.dto.response.ScoreResultResponse;
-import com.example.admissions_management.application.service.candidate.CombinationSpec;
-import com.example.admissions_management.application.service.candidate.MajorConfig;
-import com.example.admissions_management.application.service.candidate.OptionItem;
-import com.example.admissions_management.domain.model.Combination;
-import com.example.admissions_management.domain.repository.ICombinationRepository;
-import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
-import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
 
 @Service
 public class VsatScoreServiceImpl implements VsatScoreService {
