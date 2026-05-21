@@ -225,10 +225,15 @@ public class CandidatePortalService {
             toHop = "C01";
         }
         BigDecimal converted30;
+        String congThuc = "";
+        String phanVi = "";
         
         try {
             Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", toHop, originalScore);
+            
             String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
+            congThuc = quyDoiMap.get("congThuc");
+            phanVi = quyDoiMap.get("phanVi");
             converted30 = new BigDecimal(diemQuyDoiStr);
         } catch (Exception e) {
 
@@ -239,16 +244,16 @@ public class CandidatePortalService {
         
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
-        BigDecimal totalScore = round(converted30.add(priorityScore).add(bonusScore));
-        if(totalScore.compareTo(new BigDecimal("30.00")) >= 0){
-            totalScore = new BigDecimal("30.00");
-        }
+        BigDecimal totalBonusScore = round(clamp(bonusScore.add(priorityScore)  , BigDecimal.ZERO, BONUS_MAX_SCORE));
+        BigDecimal totalScore = round(converted30.add(totalBonusScore));
 
         DgnlAspirationResult aspirationResult = new DgnlAspirationResult();
         aspirationResult.setAspirationName("NV1");
         aspirationResult.setMajorName(major.name());
         aspirationResult.setOriginalCombination(major.originalCombination());
+        aspirationResult.setCalculationMethod(congThuc);
         aspirationResult.setConvertedScore(converted30);
+        aspirationResult.setFractile(phanVi);
         aspirationResult.setPriorityScore(priorityScore);
         aspirationResult.setBonusScore(bonusScore);
         aspirationResult.setTotalScore(totalScore);
@@ -438,13 +443,10 @@ public class CandidatePortalService {
 
     private Map<String, MajorConfig> createMajors() {
         Map<String, MajorConfig> map = new LinkedHashMap<>();
-        
-        // 1. Lấy toàn bộ danh sách ngành từ Repository
+
         List<XtNganhEntity> entities = majorRepository.findAll();
 
         for (XtNganhEntity entity : entities) {
-            // 2. Chuyển đổi mã tổ hợp gốc sang danh sách CombinationSpec
-            // Vì Entity chỉ có 1 cột toHopGoc, ta sẽ tạo danh sách chứa tổ hợp đó
             List<CombinationSpec> combinations = getSpecsFromCode(entity.getToHopGoc());
 
             // 3. Tạo record MajorConfig từ dữ liệu Entity
@@ -470,8 +472,8 @@ public class CandidatePortalService {
         Map<String, BigDecimal> map = new LinkedHashMap<>();
         map.put("NONE", BigDecimal.ZERO);
         map.put("UT1", new BigDecimal("2.00"));
-        map.put("UT2", new BigDecimal("1.00"));
-        map.put("UT3", new BigDecimal("0.50"));
+        map.put("UT2", new BigDecimal("1.5"));
+        map.put("UT3", new BigDecimal("1.00"));
         return map;
     }
 
