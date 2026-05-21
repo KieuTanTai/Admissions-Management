@@ -1,76 +1,121 @@
 <!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Trung tâm quản trị tuyển sinh</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
-
 <body>
     <div class="admin-shell">
         <aside class="admin-sidebar">
             <div class="brand-block">
                 <p class="brand-kicker">Admissions Console</p>
                 <h1>Trung tâm quản trị tuyển sinh</h1>
-                <p class="brand-note">Theo dõi dữ liệu đầu vào, vận hành xét tuyển và kiểm soát toàn bộ luồng xử lý trên một giao diện thống nhất.</p>
+                <p class="brand-note">
+                    Giao diện quản trị được sắp xếp theo đúng 9 hạng mục nghiệp vụ. Các màn hình web phục vụ thao tác trực tiếp từ phần 6 đến phần 9; các hạng mục còn lại được vận hành trên Swing form để giữ nguyên cấu trúc hệ thống hiện có.
+                </p>
             </div>
 
             <nav class="menu-list">
                 <a class="menu-item active" th:href="@{/admin/form}" href="/admin/form">Tổng quan</a>
+                <a class="menu-item" th:href="@{/admin/scores}" href="/admin/scores">Phần 6 - Điểm thí sinh</a>
                 <a class="menu-item" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Phần 7 - Điểm cộng</a>
                 <a class="menu-item" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Phần 8 - Nguyện vọng</a>
+                <a class="menu-item" th:href="@{/admin/quy-doi}" href="/admin/quy-doi">Phần 9 - Bảng quy đổi</a>
             </nav>
 
             <div class="status-card">
-                <p class="status-title">Nguồn dữ liệu</p>
-                <p class="status-value">Excel / Database</p>
-                <p class="status-sub">Dữ liệu hiển thị đồng bộ từ biểu mẫu nhập liệu, API quản trị và cơ sở dữ liệu hiện hành.</p>
+                <p class="status-title">Tổng dữ liệu đang theo dõi</p>
+                <p class="status-value" th:text="${scoreTotal + diemCongTotal + nguyenVongTotal} + ' bản ghi'">0 bản ghi</p>
+                <p class="status-sub">
+                    Hệ thống tổng hợp nhanh số lượng dữ liệu điểm, điểm cộng và nguyện vọng để hỗ trợ kiểm tra trạng thái vận hành trước khi thao tác chi tiết.
+                </p>
             </div>
         </aside>
 
         <main class="admin-main">
             <header class="topbar hero-topbar">
                 <div>
-                    <p class="topbar-kicker">Bảng điều khiển vận hành</p>
-                    <h2>Kiểm soát nhanh các nghiệp vụ tuyển sinh trọng tâm</h2>
-                    <p class="hero-summary">Đi đến đúng màn hình cần xử lý, theo dõi tình trạng dữ liệu và thao tác nhất quán giữa web và ứng dụng desktop.</p>
+                    <p class="topbar-kicker">Bảng điều phối</p>
+                    <h2>Danh mục quản trị theo đúng yêu cầu nghiệp vụ</h2>
+                    <p class="hero-summary">
+                        Danh sách bên dưới hiển thị đầy đủ 9 hạng mục quản lý: người dùng, thí sinh, ngành tuyển sinh, tổ hợp môn, danh sách ngành - tổ hợp, điểm thí sinh, điểm cộng, nguyện vọng và bảng quy đổi.
+                    </p>
                 </div>
                 <div class="topbar-actions">
+                    <a class="btn ghost" th:href="@{/admin/scores}" href="/admin/scores">Mở phần 6</a>
                     <a class="btn ghost" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Mở phần 7</a>
-                    <a class="btn solid" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Mở phần 8</a>
-                    <a th:href="@{/admin/scores}" href="/admin/scores" class="btn ghost">Quan ly diem thi sinh</a>
-                    <button type="button" class="btn ghost">Luu nhap</button>
-                    <button type="button" class="btn solid">Cong bo</button>
+                    <a class="btn ghost" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Mở phần 8</a>
+                    <a class="btn solid" th:href="@{/admin/quy-doi}" href="/admin/quy-doi">Mở phần 9</a>
                 </div>
             </header>
 
             <section class="panel">
                 <div class="panel-head">
                     <div>
-                        <h3>Khu vực thao tác nhanh</h3>
-                        <p class="muted">Chọn đúng khu vực nghiệp vụ để nhập dữ liệu, rà soát kết quả hoặc chạy xét tuyển theo từng đợt.</p>
+                        <h3>Đầy đủ 9 mục quản lý</h3>
+                        <p class="muted">Các phần được đánh số lại đúng thứ tự và mô tả theo ngôn ngữ hiển thị dành cho người dùng quản trị.</p>
                     </div>
-                    <span class="pill">Điều hướng</span>
+                    <span class="pill">Đồng bộ với nhánh Test</span>
                 </div>
 
                 <div class="shortcut-grid">
+                    <div class="shortcut-link">
+                        <strong>1. Quản lý người dùng</strong>
+                        <span>Quản trị tài khoản với 2 loại quyền: <code>user</code> và <code>admin</code>, hỗ trợ cập nhật trạng thái và phân quyền trên Swing form.</span>
+                        <span class="tag success">Swing form</span>
+                    </div>
+
+                    <div class="shortcut-link">
+                        <strong>2. Quản lý thí sinh</strong>
+                        <span>Quản lý hồ sơ thí sinh, tra cứu CCCD, thông tin liên hệ và nhập dữ liệu từ tệp ngay trên Swing form.</span>
+                        <span class="tag success">Swing form</span>
+                    </div>
+
+                    <div class="shortcut-link">
+                        <strong>3. Quản lý ngành tuyển sinh</strong>
+                        <span>Quản lý danh mục ngành, chỉ tiêu, điểm sàn, điểm trúng tuyển và các chỉ số tuyển sinh trên Swing form.</span>
+                        <span class="tag success">Swing form</span>
+                    </div>
+
+                    <div class="shortcut-link">
+                        <strong>4. Quản lý tổ hợp môn xét tuyển</strong>
+                        <span>Quản lý mã tổ hợp, cấu trúc môn thi và dữ liệu phục vụ xét tuyển trên Swing form.</span>
+                        <span class="tag success">Swing form</span>
+                    </div>
+
+                    <div class="shortcut-link">
+                        <strong>5. Quản lý danh sách ngành - tổ hợp</strong>
+                        <span>Quản lý mối liên kết giữa ngành tuyển sinh và tổ hợp xét tuyển theo đúng module phần 5 của nhánh Test.</span>
+                        <span class="tag success">Swing form</span>
+                    </div>
+
+                    <a class="shortcut-link" th:href="@{/admin/scores}" href="/admin/scores">
+                        <strong>6. Quản lý điểm thí sinh</strong>
+                        <span>Quản lý đầy đủ 3 nhóm điểm: THPT, VSAT và ĐGNL; hỗ trợ nhập mới, chỉnh sửa, import Excel và rà soát dữ liệu.</span>
+                        <span class="tag success" th:text="${scoreTotal} + ' bản ghi điểm'">0 bản ghi điểm</span>
+                    </a>
+
                     <a class="shortcut-link" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">
-                        <strong>Phần 7 - Quản lý điểm cộng</strong>
-                        <span>Nhập dữ liệu từ Excel, tìm kiếm theo CCCD hoặc mã ngành, kiểm tra nhanh từng bản ghi trước khi đối chiếu kết quả.</span>
-                        <span class="tag success">Nhập liệu và rà soát</span>
+                        <strong>7. Quản lý điểm cộng</strong>
+                        <span>Quản lý dữ liệu điểm cộng theo CCCD, mã ngành và nguồn import, đồng thời hỗ trợ đối chiếu nhanh từng bản ghi.</span>
+                        <span class="tag success" th:text="${diemCongTotal} + ' bản ghi điểm cộng'">0 bản ghi điểm cộng</span>
                     </a>
 
                     <a class="shortcut-link" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">
-                        <strong>Phần 8 - Quản lý nguyện vọng</strong>
-                        <span>Xét tuyển theo từng ngành hoặc toàn bộ danh sách, lọc dữ liệu tức thời và xuất kết quả phục vụ tổng hợp.</span>
-                        <span class="tag success">Xử lý và xuất báo cáo</span>
+                        <strong>8. Quản lý nguyện vọng và xét tuyển</strong>
+                        <span>Quản lý danh sách nguyện vọng, theo dõi kết quả xét tuyển, phân trang dữ liệu và xuất báo cáo phục vụ tổng hợp.</span>
+                        <span class="tag success" th:text="${nguyenVongTotal} + ' nguyện vọng'">0 nguyện vọng</span>
+                    </a>
+
+                    <a class="shortcut-link" th:href="@{/admin/quy-doi}" href="/admin/quy-doi">
+                        <strong>9. Quản lý bảng quy đổi</strong>
+                        <span>Quản lý dữ liệu quy đổi theo phương thức, tổ hợp và môn; hỗ trợ nhập tệp, chỉnh sửa trực tiếp và kiểm tra công thức quy đổi.</span>
+                        <span class="tag success">Web quản trị</span>
                     </a>
                 </div>
             </section>
@@ -78,33 +123,32 @@
             <section class="panel">
                 <div class="panel-head">
                     <div>
-                        <h3>Chuẩn hiển thị giao diện</h3>
-                        <p class="muted">Ưu tiên khả năng đọc nhanh, thao tác rõ ràng và ngôn ngữ nhất quán cho cán bộ tuyển sinh.</p>
+                        <h3>Tổng quan dữ liệu điểm</h3>
+                        <p class="muted">Các chỉ số bên dưới cho biết nhanh quy mô dữ liệu hiện có của từng nhóm điểm và các phần phụ trợ liên quan.</p>
                     </div>
-                    <span class="pill">Tiếng Việt chuẩn</span>
+                    <span class="pill">Thống kê nhanh</span>
                 </div>
 
                 <div class="metric-grid">
                     <div class="metric">
-                        <span>Dữ liệu đầu vào</span>
-                        <strong>Excel + DB</strong>
+                        <span>Điểm THPT</span>
+                        <strong th:text="${scoreThptTotal}">0</strong>
                     </div>
                     <div class="metric">
-                        <span>Phần 7</span>
-                        <strong>Điểm cộng</strong>
+                        <span>Điểm VSAT</span>
+                        <strong th:text="${scoreVsatTotal}">0</strong>
                     </div>
                     <div class="metric">
-                        <span>Phần 8</span>
-                        <strong>Nguyện vọng</strong>
+                        <span>Điểm ĐGNL</span>
+                        <strong th:text="${scoreDgnlTotal}">0</strong>
                     </div>
                     <div class="metric">
-                        <span>Đầu ra</span>
-                        <strong>XLSX</strong>
+                        <span>Điểm cộng / Nguyện vọng</span>
+                        <strong th:text="${diemCongTotal} + ' / ' + ${nguyenVongTotal}">0 / 0</strong>
                     </div>
                 </div>
             </section>
         </main>
     </div>
 </body>
-
 </html>

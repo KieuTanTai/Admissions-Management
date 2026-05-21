@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phần 9 - Quản lý bảng quy đổi</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
+</head>
+<body>
+    <div class="admin-shell">
+        <aside class="admin-sidebar">
+            <div class="brand-block">
+                <p class="brand-kicker">Admissions Console</p>
+                <h1>Phần 9 - Bảng quy đổi</h1>
+                <p class="brand-note">Quản lý dữ liệu quy đổi theo phương thức, tổ hợp và môn thi; hỗ trợ nhập tệp, chỉnh sửa trực tiếp và rà soát kết quả quy đổi trên cùng một giao diện.</p>
+            </div>
+
+            <nav class="menu-list">
+                <a class="menu-item" th:href="@{/admin/form}" href="/admin/form">Tổng quan</a>
+                <a class="menu-item" th:href="@{/admin/scores}" href="/admin/scores">Phần 6 - Điểm thí sinh</a>
+                <a class="menu-item" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Phần 7 - Điểm cộng</a>
+                <a class="menu-item" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">Phần 8 - Nguyện vọng</a>
+                <a class="menu-item active" th:href="@{/admin/quy-doi}" href="/admin/quy-doi">Phần 9 - Bảng quy đổi</a>
+            </nav>
+
+            <div class="status-card">
+                <p class="status-title">Nguồn thao tác</p>
+                <p class="status-value">Excel và Web API</p>
+                <p class="status-sub">Người quản trị có thể thêm mới, cập nhật, xóa dữ liệu, nhập tệp Excel và tải biểu mẫu chuẩn ngay trên trình duyệt.</p>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <header class="topbar">
+                <div>
+                    <p class="topbar-kicker">Quản trị dữ liệu</p>
+                    <h2>Quản lý bảng quy đổi</h2>
+                </div>
+                <div class="topbar-actions topbar-actions-wide">
+                    <button type="button" class="btn ghost btn-lg btn-wide" id="downloadTemplate">Tải mẫu Excel</button>
+                    <button type="button" class="btn solid btn-lg btn-wide" id="reloadBtn">Làm mới dữ liệu</button>
+                </div>
+            </header>
+
+            <section class="split-grid">
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Nhập dữ liệu từ tệp</h3>
+                            <p class="muted">Hỗ trợ tệp <code>.xlsx</code>. Dữ liệu sau khi nhập sẽ được cập nhật trực tiếp vào danh sách bảng quy đổi.</p>
+                        </div>
+                        <span class="pill">Import</span>
+                    </div>
+
+                    <form id="uploadForm" class="form-grid form-grid-compact">
+                        <label class="field field-lg">
+                            <span>Tệp Excel</span>
+                            <input class="file-input" type="file" id="excelFile" accept=".xlsx" required>
+                        </label>
+                        <div class="field action-field">
+                            <span>&nbsp;</span>
+                            <button type="submit" class="btn accent btn-lg btn-wide">Nhập dữ liệu</button>
+                        </div>
+                    </form>
+                    <div id="uploadStatus" class="notice"></div>
+                </div>
+
+                <div class="panel">
+                    <div class="panel-head">
+                        <div>
+                            <h3>Tìm kiếm nhanh</h3>
+                            <p class="muted">Tra cứu theo mã quy đổi để thu hẹp danh sách và kiểm tra nhanh các bản ghi liên quan.</p>
+                        </div>
+                        <span class="pill">Bộ lọc</span>
+                    </div>
+                    <div class="form-grid form-grid-single">
+                        <label class="field field-full">
+                            <span>Mã quy đổi</span>
+                            <input type="text" id="searchMaQuyDoi" placeholder="Ví dụ: IELTS, A00, VSTEP">
+                        </label>
+                        <button class="btn ghost btn-lg field-full" type="button" id="searchBtn">Áp dụng bộ lọc</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>Biểu mẫu cập nhật</h3>
+                        <p class="muted">Chọn một dòng trong bảng để nạp dữ liệu vào biểu mẫu và thực hiện chỉnh sửa hoặc xóa bản ghi.</p>
+                    </div>
+                    <span class="pill">Chỉnh sửa</span>
+                </div>
+
+                <div class="form-grid">
+                    <label class="field">
+                        <span>ID</span>
+                        <input type="text" id="ruleId" readonly>
+                    </label>
+                    <label class="field">
+                        <span>Phương thức</span>
+                        <input type="text" id="phuongThuc">
+                    </label>
+                    <label class="field">
+                        <span>Tổ hợp</span>
+                        <input type="text" id="toHop">
+                    </label>
+                    <label class="field">
+                        <span>Môn</span>
+                        <input type="text" id="mon">
+                    </label>
+                    <label class="field">
+                        <span>Điểm A</span>
+                        <input type="number" step="0.01" id="diemA">
+                    </label>
+                    <label class="field">
+                        <span>Điểm B</span>
+                        <input type="number" step="0.01" id="diemB">
+                    </label>
+                    <label class="field">
+                        <span>Điểm C</span>
+                        <input type="number" step="0.01" id="diemC">
+                    </label>
+                    <label class="field">
+                        <span>Điểm D</span>
+                        <input type="number" step="0.01" id="diemD">
+                    </label>
+                    <label class="field">
+                        <span>Mã quy đổi</span>
+                        <input type="text" id="maQuyDoi">
+                    </label>
+                    <label class="field">
+                        <span>Phân vị</span>
+                        <input type="text" id="phanVi">
+                    </label>
+                </div>
+
+                <div class="topbar-actions topbar-actions-wide action-cluster" style="margin-top: 16px;">
+                    <button type="button" class="btn ghost btn-lg btn-wide" id="clearBtn">Xóa biểu mẫu</button>
+                    <button type="button" class="btn danger btn-lg btn-wide" id="deleteBtn">Xóa dòng chọn</button>
+                    <button type="button" class="btn danger btn-lg btn-wide" id="deleteAllBtn">Xóa toàn bộ</button>
+                    <button type="button" class="btn solid btn-lg btn-wide" id="saveBtn">Lưu hoặc cập nhật</button>
+                </div>
+                <div id="formStatus" class="notice"></div>
+            </section>
+
+            <section class="panel">
+                <div class="panel-head">
+                    <div>
+                        <h3>Danh sách quy tắc quy đổi</h3>
+                        <p class="muted" id="tableSummary">Đang tải dữ liệu từ hệ thống.</p>
+                    </div>
+                    <span class="pill">Phần 9</span>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Phương thức</th>
+                                <th>Tổ hợp</th>
+                                <th>Môn</th>
+                                <th>Điểm A</th>
+                                <th>Điểm B</th>
+                                <th>Điểm C</th>
+                                <th>Điểm D</th>
+                                <th>Mã quy đổi</th>
+                                <th>Phân vị</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataTable">
+                            <tr>
+                                <td colspan="10" class="empty-row">Đang tải dữ liệu...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const basePath = '/admissions';
+        const tbody = document.getElementById('dataTable');
+        const tableSummary = document.getElementById('tableSummary');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const formStatus = document.getElementById('formStatus');
+
+        let currentRows = [];
+
+        const fields = {
+            id: document.getElementById('ruleId'),
+            phuongThuc: document.getElementById('phuongThuc'),
+            toHop: document.getElementById('toHop'),
+            mon: document.getElementById('mon'),
+            diemA: document.getElementById('diemA'),
+            diemB: document.getElementById('diemB'),
+            diemC: document.getElementById('diemC'),
+            diemD: document.getElementById('diemD'),
+            maQuyDoi: document.getElementById('maQuyDoi'),
+            phanVi: document.getElementById('phanVi')
+        };
+
+        window.addEventListener('DOMContentLoaded', () => loadRules());
+        document.getElementById('reloadBtn').addEventListener('click', () => loadRules());
+        document.getElementById('searchBtn').addEventListener('click', () => renderRows(filterRows()));
+        document.getElementById('clearBtn').addEventListener('click', clearForm);
+        document.getElementById('deleteBtn').addEventListener('click', deleteSelected);
+        document.getElementById('deleteAllBtn').addEventListener('click', deleteAll);
+        document.getElementById('saveBtn').addEventListener('click', saveRule);
+
+        document.getElementById('downloadTemplate').addEventListener('click', async () => {
+            try {
+                const response = await fetch(basePath + '/api/quydoi/download-template');
+                const blob = await response.blob();
+                downloadBlob(blob, 'bang-quy-doi-template.xlsx');
+            } catch (error) {
+                showNotice(uploadStatus, 'Không thể tải tệp mẫu: ' + error.message, false);
+            }
+        });
+
+        document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const file = document.getElementById('excelFile').files[0];
+            if (!file) {
+                showNotice(uploadStatus, 'Vui lòng chọn tệp Excel trước khi nhập dữ liệu.', false);
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const response = await fetch(basePath + '/api/quydoi/import', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                showNotice(uploadStatus, data.message || 'Đã tiếp nhận tệp Excel.', data.success === true);
+                if (data.success) {
+                    event.target.reset();
+                    loadRules();
+                }
+            } catch (error) {
+                showNotice(uploadStatus, 'Không thể nhập dữ liệu: ' + error.message, false);
+            }
+        });
+
+        async function loadRules() {
+            tbody.innerHTML = '<tr><td colspan="10" class="empty-row">Đang tải dữ liệu...</td></tr>';
+            try {
+                const response = await fetch(basePath + '/api/quydoi/danh-sach');
+                currentRows = await response.json();
+                renderRows(filterRows());
+            } catch (error) {
+                currentRows = [];
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-row">Không thể tải dữ liệu.</td></tr>';
+                tableSummary.textContent = 'Không thể kết nối để tải danh sách bảng quy đổi.';
+            }
+        }
+
+        function filterRows() {
+            const keyword = document.getElementById('searchMaQuyDoi').value.trim().toLowerCase();
+            if (!keyword) {
+                return currentRows;
+            }
+            return currentRows.filter(item => (item.maQuyDoi || '').toLowerCase().includes(keyword));
+        }
+
+        function renderRows(rows) {
+            if (!Array.isArray(rows) || rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="10" class="empty-row">Chưa có dữ liệu phù hợp.</td></tr>';
+                tableSummary.textContent = 'Không có quy tắc quy đổi nào phù hợp với bộ lọc hiện tại.';
+                return;
+            }
+
+            tableSummary.textContent = `Hiển thị ${rows.length} quy tắc quy đổi.`;
+            tbody.innerHTML = rows.map(item => `
+                <tr data-id="${item.id}">
+                    <td>${escapeHtml(item.id)}</td>
+                    <td>${escapeHtml(item.phuongThuc)}</td>
+                    <td>${escapeHtml(item.toHop)}</td>
+                    <td>${escapeHtml(item.mon)}</td>
+                    <td>${escapeHtml(item.diemA)}</td>
+                    <td>${escapeHtml(item.diemB)}</td>
+                    <td>${escapeHtml(item.diemC)}</td>
+                    <td>${escapeHtml(item.diemD)}</td>
+                    <td>${escapeHtml(item.maQuyDoi)}</td>
+                    <td>${escapeHtml(item.phanVi)}</td>
+                </tr>
+            `).join('');
+
+            tbody.querySelectorAll('tr[data-id]').forEach(row => {
+                row.addEventListener('click', () => populateForm(Number(row.dataset.id)));
+            });
+        }
+
+        function populateForm(id) {
+            const item = currentRows.find(row => row.id === id);
+            if (!item) {
+                return;
+            }
+            fields.id.value = item.id ?? '';
+            fields.phuongThuc.value = item.phuongThuc ?? '';
+            fields.toHop.value = item.toHop ?? '';
+            fields.mon.value = item.mon ?? '';
+            fields.diemA.value = item.diemA ?? '';
+            fields.diemB.value = item.diemB ?? '';
+            fields.diemC.value = item.diemC ?? '';
+            fields.diemD.value = item.diemD ?? '';
+            fields.maQuyDoi.value = item.maQuyDoi ?? '';
+            fields.phanVi.value = item.phanVi ?? '';
+            showNotice(formStatus, 'Đã nạp dữ liệu vào biểu mẫu.', true);
+        }
+
+        function clearForm() {
+            Object.values(fields).forEach(field => field.value = '');
+            showNotice(formStatus, 'Đã xóa dữ liệu biểu mẫu.', true);
+        }
+
+        async function saveRule() {
+            const payload = {
+                id: fields.id.value ? Number(fields.id.value) : null,
+                phuongThuc: fields.phuongThuc.value.trim(),
+                toHop: fields.toHop.value.trim(),
+                mon: fields.mon.value.trim(),
+                diemA: numberOrNull(fields.diemA.value),
+                diemB: numberOrNull(fields.diemB.value),
+                diemC: numberOrNull(fields.diemC.value),
+                diemD: numberOrNull(fields.diemD.value),
+                maQuyDoi: fields.maQuyDoi.value.trim(),
+                phanVi: fields.phanVi.value.trim()
+            };
+
+            const isUpdate = Boolean(payload.id);
+            const endpoint = isUpdate ? '/api/quydoi/sua' : '/api/quydoi/them';
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            try {
+                const response = await fetch(basePath + endpoint, {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const message = await response.text();
+                showNotice(formStatus, message || 'Đã lưu dữ liệu thành công.', response.ok);
+                if (response.ok) {
+                    clearForm();
+                    loadRules();
+                }
+            } catch (error) {
+                showNotice(formStatus, 'Không thể lưu dữ liệu: ' + error.message, false);
+            }
+        }
+
+        async function deleteSelected() {
+            const id = fields.id.value;
+            if (!id) {
+                showNotice(formStatus, 'Vui lòng chọn một bản ghi cần xóa.', false);
+                return;
+            }
+            if (!confirm('Xác nhận xóa bản ghi đang chọn?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(basePath + '/api/quydoi/xoa/' + id, { method: 'DELETE' });
+                const message = await response.text();
+                showNotice(formStatus, message || 'Đã xóa bản ghi.', response.ok);
+                if (response.ok) {
+                    clearForm();
+                    loadRules();
+                }
+            } catch (error) {
+                showNotice(formStatus, 'Không thể xóa dữ liệu: ' + error.message, false);
+            }
+        }
+
+        async function deleteAll() {
+            if (!confirm('Xác nhận xóa toàn bộ dữ liệu bảng quy đổi?')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(basePath + '/api/quydoi/xoa-tat-ca', { method: 'DELETE' });
+                const message = await response.text();
+                showNotice(formStatus, message || 'Đã xóa toàn bộ dữ liệu.', response.ok);
+                if (response.ok) {
+                    clearForm();
+                    loadRules();
+                }
+            } catch (error) {
+                showNotice(formStatus, 'Không thể xóa toàn bộ dữ liệu: ' + error.message, false);
+            }
+        }
+
+        function showNotice(target, message, success) {
+            target.textContent = message;
+            target.className = 'notice show ' + (success ? 'success' : 'error');
+        }
+
+        function numberOrNull(value) {
+            if (value === null || value === undefined || value === '') {
+                return null;
+            }
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
+        function downloadBlob(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function escapeHtml(value) {
+            return String(value ?? '')
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
+    </script>
+</body>
+</html>

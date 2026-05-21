@@ -42,7 +42,7 @@ public class XtDiemCongXetTuyenEntity {
     @Column(name = "diemtong", precision = 6, scale = 2)
     private BigDecimal diemTong;
 
-    @Column(name = "ghichu", columnDefinition = "TEXT")
+    @Column(name = "ghichu", length = 2000)
     private String ghiChu;
 
     @Column(name = "dc_keys", nullable = false, length = 45)

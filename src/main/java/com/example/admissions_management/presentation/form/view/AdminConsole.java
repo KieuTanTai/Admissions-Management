@@ -1,42 +1,45 @@
 package com.example.admissions_management.presentation.form.view;
 
-import com.example.admissions_management.presentation.form.controller.AdminConsoleController;
-import com.example.admissions_management.presentation.form.controller.DiemCongConsoleController;
-import com.example.admissions_management.presentation.form.controller.NguyenVongConsoleController;
-import com.example.admissions_management.presentation.form.view.combination.CombinationForm;
-import com.example.admissions_management.presentation.form.model.AdminConsoleTableModel;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Lazy;
 import com.example.admissions_management.application.dto.response.UserAccountResponse;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtThiSinhXetTuyen25Entity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtToHopMonThiEntity;
+import com.example.admissions_management.presentation.form.controller.BangQuyDoiConsoleController;
 import com.example.admissions_management.presentation.form.controller.CandidateManagementController;
+import com.example.admissions_management.presentation.form.controller.CombinationFormController;
+import com.example.admissions_management.presentation.form.controller.DiemCongConsoleController;
 import com.example.admissions_management.presentation.form.controller.MajorManagementController;
+import com.example.admissions_management.presentation.form.controller.NguyenVongConsoleController;
+import com.example.admissions_management.presentation.form.controller.ScoreManagementConsoleController;
 import com.example.admissions_management.presentation.form.controller.ToHopMonThiManagementController;
 import com.example.admissions_management.presentation.form.controller.UserManagementController;
-import org.springframework.stereotype.Component;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
-import javax.swing.JButton;
+import javax.swing.BorderFactory;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import java.awt.BorderLayout;
-import java.awt.GridLayout;
-import java.io.File;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
+import javax.swing.SwingConstants;
+import javax.swing.WindowConstants;
+import javax.swing.JButton;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridLayout;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
@@ -47,15 +50,29 @@ import java.util.stream.Collectors;
 @Lazy
 public class AdminConsole extends JFrame {
 
-    private final AdminConsoleController controller;
-    private final ObjectProvider<CombinationForm> combinationFormProvider;
-    private final ObjectProvider<AdminPanel> adminPanelProvider;
+    private static final Color BG_COLOR = new Color(240, 243, 238);
+    private static final Color SURFACE_COLOR = new Color(252, 253, 251);
+    private static final Color SOFT_COLOR = new Color(236, 244, 239);
+    private static final Color PRIMARY_COLOR = new Color(17, 110, 88);
+    private static final Color ACCENT_COLOR = new Color(220, 155, 63);
+    private static final Color DANGER_COLOR = new Color(190, 76, 64);
+    private static final Color TEXT_COLOR = new Color(23, 45, 38);
+    private static final Color MUTED_COLOR = new Color(102, 121, 113);
+    private static final Color BORDER_COLOR = new Color(214, 224, 218);
+    private static final Font TITLE_FONT = new Font("Segoe UI", Font.BOLD, 30);
+    private static final Font SUBTITLE_FONT = new Font("Segoe UI", Font.PLAIN, 14);
+    private static final Font UI_FONT = new Font("Segoe UI", Font.PLAIN, 13);
+    private static final Font UI_FONT_BOLD = new Font("Segoe UI", Font.BOLD, 13);
+
     private final DiemCongConsoleController diemCongConsoleController;
     private final NguyenVongConsoleController nguyenVongConsoleController;
+    private final ScoreManagementConsoleController scoreManagementConsoleController;
+    private final BangQuyDoiConsoleController bangQuyDoiConsoleController;
     private final UserManagementController userController;
     private final CandidateManagementController candidateController;
     private final MajorManagementController majorController;
     private final ToHopMonThiManagementController toHopController;
+    private final CombinationFormController combinationFormController;
 
     private final DefaultTableModel userTableModel;
     private final JTable userTable;
@@ -67,15 +84,6 @@ public class AdminConsole extends JFrame {
     private final JLabel candidatePageLabel;
     private int candidatePage = 0;
     private String candidateQuery = "";
-    private final ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider;
-
-    private static final Logger logger = LoggerFactory.getLogger(AdminConsole.class);
-
-    private JFrame userManagementFrame;
-    private JFrame candidateManagementFrame;
-    private JFrame majorManagementFrame;
-    private JFrame toHopManagementFrame;
-    private JFrame applicantFrame;
 
     private final DefaultTableModel majorTableModel;
     private final JTable majorTable;
@@ -91,43 +99,43 @@ public class AdminConsole extends JFrame {
     private int toHopPage = 0;
     private String toHopQuery = "";
 
-    public AdminConsole(AdminConsoleController controller, ObjectProvider<CombinationForm> combinationFormProvider,
-            ObjectProvider<AdminPanel> adminPanelProvider,
+    public AdminConsole(
             DiemCongConsoleController diemCongConsoleController,
             NguyenVongConsoleController nguyenVongConsoleController,
+            ScoreManagementConsoleController scoreManagementConsoleController,
+            BangQuyDoiConsoleController bangQuyDoiConsoleController,
             UserManagementController userController,
             CandidateManagementController candidateController,
             MajorManagementController majorController,
             ToHopMonThiManagementController toHopController,
-            ObjectProvider<ScoreManagementConsole> scoreManagementConsoleProvider) {
-        this.controller = controller;
-        this.combinationFormProvider = combinationFormProvider;
-        this.adminPanelProvider = adminPanelProvider;
+            CombinationFormController combinationFormController) {
         this.diemCongConsoleController = diemCongConsoleController;
         this.nguyenVongConsoleController = nguyenVongConsoleController;
+        this.scoreManagementConsoleController = scoreManagementConsoleController;
+        this.bangQuyDoiConsoleController = bangQuyDoiConsoleController;
         this.userController = userController;
         this.candidateController = candidateController;
         this.majorController = majorController;
         this.toHopController = toHopController;
-        this.scoreManagementConsoleProvider = scoreManagementConsoleProvider;
+        this.combinationFormController = combinationFormController;
 
-        setTitle("Bảng Quản Trị Tuyển Sinh");
-        setSize(1200, 600);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Hệ thống quản trị tuyển sinh");
+        setSize(1480, 860);
+        setMinimumSize(new Dimension(1320, 780));
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        getContentPane().setBackground(BG_COLOR);
 
         userSearchField = new JTextField(20);
         candidateSearchField = new JTextField(20);
-        candidatePageLabel = new JLabel("Page: 1");
-
+        candidatePageLabel = createPageLabel();
         majorSearchField = new JTextField(20);
-        majorPageLabel = new JLabel("Page: 1");
-
+        majorPageLabel = createPageLabel();
         toHopSearchField = new JTextField(20);
-        toHopPageLabel = new JLabel("Page: 1");
+        toHopPageLabel = createPageLabel();
 
         userTableModel = new DefaultTableModel(
-                new Object[] { "ID", "Username", "Full Name", "Role", "Status" }, 0) {
+                new Object[] { "ID", "Tên đăng nhập", "Họ và tên", "Vai trò", "Trạng thái" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -136,9 +144,8 @@ public class AdminConsole extends JFrame {
         userTable = new JTable(userTableModel);
 
         candidateTableModel = new DefaultTableModel(
-                new Object[] { "ID", "CCCD", "SBD", "Họ", "Tên", "Ngày Sinh", "Điện Thoại", "Giới Tính", "Email",
-                        "Nơi Sinh", "Đối Tượng", "Khu Vực" },
-                0) {
+                new Object[] { "ID", "CCCD", "SBD", "Họ", "Tên", "Ngày sinh", "Điện thoại", "Giới tính", "Email",
+                        "Nơi sinh", "Đối tượng", "Khu vực" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -147,23 +154,9 @@ public class AdminConsole extends JFrame {
         candidateTable = new JTable(candidateTableModel);
 
         majorTableModel = new DefaultTableModel(
-                new Object[] {
-                        "ID",
-                        "Mã ngành",
-                        "Tên ngành",
-                        "Tổ hợp gốc",
-                        "Chỉ tiêu",
-                        "Điểm sàn",
-                        "Điểm trúng tuyển",
-                        "Tuyển thẳng",
-                        "ĐGNL",
-                        "THPT",
-                        "V-SAT",
-                        "SL XTT",
-                        "SL ĐGNL",
-                        "SL V-SAT",
-                        "SL THPT"
-                }, 0) {
+                new Object[] { "ID", "Mã ngành", "Tên ngành", "Tổ hợp gốc", "Chỉ tiêu", "Điểm sàn",
+                        "Điểm trúng tuyển", "Tuyển thẳng", "ĐGNL", "THPT", "V-SAT", "SL XTT", "SL ĐGNL",
+                        "SL V-SAT", "SL THPT" }, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -180,490 +173,320 @@ public class AdminConsole extends JFrame {
         };
         toHopTable = new JTable(toHopTableModel);
 
-        setLayout(new BorderLayout(12, 12));
-        add(buildLauncherPanel(), BorderLayout.CENTER);
-    }
+        styleTable(userTable);
+        styleTable(candidateTable);
+        styleTable(majorTable);
+        styleTable(toHopTable);
 
-    private JPanel buildLauncherPanel() {
-        List<JButton> buttons = Arrays.asList(
-                createLauncherButton("Quản lý người dùng", this::openUserManagementForm),
-                createLauncherButton("Quản lý thí sinh", this::openCandidateManagementForm),
-                createLauncherButton("Quản lý ngành", this::openMajorManagementForm),
-                createLauncherButton("Quản lý tổ hợp môn", this::openToHopManagementForm),
-                createLauncherButton("Bảng quy đổi", this::openBangQuyDoiForm),
-                createLauncherButton("Tổ hợp", this::openCombinationManager),
-                createLauncherButton("Điểm cộng", this::openDiemCongForm),
-                createLauncherButton("Nguyện vọng", this::openNguyenVongForm),
-                createLauncherButton("Quản lý điểm", this::openScoreManagementForm),
-                createLauncherButton("Đăng ký thí sinh", this::openApplicantForm));
+        setLayout(new BorderLayout(10, 10));
+        add(buildDashboardHeader(), BorderLayout.NORTH);
+        add(buildTabPane(), BorderLayout.CENTER);
 
-        int columns = (int) Math.ceil(buttons.size() / 2.0);
-        JPanel panel = new JPanel(new GridLayout(2, columns, 12, 12));
-        for (JButton button : buttons) {
-            panel.add(button);
-        }
-        panel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        return panel;
-    }
-
-    private JButton createLauncherButton(String text, Runnable action) {
-        JButton button = new JButton(text);
-        button.addActionListener(e -> action.run());
-        return button;
-    }
-
-    private void openUserManagementForm() {
-        if (userManagementFrame == null) {
-            userManagementFrame = new JFrame("Quản lý người dùng");
-            userManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            userManagementFrame.add(buildUserPanel());
-            userManagementFrame.setSize(1200, 720);
-            userManagementFrame.setLocationRelativeTo(this);
-        }
         loadUsers();
-        userManagementFrame.setVisible(true);
-        userManagementFrame.toFront();
-    }
-
-    private void openCandidateManagementForm() {
-        if (candidateManagementFrame == null) {
-            candidateManagementFrame = new JFrame("Quản lý thí sinh");
-            candidateManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            candidateManagementFrame.add(buildCandidatePanel());
-            candidateManagementFrame.setSize(1280, 760);
-            candidateManagementFrame.setLocationRelativeTo(this);
-        }
         loadCandidates();
-        candidateManagementFrame.setVisible(true);
-        candidateManagementFrame.toFront();
-    }
-
-    private void openMajorManagementForm() {
-        if (majorManagementFrame == null) {
-            majorManagementFrame = new JFrame("Quản lý ngành tuyển sinh");
-            majorManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            majorManagementFrame.add(buildMajorPanel());
-            majorManagementFrame.setSize(1280, 760);
-            majorManagementFrame.setLocationRelativeTo(this);
-        }
         loadMajors();
-        majorManagementFrame.setVisible(true);
-        majorManagementFrame.toFront();
-    }
-
-    private void openToHopManagementForm() {
-        if (toHopManagementFrame == null) {
-            toHopManagementFrame = new JFrame("Quản lý tổ hợp môn");
-            toHopManagementFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            toHopManagementFrame.add(buildToHopPanel());
-            toHopManagementFrame.setSize(1280, 720);
-            toHopManagementFrame.setLocationRelativeTo(this);
-        }
         loadToHop();
-        toHopManagementFrame.setVisible(true);
-        toHopManagementFrame.toFront();
     }
 
-    private void openBangQuyDoiForm() {
-        AdminPanel panel = adminPanelProvider.getObject();
-        panel.setLocationRelativeTo(this);
-        panel.setVisible(true);
-        panel.toFront();
+    private JPanel buildDashboardHeader() {
+        JPanel wrapper = new JPanel(new BorderLayout());
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(18, 18, 6, 18));
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(SURFACE_COLOR);
+        header.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(20, 22, 20, 22)));
+
+        JPanel titlePanel = new JPanel();
+        titlePanel.setOpaque(false);
+        titlePanel.setLayout(new BoxLayout(titlePanel, BoxLayout.Y_AXIS));
+
+        JLabel badge = new JLabel("ADMISSIONS CONSOLE");
+        badge.setFont(new Font("Segoe UI", Font.BOLD, 11));
+        badge.setForeground(new Color(154, 100, 28));
+
+        JLabel title = new JLabel("Trung tâm điều hành tuyển sinh");
+        title.setFont(TITLE_FONT);
+        title.setForeground(TEXT_COLOR);
+
+        JLabel subtitle = new JLabel("Theo dõi dữ liệu, kiểm soát nhập liệu và thao tác trực tiếp trên từng phân hệ.");
+        subtitle.setFont(SUBTITLE_FONT);
+        subtitle.setForeground(MUTED_COLOR);
+
+        titlePanel.add(badge);
+        titlePanel.add(Box.createVerticalStrut(6));
+        titlePanel.add(title);
+        titlePanel.add(Box.createVerticalStrut(6));
+        titlePanel.add(subtitle);
+
+        header.add(titlePanel, BorderLayout.CENTER);
+        wrapper.add(header, BorderLayout.CENTER);
+        return wrapper;
     }
 
-    private void openApplicantForm() {
-        if (applicantFrame == null) {
-            applicantFrame = new JFrame("Đăng ký thí sinh");
-            applicantFrame.setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
-            applicantFrame.add(new ApplicantPanel(controller));
-            applicantFrame.setSize(900, 600);
-            applicantFrame.setLocationRelativeTo(this);
-        }
-        applicantFrame.setVisible(true);
-        applicantFrame.toFront();
-    }
-
-    private void openCombinationManager() {
-        CombinationForm form = combinationFormProvider.getObject();
-        form.setVisible(true);
-        form.setParentFrame(this);
-        form.setTrackingEnableForParentFrame();
-        form.toFront();
-
-    }
-
-    private void openDiemCongForm() {
-        DiemCongPanel diemCongPanel = new DiemCongPanel(diemCongConsoleController);
-        JFrame diemCongFrame = new JFrame("Phần 7 - Điểm Cộng");
-        diemCongFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        diemCongFrame.add(diemCongPanel);
-        diemCongFrame.setSize(1280, 760);
-        diemCongFrame.setLocationRelativeTo(this);
-        diemCongFrame.setVisible(true);
-    }
-
-    private void openNguyenVongForm() {
-        NguyenVongPanel nguyenVongPanel = new NguyenVongPanel(nguyenVongConsoleController);
-        JFrame nguyenVongFrame = new JFrame("Phần 8 - Nguyện Vọng");
-        nguyenVongFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        nguyenVongFrame.add(nguyenVongPanel);
-        nguyenVongFrame.setSize(1280, 760);
-        nguyenVongFrame.setLocationRelativeTo(this);
-        nguyenVongFrame.setVisible(true);
-    }
-
-    private JTabbedPane buildTabPane() {
+        private JTabbedPane buildTabPane() {
         JTabbedPane tabPane = new JTabbedPane();
-        tabPane.addTab("Quản lý người dùng", buildUserPanel());
-        tabPane.addTab("Quản lý thí sinh", buildCandidatePanel());
-        tabPane.addTab("Quản lý ngành tuyển sinh", buildMajorPanel());
-        tabPane.addTab("Quản lý tổ hợp môn", buildToHopPanel());
-        tabPane.addTab("Phần 7 - Điểm cộng", new DiemCongPanel(diemCongConsoleController));
-        tabPane.addTab("Phần 8 - Nguyện vọng", new NguyenVongPanel(nguyenVongConsoleController));
+        tabPane.setFont(UI_FONT_BOLD);
+        tabPane.setForeground(TEXT_COLOR);
+        tabPane.setBackground(BG_COLOR);
+        tabPane.setBorder(new EmptyBorder(10, 18, 18, 18));
+
+        tabPane.addTab("1. Quản lý người dùng", buildUserPanel());
+        tabPane.addTab("2. Quản lý thí sinh", buildCandidatePanel());
+        tabPane.addTab("3. Quản lý ngành tuyển sinh", buildMajorPanel());
+        tabPane.addTab("4. Quản lý tổ hợp môn xét tuyển", buildToHopPanel());
+        tabPane.addTab("5. Quản lý danh sách ngành - tổ hợp", new CombinationManagementPanel(combinationFormController));
+        tabPane.addTab("6. Quản lý điểm thí sinh", new ScoreManagementPanel(scoreManagementConsoleController));
+        tabPane.addTab("7. Quản lý điểm cộng", new DiemCongPanel(diemCongConsoleController));
+        tabPane.addTab("8. Quản lý nguyện vọng và xét tuyển", new NguyenVongPanel(nguyenVongConsoleController));
+        tabPane.addTab("9. Quản lý bảng quy đổi", new BangQuyDoiManagementPanel(bangQuyDoiConsoleController));
         return tabPane;
     }
 
     private JPanel buildUserPanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel panel = createSectionPanel();
 
-        JPanel topPanel = new JPanel(new GridLayout(1, 4, 8, 8));
-        topPanel.add(new JLabel("Tìm kiếm User"));
+        JPanel topPanel = createToolbarPanel();
+        topPanel.setLayout(new GridLayout(1, 4, 10, 10));
+        topPanel.add(createToolbarLabel("Tìm kiếm người dùng"));
+        styleTextField(userSearchField);
         topPanel.add(userSearchField);
-
-        JButton searchButton = new JButton("Tìm");
-        JButton refreshButton = new JButton("Làm mới");
-
-        searchButton.addActionListener(e -> loadUsers());
-        refreshButton.addActionListener(e -> {
+        topPanel.add(createButton("Tìm", ButtonStyle.PRIMARY, this::loadUsers));
+        topPanel.add(createButton("Làm mới", ButtonStyle.SECONDARY, () -> {
             userSearchField.setText("");
             loadUsers();
-        });
-
-        topPanel.add(searchButton);
-        topPanel.add(refreshButton);
+        }));
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(userTable), BorderLayout.CENTER);
+        panel.add(createTableScrollPane(userTable), BorderLayout.CENTER);
 
-        JPanel actionPanel = new JPanel(new GridLayout(1, 5, 8, 8));
-
-        JButton addButton = new JButton("Thêm");
-        JButton editButton = new JButton("Sửa");
-        JButton passwordButton = new JButton("Đổi mật khẩu");
-        JButton roleButton = new JButton("Đổi quyền");
-        JButton enableButton = new JButton("Bật/Tắt");
-
-        addButton.addActionListener(e -> {
+        JPanel actionPanel = createToolbarPanel();
+        actionPanel.setLayout(new GridLayout(1, 5, 10, 10));
+        actionPanel.add(createButton("Thêm", ButtonStyle.PRIMARY, () -> {
             userController.openUserForm(null);
             loadUsers();
-        });
-
-        editButton.addActionListener(e -> {
+        }));
+        actionPanel.add(createButton("Sửa", ButtonStyle.SECONDARY, () -> {
             Long id = getSelectedUserId();
             if (id != null) {
                 userController.openUserForm(id);
                 loadUsers();
             }
-        });
-
-        passwordButton.addActionListener(e -> {
+        }));
+        actionPanel.add(createButton("Đổi mật khẩu", ButtonStyle.SECONDARY, () -> {
             Long id = getSelectedUserId();
             if (id != null) {
                 userController.changePassword(id);
             }
-        });
-
-        roleButton.addActionListener(e -> {
+        }));
+        actionPanel.add(createButton("Đổi quyền", ButtonStyle.SECONDARY, () -> {
             Long id = getSelectedUserId();
             if (id != null) {
                 userController.toggleUserRole(id);
                 loadUsers();
             }
-        });
-
-        enableButton.addActionListener(e -> {
+        }));
+        actionPanel.add(createButton("Bật/Tắt", ButtonStyle.DANGER, () -> {
             Long id = getSelectedUserId();
             if (id != null) {
-                boolean enabled = !isSelectedUserEnabled();
-                userController.setUserEnabled(id, enabled);
+                userController.setUserEnabled(id, !isSelectedUserEnabled());
                 loadUsers();
             }
-        });
-
-        actionPanel.add(addButton);
-        actionPanel.add(editButton);
-        actionPanel.add(passwordButton);
-        actionPanel.add(roleButton);
-        actionPanel.add(enableButton);
+        }));
 
         panel.add(actionPanel, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel buildCandidatePanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel panel = createSectionPanel();
 
-        JPanel topPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-        topPanel.add(new JLabel("Tìm kiếm CCCD/Họ tên"));
+        JPanel topPanel = createToolbarPanel();
+        topPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        topPanel.add(createToolbarLabel("Tìm kiếm CCCD / họ tên"));
+        styleTextField(candidateSearchField);
         topPanel.add(candidateSearchField);
-
-        JButton searchButton = new JButton("Tìm");
-        JButton importButton = new JButton("Nhập CSV/Excel");
-        JButton refreshButton = new JButton("Làm mới");
-
-        topPanel.add(searchButton);
-        topPanel.add(importButton);
-        topPanel.add(refreshButton);
-        topPanel.add(candidatePageLabel);
-
-        searchButton.addActionListener(e -> {
+        topPanel.add(createButton("Tìm", ButtonStyle.PRIMARY, () -> {
             candidatePage = 0;
             candidateQuery = candidateSearchField.getText().trim();
             loadCandidates();
-        });
-
-        refreshButton.addActionListener(e -> {
+        }));
+        topPanel.add(createButton("Nhập Excel", ButtonStyle.ACCENT, this::importCandidates));
+        topPanel.add(createButton("Làm mới", ButtonStyle.SECONDARY, () -> {
             candidateSearchField.setText("");
             candidateQuery = "";
             candidatePage = 0;
             loadCandidates();
-        });
-
-        importButton.addActionListener(e -> importCandidates());
+        }));
+        topPanel.add(candidatePageLabel);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(candidateTable), BorderLayout.CENTER);
+        panel.add(createTableScrollPane(candidateTable), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 5, 8, 8));
-
-        JButton editButton = new JButton("Sửa");
-        JButton deleteButton = new JButton("Xóa");
-        JButton deleteAllButton = new JButton("Xóa tất cả");
-        JButton prevButton = new JButton("<< Trước");
-        JButton nextButton = new JButton("Sau >>");
-
-        editButton.addActionListener(e -> {
+        JPanel buttonPanel = createToolbarPanel();
+        buttonPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        buttonPanel.add(createButton("Thêm", ButtonStyle.PRIMARY, () -> {
+            candidateController.openCandidateForm(null);
+            loadCandidates();
+        }));
+        buttonPanel.add(createButton("Sửa", ButtonStyle.SECONDARY, () -> {
             Integer id = getSelectedCandidateId();
             if (id != null) {
                 candidateController.openCandidateForm(id);
                 loadCandidates();
             }
-        });
-
-        deleteButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa", ButtonStyle.DANGER, () -> {
             Integer id = getSelectedCandidateId();
             if (id != null) {
                 candidateController.deleteCandidate(id);
                 loadCandidates();
             }
-        });
-
-        deleteAllButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa tất cả", ButtonStyle.DANGER, () -> {
             candidateController.deleteAllCandidates();
             loadCandidates();
-        });
-
-        prevButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("<< Trước", ButtonStyle.SECONDARY, () -> {
             if (candidatePage > 0) {
                 candidatePage--;
                 loadCandidates();
             }
-        });
-
-        nextButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Sau >>", ButtonStyle.SECONDARY, () -> {
             candidatePage++;
             loadCandidates();
-        });
-
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(deleteAllButton);
-        buttonPanel.add(prevButton);
-        buttonPanel.add(nextButton);
+        }));
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel buildMajorPanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel panel = createSectionPanel();
 
-        JPanel topPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-        topPanel.add(new JLabel("Tìm kiếm mã ngành/tên ngành"));
+        JPanel topPanel = createToolbarPanel();
+        topPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        topPanel.add(createToolbarLabel("Tìm kiếm mã ngành / tên ngành"));
+        styleTextField(majorSearchField);
         topPanel.add(majorSearchField);
-
-        JButton searchButton = new JButton("Tìm");
-        JButton importButton = new JButton("Import Excel");
-        JButton refreshButton = new JButton("Refresh");
-
-        topPanel.add(searchButton);
-        topPanel.add(importButton);
-        topPanel.add(refreshButton);
-        topPanel.add(majorPageLabel);
-
-        searchButton.addActionListener(e -> {
+        topPanel.add(createButton("Tìm", ButtonStyle.PRIMARY, () -> {
             majorPage = 0;
             majorQuery = majorSearchField.getText().trim();
             loadMajors();
-        });
-
-        refreshButton.addActionListener(e -> {
+        }));
+        topPanel.add(createButton("Nhập Excel", ButtonStyle.ACCENT, this::importMajors));
+        topPanel.add(createButton("Làm mới", ButtonStyle.SECONDARY, () -> {
             majorSearchField.setText("");
             majorQuery = "";
             majorPage = 0;
             loadMajors();
-        });
-
-        importButton.addActionListener(e -> importMajors());
+        }));
+        topPanel.add(majorPageLabel);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(majorTable), BorderLayout.CENTER);
+        panel.add(createTableScrollPane(majorTable), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-
-        JButton addButton = new JButton("Thêm");
-        JButton editButton = new JButton("Sửa");
-        JButton deleteButton = new JButton("Xóa");
-        JButton deleteAllButton = new JButton("Xóa tất cả");
-        JButton prevButton = new JButton("<< Trước");
-        JButton nextButton = new JButton("Sau >>");
-
-        addButton.addActionListener(e -> {
+        JPanel buttonPanel = createToolbarPanel();
+        buttonPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        buttonPanel.add(createButton("Thêm", ButtonStyle.PRIMARY, () -> {
             majorController.openMajorForm(null);
             loadMajors();
-        });
-
-        editButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Sửa", ButtonStyle.SECONDARY, () -> {
             Integer id = getSelectedMajorId();
             if (id != null) {
                 majorController.openMajorForm(id);
                 loadMajors();
             }
-        });
-
-        deleteButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa", ButtonStyle.DANGER, () -> {
             Integer id = getSelectedMajorId();
             if (id != null) {
                 majorController.deleteMajor(id);
                 loadMajors();
             }
-        });
-
-        deleteAllButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa tất cả", ButtonStyle.DANGER, () -> {
             majorController.deleteAllMajors();
             loadMajors();
-        });
-
-        prevButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("<< Trước", ButtonStyle.SECONDARY, () -> {
             if (majorPage > 0) {
                 majorPage--;
                 loadMajors();
             }
-        });
-
-        nextButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Sau >>", ButtonStyle.SECONDARY, () -> {
             majorPage++;
             loadMajors();
-        });
-
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(deleteAllButton);
-        buttonPanel.add(prevButton);
-        buttonPanel.add(nextButton);
+        }));
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
     }
 
     private JPanel buildToHopPanel() {
-        JPanel panel = new JPanel(new BorderLayout(8, 8));
+        JPanel panel = createSectionPanel();
 
-        JPanel topPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-        topPanel.add(new JLabel("Tìm kiếm mã/tên tổ hợp"));
+        JPanel topPanel = createToolbarPanel();
+        topPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        topPanel.add(createToolbarLabel("Tìm kiếm mã / tên tổ hợp"));
+        styleTextField(toHopSearchField);
         topPanel.add(toHopSearchField);
-
-        JButton searchButton = new JButton("Tìm");
-        JButton importButton = new JButton("Import Excel");
-        JButton refreshButton = new JButton("Refresh");
-
-        topPanel.add(searchButton);
-        topPanel.add(importButton);
-        topPanel.add(refreshButton);
-        topPanel.add(toHopPageLabel);
-
-        searchButton.addActionListener(e -> {
+        topPanel.add(createButton("Tìm", ButtonStyle.PRIMARY, () -> {
             toHopPage = 0;
             toHopQuery = toHopSearchField.getText().trim();
             loadToHop();
-        });
-
-        refreshButton.addActionListener(e -> {
+        }));
+        topPanel.add(createButton("Nhập Excel", ButtonStyle.ACCENT, this::importToHop));
+        topPanel.add(createButton("Làm mới", ButtonStyle.SECONDARY, () -> {
             toHopSearchField.setText("");
             toHopQuery = "";
             toHopPage = 0;
             loadToHop();
-        });
-
-        importButton.addActionListener(e -> importToHop());
+        }));
+        topPanel.add(toHopPageLabel);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(new JScrollPane(toHopTable), BorderLayout.CENTER);
+        panel.add(createTableScrollPane(toHopTable), BorderLayout.CENTER);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-
-        JButton addButton = new JButton("Thêm");
-        JButton editButton = new JButton("Sửa");
-        JButton deleteButton = new JButton("Xóa");
-        JButton deleteAllButton = new JButton("Xóa tất cả");
-        JButton prevButton = new JButton("<< Trước");
-        JButton nextButton = new JButton("Sau >>");
-
-        addButton.addActionListener(e -> {
+        JPanel buttonPanel = createToolbarPanel();
+        buttonPanel.setLayout(new GridLayout(1, 6, 10, 10));
+        buttonPanel.add(createButton("Thêm", ButtonStyle.PRIMARY, () -> {
             toHopController.openToHopForm(null);
             loadToHop();
-        });
-
-        editButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Sửa", ButtonStyle.SECONDARY, () -> {
             Integer id = getSelectedToHopId();
             if (id != null) {
                 toHopController.openToHopForm(id);
                 loadToHop();
             }
-        });
-
-        deleteButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa", ButtonStyle.DANGER, () -> {
             Integer id = getSelectedToHopId();
             if (id != null) {
                 toHopController.deleteToHop(id);
                 loadToHop();
             }
-        });
-
-        deleteAllButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Xóa tất cả", ButtonStyle.DANGER, () -> {
             toHopController.deleteAllToHop();
             loadToHop();
-        });
-
-        prevButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("<< Trước", ButtonStyle.SECONDARY, () -> {
             if (toHopPage > 0) {
                 toHopPage--;
                 loadToHop();
             }
-        });
-
-        nextButton.addActionListener(e -> {
+        }));
+        buttonPanel.add(createButton("Sau >>", ButtonStyle.SECONDARY, () -> {
             toHopPage++;
             loadToHop();
-        });
-
-        buttonPanel.add(addButton);
-        buttonPanel.add(editButton);
-        buttonPanel.add(deleteButton);
-        buttonPanel.add(deleteAllButton);
-        buttonPanel.add(prevButton);
-        buttonPanel.add(nextButton);
+        }));
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
@@ -671,7 +494,6 @@ public class AdminConsole extends JFrame {
 
     private void loadUsers() {
         userTableModel.setRowCount(0);
-
         List<UserAccountResponse> users = userController.getAllUsers();
         String query = userSearchField.getText().trim().toLowerCase();
 
@@ -684,7 +506,7 @@ public class AdminConsole extends JFrame {
                         user.getUsername(),
                         user.getFullName(),
                         user.getRole(),
-                        user.getEnabled() ? "Enabled" : "Disabled"
+                        Boolean.TRUE.equals(user.getEnabled()) ? "Đang hoạt động" : "Đã khóa"
                 });
             }
         }
@@ -692,9 +514,7 @@ public class AdminConsole extends JFrame {
 
     private void loadCandidates() {
         candidateTableModel.setRowCount(0);
-
-        List<XtThiSinhXetTuyen25Entity> candidates = candidateController.searchCandidates(candidateQuery,
-                candidatePage);
+        List<XtThiSinhXetTuyen25Entity> candidates = candidateController.searchCandidates(candidateQuery, candidatePage);
 
         for (XtThiSinhXetTuyen25Entity entity : candidates) {
             candidateTableModel.addRow(new Object[] {
@@ -713,12 +533,11 @@ public class AdminConsole extends JFrame {
             });
         }
 
-        candidatePageLabel.setText("Page: " + (candidatePage + 1));
+        candidatePageLabel.setText("Trang " + (candidatePage + 1));
     }
 
     private void loadMajors() {
         majorTableModel.setRowCount(0);
-
         List<XtNganhEntity> majors = majorController.searchMajors(majorQuery, majorPage);
 
         for (XtNganhEntity entity : majors) {
@@ -741,12 +560,11 @@ public class AdminConsole extends JFrame {
             });
         }
 
-        majorPageLabel.setText("Page: " + (majorPage + 1));
+        majorPageLabel.setText("Trang " + (majorPage + 1));
     }
 
     private void loadToHop() {
         toHopTableModel.setRowCount(0);
-
         List<XtToHopMonThiEntity> list = toHopController.searchToHop(toHopQuery, toHopPage);
 
         for (XtToHopMonThiEntity entity : list) {
@@ -760,12 +578,11 @@ public class AdminConsole extends JFrame {
             });
         }
 
-        toHopPageLabel.setText("Page: " + (toHopPage + 1));
+        toHopPageLabel.setText("Trang " + (toHopPage + 1));
     }
 
     private Long getSelectedUserId() {
         int row = userTable.getSelectedRow();
-
         if (row < 0) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một người dùng.", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return null;
@@ -777,18 +594,16 @@ public class AdminConsole extends JFrame {
 
     private boolean isSelectedUserEnabled() {
         int row = userTable.getSelectedRow();
-
         if (row < 0) {
             return true;
         }
 
         Object status = userTable.getValueAt(row, 4);
-        return "Enabled".equals(status);
+        return "Đang hoạt động".equals(status);
     }
 
     private Integer getSelectedCandidateId() {
         int row = candidateTable.getSelectedRow();
-
         if (row < 0) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một thí sinh.", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return null;
@@ -800,7 +615,6 @@ public class AdminConsole extends JFrame {
 
     private Integer getSelectedMajorId() {
         int row = majorTable.getSelectedRow();
-
         if (row < 0) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một ngành.", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return null;
@@ -812,7 +626,6 @@ public class AdminConsole extends JFrame {
 
     private Integer getSelectedToHopId() {
         int row = toHopTable.getSelectedRow();
-
         if (row < 0) {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn một tổ hợp môn.", "Lỗi", JOptionPane.WARNING_MESSAGE);
             return null;
@@ -825,19 +638,17 @@ public class AdminConsole extends JFrame {
     private void importCandidates() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
-        chooser.setDialogTitle("Chọn file CSV hoặc Excel import thí sinh");
+        chooser.setDialogTitle("Chọn file CSV hoặc Excel để nhập thí sinh");
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter(
                 new javax.swing.filechooser.FileNameExtensionFilter("CSV, XLS, XLSX", "csv", "xls", "xlsx"));
 
         int choice = chooser.showOpenDialog(this);
-
         if (choice == JFileChooser.APPROVE_OPTION) {
             List<String> files = Arrays.stream(chooser.getSelectedFiles())
                     .map(File::getAbsolutePath)
                     .collect(Collectors.toList());
-
             candidateController.importCandidates(files);
             loadCandidates();
         }
@@ -846,19 +657,17 @@ public class AdminConsole extends JFrame {
     private void importMajors() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
-        chooser.setDialogTitle("Chọn file Excel import ngành tuyển sinh");
+        chooser.setDialogTitle("Chọn file Excel để nhập ngành tuyển sinh");
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter(
                 new javax.swing.filechooser.FileNameExtensionFilter("XLS, XLSX", "xls", "xlsx"));
 
         int choice = chooser.showOpenDialog(this);
-
         if (choice == JFileChooser.APPROVE_OPTION) {
             List<String> files = Arrays.stream(chooser.getSelectedFiles())
                     .map(File::getAbsolutePath)
                     .collect(Collectors.toList());
-
             majorController.importMajors(files);
             loadMajors();
         }
@@ -867,34 +676,123 @@ public class AdminConsole extends JFrame {
     private void importToHop() {
         JFileChooser chooser = new JFileChooser();
         chooser.setMultiSelectionEnabled(true);
-        chooser.setDialogTitle("Chọn file Excel import tổ hợp môn");
+        chooser.setDialogTitle("Chọn file Excel để nhập tổ hợp môn");
         chooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
         chooser.setAcceptAllFileFilterUsed(false);
         chooser.addChoosableFileFilter(
                 new javax.swing.filechooser.FileNameExtensionFilter("XLS, XLSX", "xls", "xlsx"));
 
         int choice = chooser.showOpenDialog(this);
-
         if (choice == JFileChooser.APPROVE_OPTION) {
             List<String> files = Arrays.stream(chooser.getSelectedFiles())
                     .map(File::getAbsolutePath)
                     .collect(Collectors.toList());
-
             toHopController.importToHop(files);
             loadToHop();
         }
     }
 
-    private void openScoreManagementForm() {
-        try {
-            ScoreManagementConsole scoreConsole = scoreManagementConsoleProvider.getObject();
-            scoreConsole.setVisible(true);
-        } catch (Exception ex) {
-            logger.error("Open score form failed", ex);
-            JOptionPane.showMessageDialog(this,
-                    "Không mở được form quản lý điểm: " + ex.getMessage() + "\n(Chi tiết xem logs)",
-                    "Open Form Failed",
-                    JOptionPane.ERROR_MESSAGE);
+    private JPanel createSectionPanel() {
+        JPanel panel = new JPanel(new BorderLayout(12, 12));
+        panel.setBackground(SURFACE_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(16, 16, 16, 16)));
+        return panel;
+    }
+
+    private JPanel createToolbarPanel() {
+        JPanel panel = new JPanel();
+        panel.setBackground(SURFACE_COLOR);
+        panel.setBorder(new EmptyBorder(0, 0, 0, 0));
+        return panel;
+    }
+
+    private JLabel createToolbarLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(UI_FONT_BOLD);
+        label.setForeground(TEXT_COLOR);
+        return label;
+    }
+
+    private JLabel createPageLabel() {
+        JLabel label = new JLabel("Trang 1", SwingConstants.CENTER);
+        label.setOpaque(true);
+        label.setBackground(SOFT_COLOR);
+        label.setForeground(TEXT_COLOR);
+        label.setFont(UI_FONT_BOLD);
+        label.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(9, 12, 9, 12)));
+        return label;
+    }
+
+    private JScrollPane createTableScrollPane(JTable table) {
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                BorderFactory.createEmptyBorder()));
+        scrollPane.getViewport().setBackground(Color.WHITE);
+        return scrollPane;
+    }
+
+    private JButton createButton(String text, ButtonStyle style, Runnable action) {
+        JButton button = new JButton(text);
+        button.setFont(UI_FONT_BOLD);
+        button.setFocusPainted(false);
+        button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(12, 18, 12, 18)));
+        button.setPreferredSize(new Dimension(156, 46));
+        button.setMinimumSize(new Dimension(156, 46));
+        button.setOpaque(true);
+
+        if (style == ButtonStyle.PRIMARY) {
+            button.setBackground(PRIMARY_COLOR);
+            button.setForeground(Color.WHITE);
+        } else if (style == ButtonStyle.ACCENT) {
+            button.setBackground(ACCENT_COLOR);
+            button.setForeground(TEXT_COLOR);
+        } else if (style == ButtonStyle.DANGER) {
+            button.setBackground(DANGER_COLOR);
+            button.setForeground(Color.WHITE);
+        } else {
+            button.setBackground(new Color(248, 250, 247));
+            button.setForeground(TEXT_COLOR);
         }
+
+        button.addActionListener(e -> action.run());
+        return button;
+    }
+
+    private void styleTextField(JTextField field) {
+        field.setFont(UI_FONT);
+        field.setForeground(TEXT_COLOR);
+        field.setCaretColor(PRIMARY_COLOR);
+        field.setBackground(Color.WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(9, 11, 9, 11)));
+    }
+
+    private void styleTable(JTable table) {
+        table.setFont(UI_FONT);
+        table.setRowHeight(32);
+        table.setGridColor(new Color(233, 239, 235));
+        table.setSelectionBackground(new Color(221, 237, 231));
+        table.setSelectionForeground(TEXT_COLOR);
+        table.setFillsViewportHeight(true);
+        table.getTableHeader().setFont(UI_FONT_BOLD);
+        table.getTableHeader().setBackground(new Color(242, 246, 243));
+        table.getTableHeader().setForeground(TEXT_COLOR);
+        table.getTableHeader().setReorderingAllowed(false);
+    }
+
+    private enum ButtonStyle {
+        PRIMARY,
+        SECONDARY,
+        ACCENT,
+        DANGER
     }
 }
