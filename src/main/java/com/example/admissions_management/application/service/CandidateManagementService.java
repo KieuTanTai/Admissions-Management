@@ -5,6 +5,7 @@ import com.example.admissions_management.infrastructure.persistence.repository.C
 import com.example.admissions_management.presentation.form.model.CandidateForm;
 import com.example.admissions_management.presentation.form.model.CandidateImportResult;
 import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -118,6 +119,7 @@ public class CandidateManagementService {
         candidateRepository.deleteById(candidateId);
     }
 
+    @Transactional
     public void deleteAllCandidates() {
         candidateRepository.deleteAll();
         entityManager.createNativeQuery("ALTER TABLE xt_thisinhxettuyen25 AUTO_INCREMENT = 1").executeUpdate();
