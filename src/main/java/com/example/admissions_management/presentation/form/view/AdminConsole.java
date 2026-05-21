@@ -26,6 +26,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSeparator;
 import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -40,7 +41,11 @@ import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.File;
+import java.util.Map;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -82,6 +87,20 @@ public class AdminConsole extends JFrame {
     private final JTable candidateTable;
     private final JTextField candidateSearchField;
     private final JLabel candidatePageLabel;
+    private final JLabel candidateTotalValue;
+    private final JLabel candidateDoiTuongValue;
+    private final JLabel candidateKhuVucValue;
+    private final JTextField candidateDetailIdField;
+    private final JTextField candidateDetailCccdField;
+    private final JTextField candidateDetailSbdField;
+    private final JTextField candidateDetailHoTenField;
+    private final JTextField candidateDetailNgaySinhField;
+    private final JTextField candidateDetailDienThoaiField;
+    private final JTextField candidateDetailGioiTinhField;
+    private final JTextField candidateDetailEmailField;
+    private final JTextField candidateDetailNoiSinhField;
+    private final JTextField candidateDetailDoiTuongField;
+    private final JTextField candidateDetailKhuVucField;
     private int candidatePage = 0;
     private String candidateQuery = "";
 
@@ -129,6 +148,20 @@ public class AdminConsole extends JFrame {
         userSearchField = new JTextField(20);
         candidateSearchField = new JTextField(20);
         candidatePageLabel = createPageLabel();
+        candidateTotalValue = createStatValueLabel("0");
+        candidateDoiTuongValue = createStatValueLabel("-");
+        candidateKhuVucValue = createStatValueLabel("-");
+        candidateDetailIdField = createReadOnlyField();
+        candidateDetailCccdField = createReadOnlyField();
+        candidateDetailSbdField = createReadOnlyField();
+        candidateDetailHoTenField = createReadOnlyField();
+        candidateDetailNgaySinhField = createReadOnlyField();
+        candidateDetailDienThoaiField = createReadOnlyField();
+        candidateDetailGioiTinhField = createReadOnlyField();
+        candidateDetailEmailField = createReadOnlyField();
+        candidateDetailNoiSinhField = createReadOnlyField();
+        candidateDetailDoiTuongField = createReadOnlyField();
+        candidateDetailKhuVucField = createReadOnlyField();
         majorSearchField = new JTextField(20);
         majorPageLabel = createPageLabel();
         toHopSearchField = new JTextField(20);
@@ -177,6 +210,11 @@ public class AdminConsole extends JFrame {
         styleTable(candidateTable);
         styleTable(majorTable);
         styleTable(toHopTable);
+        candidateTable.getSelectionModel().addListSelectionListener(event -> {
+            if (!event.getValueIsAdjusting()) {
+                updateCandidateDetailPanel();
+            }
+        });
 
         setLayout(new BorderLayout(10, 10));
         add(buildDashboardHeader(), BorderLayout.NORTH);
@@ -323,7 +361,12 @@ public class AdminConsole extends JFrame {
         topPanel.add(candidatePageLabel);
 
         panel.add(topPanel, BorderLayout.NORTH);
-        panel.add(createTableScrollPane(candidateTable), BorderLayout.CENTER);
+
+        JPanel centerPanel = new JPanel(new BorderLayout(12, 0));
+        centerPanel.setOpaque(false);
+        centerPanel.add(createTableScrollPane(candidateTable), BorderLayout.CENTER);
+        centerPanel.add(buildCandidateInfoPanel(), BorderLayout.EAST);
+        panel.add(centerPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = createToolbarPanel();
         buttonPanel.setLayout(new GridLayout(1, 6, 10, 10));
@@ -362,6 +405,95 @@ public class AdminConsole extends JFrame {
 
         panel.add(buttonPanel, BorderLayout.SOUTH);
         return panel;
+    }
+
+    private JPanel buildCandidateInfoPanel() {
+        JPanel wrapper = new JPanel(new BorderLayout(10, 10));
+        wrapper.setPreferredSize(new Dimension(420, 0));
+        wrapper.setOpaque(false);
+
+        JPanel statsPanel = createToolbarPanel();
+        statsPanel.setLayout(new GridLayout(3, 1, 8, 8));
+        statsPanel.add(createStatCard("Tổng số thí sinh", candidateTotalValue));
+        statsPanel.add(createStatCard("Theo đối tượng", candidateDoiTuongValue));
+        statsPanel.add(createStatCard("Theo khu vực", candidateKhuVucValue));
+
+        JPanel detailPanel = new JPanel(new GridBagLayout());
+        detailPanel.setBackground(SURFACE_COLOR);
+        detailPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(16, 16, 16, 16)));
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.weightx = 1.0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.NORTHWEST;
+        gbc.insets = new Insets(0, 0, 10, 0);
+
+        JLabel title = new JLabel("Thông tin thí sinh");
+        title.setFont(UI_FONT_BOLD);
+        title.setForeground(TEXT_COLOR);
+        detailPanel.add(title, gbc);
+
+        gbc.gridy++;
+        JSeparator separator = new JSeparator();
+        separator.setForeground(BORDER_COLOR);
+        detailPanel.add(separator, gbc);
+
+        gbc.gridy++;
+        detailPanel.add(createCandidateFieldGrid(), gbc);
+
+        gbc.gridy++;
+        gbc.weighty = 1.0;
+        JPanel filler = new JPanel();
+        filler.setOpaque(false);
+        detailPanel.add(filler, gbc);
+
+        wrapper.add(statsPanel, BorderLayout.NORTH);
+        wrapper.add(detailPanel, BorderLayout.CENTER);
+        return wrapper;
+    }
+
+    private JPanel createCandidateFieldGrid() {
+        JPanel grid = new JPanel(new GridBagLayout());
+        grid.setOpaque(false);
+
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(0, 0, 10, 0);
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.weightx = 1.0;
+
+        addCandidateDetailRow(grid, gbc, "ID", candidateDetailIdField);
+        addCandidateDetailRow(grid, gbc, "CCCD", candidateDetailCccdField);
+        addCandidateDetailRow(grid, gbc, "Số báo danh", candidateDetailSbdField);
+        addCandidateDetailRow(grid, gbc, "Họ và tên", candidateDetailHoTenField);
+        addCandidateDetailRow(grid, gbc, "Ngày sinh", candidateDetailNgaySinhField);
+        addCandidateDetailRow(grid, gbc, "Điện thoại", candidateDetailDienThoaiField);
+        addCandidateDetailRow(grid, gbc, "Giới tính", candidateDetailGioiTinhField);
+        addCandidateDetailRow(grid, gbc, "Email", candidateDetailEmailField);
+        addCandidateDetailRow(grid, gbc, "Nơi sinh", candidateDetailNoiSinhField);
+        addCandidateDetailRow(grid, gbc, "Đối tượng", candidateDetailDoiTuongField);
+        addCandidateDetailRow(grid, gbc, "Khu vực", candidateDetailKhuVucField);
+
+        return grid;
+    }
+
+    private void addCandidateDetailRow(JPanel parent, GridBagConstraints gbc, String labelText, JTextField field) {
+        JPanel row = new JPanel(new BorderLayout(0, 6));
+        row.setOpaque(false);
+
+        JLabel label = new JLabel(labelText);
+        label.setFont(UI_FONT_BOLD);
+        label.setForeground(MUTED_COLOR);
+        row.add(label, BorderLayout.NORTH);
+        row.add(field, BorderLayout.CENTER);
+
+        parent.add(row, gbc);
+        gbc.gridy++;
     }
 
     private JPanel buildMajorPanel() {
@@ -534,6 +666,48 @@ public class AdminConsole extends JFrame {
         }
 
         candidatePageLabel.setText("Trang " + (candidatePage + 1));
+        updateCandidateStats();
+        updateCandidateDetailPanel();
+    }
+
+    private void updateCandidateStats() {
+        candidateTotalValue.setText(String.valueOf(candidateController.countCandidates()));
+        candidateDoiTuongValue.setText(formatStats(candidateController.countCandidatesByDoiTuong()));
+        candidateKhuVucValue.setText(formatStats(candidateController.countCandidatesByKhuVuc()));
+    }
+
+    private void updateCandidateDetailPanel() {
+        int row = candidateTable.getSelectedRow();
+        if (row < 0) {
+            clearCandidateDetailPanel();
+            return;
+        }
+
+        candidateDetailIdField.setText(valueOf(candidateTable.getValueAt(row, 0)));
+        candidateDetailCccdField.setText(valueOf(candidateTable.getValueAt(row, 1)));
+        candidateDetailSbdField.setText(valueOf(candidateTable.getValueAt(row, 2)));
+        candidateDetailHoTenField.setText((valueOf(candidateTable.getValueAt(row, 3)) + " " + valueOf(candidateTable.getValueAt(row, 4))).trim());
+        candidateDetailNgaySinhField.setText(valueOf(candidateTable.getValueAt(row, 5)));
+        candidateDetailDienThoaiField.setText(valueOf(candidateTable.getValueAt(row, 6)));
+        candidateDetailGioiTinhField.setText(valueOf(candidateTable.getValueAt(row, 7)));
+        candidateDetailEmailField.setText(valueOf(candidateTable.getValueAt(row, 8)));
+        candidateDetailNoiSinhField.setText(valueOf(candidateTable.getValueAt(row, 9)));
+        candidateDetailDoiTuongField.setText(valueOf(candidateTable.getValueAt(row, 10)));
+        candidateDetailKhuVucField.setText(valueOf(candidateTable.getValueAt(row, 11)));
+    }
+
+    private void clearCandidateDetailPanel() {
+        candidateDetailIdField.setText("");
+        candidateDetailCccdField.setText("");
+        candidateDetailSbdField.setText("");
+        candidateDetailHoTenField.setText("");
+        candidateDetailNgaySinhField.setText("");
+        candidateDetailDienThoaiField.setText("");
+        candidateDetailGioiTinhField.setText("");
+        candidateDetailEmailField.setText("");
+        candidateDetailNoiSinhField.setText("");
+        candidateDetailDoiTuongField.setText("");
+        candidateDetailKhuVucField.setText("");
     }
 
     private void loadMajors() {
@@ -725,6 +899,51 @@ public class AdminConsole extends JFrame {
                 BorderFactory.createLineBorder(BORDER_COLOR),
                 new EmptyBorder(9, 12, 9, 12)));
         return label;
+    }
+
+    private JLabel createStatValueLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(UI_FONT);
+        label.setForeground(TEXT_COLOR);
+        label.setVerticalAlignment(SwingConstants.TOP);
+        return label;
+    }
+
+    private JPanel createStatCard(String title, JLabel valueLabel) {
+        JPanel card = new JPanel(new BorderLayout(0, 8));
+        card.setBackground(SOFT_COLOR);
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(BORDER_COLOR),
+                new EmptyBorder(12, 14, 12, 14)));
+
+        JLabel titleLabel = new JLabel(title);
+        titleLabel.setFont(UI_FONT_BOLD);
+        titleLabel.setForeground(TEXT_COLOR);
+
+        card.add(titleLabel, BorderLayout.NORTH);
+        card.add(valueLabel, BorderLayout.CENTER);
+        return card;
+    }
+
+    private JTextField createReadOnlyField() {
+        JTextField field = new JTextField();
+        field.setEditable(false);
+        styleTextField(field);
+        field.setBackground(new Color(249, 250, 248));
+        return field;
+    }
+
+    private String formatStats(Map<String, Long> stats) {
+        if (stats == null || stats.isEmpty()) {
+            return "Chưa có dữ liệu";
+        }
+        return stats.entrySet().stream()
+                .map(entry -> entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining(" | "));
+    }
+
+    private String valueOf(Object value) {
+        return value == null ? "" : value.toString();
     }
 
     private JScrollPane createTableScrollPane(JTable table) {

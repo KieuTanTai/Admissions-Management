@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Component
@@ -30,6 +31,18 @@ public class CandidateManagementController {
 
     public Optional<XtThiSinhXetTuyen25Entity> getCandidateById(Integer id) {
         return candidateManagementService.getCandidateById(id);
+    }
+
+    public long countCandidates() {
+        return candidateManagementService.countCandidates();
+    }
+
+    public Map<String, Long> countCandidatesByDoiTuong() {
+        return candidateManagementService.countByDoiTuong();
+    }
+
+    public Map<String, Long> countCandidatesByKhuVuc() {
+        return candidateManagementService.countByKhuVuc();
     }
 
     public void openCandidateForm(Integer candidateId) {

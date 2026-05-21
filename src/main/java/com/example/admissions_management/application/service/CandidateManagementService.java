@@ -60,6 +60,26 @@ public class CandidateManagementService {
         return candidateRepository.findById(id);
     }
 
+    public long countCandidates() {
+        return candidateRepository.count();
+    }
+
+    public Map<String, Long> countByDoiTuong() {
+        return candidateRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        entity -> normalizeStatValue(entity.getDoiTuong()),
+                        TreeMap::new,
+                        Collectors.counting()));
+    }
+
+    public Map<String, Long> countByKhuVuc() {
+        return candidateRepository.findAll().stream()
+                .collect(Collectors.groupingBy(
+                        entity -> normalizeStatValue(entity.getKhuVuc()),
+                        TreeMap::new,
+                        Collectors.counting()));
+    }
+
     public void saveCandidate(CandidateForm form) {
         XtThiSinhXetTuyen25Entity entity;
 
@@ -852,5 +872,12 @@ public void saveBatch(List<XtThiSinhXetTuyen25Entity> entities) {
         }
 
         return value.substring(0, maxLength);
+    }
+
+    private String normalizeStatValue(String value) {
+        if (value == null || value.isBlank()) {
+            return "Chua cap nhat";
+        }
+        return value.trim();
     }
 }

@@ -46,8 +46,8 @@ public class ScoreManagementPanel extends JPanel {
     private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font FIELD_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 12);
-    private static final Dimension FIELD_SIZE = new Dimension(320, 32);
-    private static final Dimension LABEL_SIZE = new Dimension(136, 24);
+    private static final Dimension FIELD_SIZE = new Dimension(250, 32);
+    private static final Dimension LABEL_SIZE = new Dimension(112, 24);
 
     private final ScoreManagementConsoleController controller;
     private final ScoreManagementTableModel tableModel;
@@ -142,7 +142,7 @@ public class ScoreManagementPanel extends JPanel {
 
     private JPanel buildFormPanel() {
         JPanel outer = new JPanel(new BorderLayout(10, 10));
-        outer.setPreferredSize(new Dimension(600, 0));
+        outer.setPreferredSize(new Dimension(470, 0));
         outer.setBackground(BG_COLOR);
 
         idField.setEditable(false);
