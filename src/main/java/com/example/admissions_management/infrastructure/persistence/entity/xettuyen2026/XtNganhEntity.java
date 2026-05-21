@@ -57,8 +57,9 @@ public class XtNganhEntity {
     @Column(name = "sl_vsat")
     private Integer slVsat;
 
-    @Column(name = "sl_thpt", length = 45)
-    private String slThpt;
+    @Column(name = "sl_thpt")
+    private Integer slThpt;
+
 
     public Integer getId() {
         return id;
@@ -172,11 +173,6 @@ public class XtNganhEntity {
         this.slVsat = slVsat;
     }
 
-    public String getSlThpt() {
-        return slThpt;
-    }
-
-    public void setSlThpt(String slThpt) {
-        this.slThpt = slThpt;
-    }
+    public Integer getSlThpt() { return slThpt; }
+    public void setSlThpt(Integer slThpt) { this.slThpt = slThpt; }
 }

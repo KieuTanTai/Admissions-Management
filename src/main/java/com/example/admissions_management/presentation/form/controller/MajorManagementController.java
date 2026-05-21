@@ -33,9 +33,9 @@ public class MajorManagementController {
 
     public void openMajorForm(Integer majorId) {
         JFrame frame = new JFrame(majorId == null ? "Tạo mới ngành tuyển sinh" : "Chỉnh sửa ngành tuyển sinh");
-
         JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
 
+        // Tạo các textfield
         JTextField txtMaNganh = new JTextField(20);
         JTextField txtTenNganh = new JTextField(20);
         JTextField txtToHopGoc = new JTextField(20);
@@ -53,113 +53,95 @@ public class MajorManagementController {
 
         MajorForm form = new MajorForm();
 
+        // Nếu chỉnh sửa, load dữ liệu từ DB
         if (majorId != null) {
             majorManagementService.getMajorById(majorId).ifPresent(entity -> {
                 form.setIdnganh(entity.getId());
-                form.setManganh(entity.getMaNganh());
-                form.setTennganh(entity.getTenNganh());
-                form.setnTohopgoc(entity.getToHopGoc());
-                form.setnChitieu(entity.getChiTieu());
-                form.setnDiemsan(entity.getDiemSan());
-                form.setnDiemtrungtuyen(entity.getDiemTrungTuyen());
-                form.setnTuyenthang(entity.getTuyenThang());
-                form.setnDgnl(entity.getDgnl());
-                form.setnThpt(entity.getThpt());
-                form.setnVsat(entity.getVsat());
-                form.setSlXtt(entity.getSlXtt());
-                form.setSlDgnl(entity.getSlDgnl());
-                form.setSlVsat(entity.getSlVsat());
-                form.setSlThpt(entity.getSlThpt());
-
-                txtMaNganh.setText(nvl(form.getManganh()));
-                txtTenNganh.setText(nvl(form.getTennganh()));
-                txtToHopGoc.setText(nvl(form.getnTohopgoc()));
-                txtChiTieu.setText(nvl(form.getnChitieu()));
-                txtDiemSan.setText(nvl(form.getnDiemsan()));
-                txtDiemTrungTuyen.setText(nvl(form.getnDiemtrungtuyen()));
-                txtTuyenThang.setText(nvl(form.getnTuyenthang()));
-                txtDgnl.setText(nvl(form.getnDgnl()));
-                txtThpt.setText(nvl(form.getnThpt()));
-                txtVsat.setText(nvl(form.getnVsat()));
-                txtSlXtt.setText(nvl(form.getSlXtt()));
-                txtSlDgnl.setText(nvl(form.getSlDgnl()));
-                txtSlVsat.setText(nvl(form.getSlVsat()));
-                txtSlThpt.setText(nvl(form.getSlThpt()));
+                txtMaNganh.setText(nvl(entity.getMaNganh()));
+                txtTenNganh.setText(nvl(entity.getTenNganh()));
+                txtToHopGoc.setText(nvl(entity.getToHopGoc()));
+                txtChiTieu.setText(nvl(entity.getChiTieu()));
+                txtDiemSan.setText(nvl(entity.getDiemSan()));
+                txtDiemTrungTuyen.setText(nvl(entity.getDiemTrungTuyen()));
+                txtTuyenThang.setText(nvl(entity.getTuyenThang()));
+                txtDgnl.setText(nvl(entity.getDgnl()));
+                txtThpt.setText(nvl(entity.getThpt()));
+                txtVsat.setText(nvl(entity.getVsat()));
+                txtSlXtt.setText(nvl(entity.getSlXtt()));
+                txtSlDgnl.setText(nvl(entity.getSlDgnl()));
+                txtSlVsat.setText(nvl(entity.getSlVsat()));
+                txtSlThpt.setText(nvl(entity.getSlThpt()));
             });
         }
 
-        panel.add(new JLabel("Mã ngành"));
-        panel.add(txtMaNganh);
+        // Thêm label + textfield vào panel
+        panel.add(new JLabel("Mã ngành")); panel.add(txtMaNganh);
+        panel.add(new JLabel("Tên ngành")); panel.add(txtTenNganh);
+        panel.add(new JLabel("Tổ hợp gốc")); panel.add(txtToHopGoc);
+        panel.add(new JLabel("Chỉ tiêu")); panel.add(txtChiTieu);
+        panel.add(new JLabel("Điểm sàn")); panel.add(txtDiemSan);
+        panel.add(new JLabel("Điểm trúng tuyển")); panel.add(txtDiemTrungTuyen);
+        panel.add(new JLabel("Tuyển thẳng")); panel.add(txtTuyenThang);
+        panel.add(new JLabel("ĐGNL")); panel.add(txtDgnl);
+        panel.add(new JLabel("THPT")); panel.add(txtThpt);
+        panel.add(new JLabel("V-SAT")); panel.add(txtVsat);
+        panel.add(new JLabel("SL XTT")); panel.add(txtSlXtt);
+        panel.add(new JLabel("SL ĐGNL")); panel.add(txtSlDgnl);
+        panel.add(new JLabel("SL V-SAT")); panel.add(txtSlVsat);
+        panel.add(new JLabel("SL THPT")); panel.add(txtSlThpt);
 
-        panel.add(new JLabel("Tên ngành"));
-        panel.add(txtTenNganh);
-
-        panel.add(new JLabel("Tổ hợp gốc"));
-        panel.add(txtToHopGoc);
-
-        panel.add(new JLabel("Chỉ tiêu"));
-        panel.add(txtChiTieu);
-
-        panel.add(new JLabel("Điểm sàn"));
-        panel.add(txtDiemSan);
-
-        panel.add(new JLabel("Điểm trúng tuyển"));
-        panel.add(txtDiemTrungTuyen);
-
-        panel.add(new JLabel("Tuyển thẳng"));
-        panel.add(txtTuyenThang);
-
-        panel.add(new JLabel("ĐGNL"));
-        panel.add(txtDgnl);
-
-        panel.add(new JLabel("THPT"));
-        panel.add(txtThpt);
-
-        panel.add(new JLabel("V-SAT"));
-        panel.add(txtVsat);
-
-        panel.add(new JLabel("SL XTT"));
-        panel.add(txtSlXtt);
-
-        panel.add(new JLabel("SL ĐGNL"));
-        panel.add(txtSlDgnl);
-
-        panel.add(new JLabel("SL V-SAT"));
-        panel.add(txtSlVsat);
-
-        panel.add(new JLabel("SL THPT"));
-        panel.add(txtSlThpt);
-
+        // Nút Lưu
         JButton saveButton = new JButton("Lưu");
-
         saveButton.addActionListener(e -> {
-    try {
-        // Chuyển MajorForm sang XtNganhEntity trước khi gọi service
-        XtNganhEntity entity = new XtNganhEntity();
-        entity.setId(form.getIdnganh());
-        entity.setMaNganh(form.getManganh());
-        entity.setTenNganh(form.getTennganh());
-        entity.setToHopGoc(form.getnTohopgoc());
-        entity.setChiTieu(form.getnChitieu());
-        entity.setDiemSan(form.getnDiemsan());
-        entity.setDiemTrungTuyen(form.getnDiemtrungtuyen());
-        entity.setTuyenThang(form.getnTuyenthang());
-        entity.setDgnl(form.getnDgnl());
-        entity.setThpt(form.getnThpt());
-        entity.setVsat(form.getnVsat());
-        entity.setSlXtt(form.getSlXtt());
-        entity.setSlDgnl(form.getSlDgnl());
-        entity.setSlVsat(form.getSlVsat());
-        entity.setSlThpt(form.getSlThpt());
+            try {
+                if (majorId == null) {
+                    // ADD: tạo entity mới
+                    XtNganhEntity entity = new XtNganhEntity();
+                    entity.setMaNganh(txtMaNganh.getText().trim());
+                    entity.setTenNganh(txtTenNganh.getText().trim());
+                    entity.setToHopGoc(txtToHopGoc.getText().trim());
+                    entity.setChiTieu(toInteger(txtChiTieu.getText()));
+                    entity.setDiemSan(toBigDecimal(txtDiemSan.getText()));
+                    entity.setDiemTrungTuyen(toBigDecimal(txtDiemTrungTuyen.getText()));
+                    entity.setTuyenThang(txtTuyenThang.getText().trim());
+                    entity.setDgnl(txtDgnl.getText().trim());
+                    entity.setThpt(txtThpt.getText().trim());
+                    entity.setVsat(txtVsat.getText().trim());
+                    entity.setSlXtt(toInteger(txtSlXtt.getText()));
+                    entity.setSlDgnl(toInteger(txtSlDgnl.getText()));
+                    entity.setSlVsat(toInteger(txtSlVsat.getText()));
+                    entity.setSlThpt(toInteger(txtSlThpt.getText()));
 
-        majorManagementService.saveMajor(entity);
+                    majorManagementService.saveMajor(entity);
+                    JOptionPane.showMessageDialog(frame, "Thêm ngành thành công.");
+                    frame.dispose();
+                } else {
+                    // EDIT: lấy entity từ DB
+                    majorManagementService.getMajorById(majorId).ifPresent(entity -> {
+                        entity.setMaNganh(txtMaNganh.getText().trim());
+                        entity.setTenNganh(txtTenNganh.getText().trim());
+                        entity.setToHopGoc(txtToHopGoc.getText().trim());
+                        entity.setChiTieu(toInteger(txtChiTieu.getText()));
+                        entity.setDiemSan(toBigDecimal(txtDiemSan.getText()));
+                        entity.setDiemTrungTuyen(toBigDecimal(txtDiemTrungTuyen.getText()));
+                        entity.setTuyenThang(txtTuyenThang.getText().trim());
+                        entity.setDgnl(txtDgnl.getText().trim());
+                        entity.setThpt(txtThpt.getText().trim());
+                        entity.setVsat(txtVsat.getText().trim());
+                        entity.setSlXtt(toInteger(txtSlXtt.getText()));
+                        entity.setSlDgnl(toInteger(txtSlDgnl.getText()));
+                        entity.setSlVsat(toInteger(txtSlVsat.getText()));
+                        entity.setSlThpt(toInteger(txtSlThpt.getText()));
 
-        JOptionPane.showMessageDialog(frame, "Lưu ngành thành công.");
-        frame.dispose();
-    } catch (Exception ex) {
-        JOptionPane.showMessageDialog(frame, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
-    }
-});
+                        majorManagementService.saveMajor(entity);
+                        JOptionPane.showMessageDialog(frame, "Sửa ngành thành công.");
+                        frame.dispose();
+                    });
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(frame, ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        });
 
         JPanel root = new JPanel();
         root.setLayout(new BoxLayout(root, BoxLayout.Y_AXIS));
@@ -173,13 +155,7 @@ public class MajorManagementController {
     }
 
     public void deleteMajor(Integer majorId) {
-        int confirm = JOptionPane.showConfirmDialog(
-                null,
-                "Bạn có chắc muốn xóa ngành này?",
-                "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION
-        );
-
+        int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn xóa ngành này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             majorManagementService.deleteMajor(majorId);
             JOptionPane.showMessageDialog(null, "Đã xóa ngành.", "Xóa thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -187,13 +163,7 @@ public class MajorManagementController {
     }
 
     public void deleteAllMajors() {
-        int confirm = JOptionPane.showConfirmDialog(
-                null,
-                "Bạn có chắc muốn xóa TẤT CẢ dữ liệu ngành tuyển sinh?",
-                "Xác nhận xóa",
-                JOptionPane.YES_NO_OPTION
-        );
-
+        int confirm = JOptionPane.showConfirmDialog(null, "Bạn có chắc muốn xóa TẤT CẢ dữ liệu ngành tuyển sinh?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
         if (confirm == JOptionPane.YES_OPTION) {
             majorManagementService.deleteAllMajors();
             JOptionPane.showMessageDialog(null, "Đã xóa tất cả dữ liệu ngành.", "Xóa thành công", JOptionPane.INFORMATION_MESSAGE);
@@ -207,24 +177,18 @@ public class MajorManagementController {
 
         for (String file : files) {
             Path path = Path.of(file);
-
             if (!Files.exists(path)) {
                 errors.append("File không tồn tại: ").append(file).append("\n");
                 continue;
             }
-
             String lowerName = file.toLowerCase();
-
             if (!lowerName.endsWith(".xlsx") && !lowerName.endsWith(".xls")) {
                 errors.append("Định dạng không hỗ trợ: ").append(file).append("\n");
                 continue;
             }
-
             MajorImportResult result = majorManagementService.importExcelFile(path);
-
             totalImported += result.getImportedCount();
             totalUpdated += result.getUpdatedCount();
-
             if (result.hasErrors()) {
                 for (String error : result.getErrors()) {
                     errors.append(error).append("\n");
@@ -233,19 +197,9 @@ public class MajorManagementController {
         }
 
         if (errors.length() > 0) {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Import có lỗi:\n" + errors,
-                    "Import lỗi",
-                    JOptionPane.ERROR_MESSAGE
-            );
+            JOptionPane.showMessageDialog(null, "Import có lỗi:\n" + errors, "Import lỗi", JOptionPane.ERROR_MESSAGE);
         } else {
-            JOptionPane.showMessageDialog(
-                    null,
-                    "Import ngành thành công\nThêm mới: " + totalImported + "\nCập nhật: " + totalUpdated,
-                    "Import thành công",
-                    JOptionPane.INFORMATION_MESSAGE
-            );
+            JOptionPane.showMessageDialog(null, "Import ngành thành công\nThêm mới: " + totalImported + "\nCập nhật: " + totalUpdated, "Import thành công", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 

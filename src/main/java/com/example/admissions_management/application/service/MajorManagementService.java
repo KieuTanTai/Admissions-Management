@@ -309,11 +309,11 @@ public class MajorManagementService {
                 "số lượng vsat"
         )));
 
-        entity.setSlThpt(safe(getValue(row, headerIndex, formatter,
+        entity.setSlThpt(toInteger(getValue(row, headerIndex, formatter,
                 "sl_thpt",
                 "so luong thpt",
                 "số lượng thpt"
-        ), 45));
+        )));
 
         return entity;
     }
@@ -485,7 +485,7 @@ public class MajorManagementService {
             current.setSlVsat(imported.getSlVsat());
         }
 
-        if (isNotBlank(imported.getSlThpt())) {
+        if (imported.getSlThpt() != null) {
             current.setSlThpt(imported.getSlThpt());
         }
     }
