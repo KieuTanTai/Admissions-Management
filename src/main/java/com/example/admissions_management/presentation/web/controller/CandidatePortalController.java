@@ -51,6 +51,21 @@ public class CandidatePortalController {
         return "candidate-portal";
     }
 
+    @GetMapping("/login")
+    public String loginPage(Model model) {
+        if (!model.containsAttribute("lookupForm")) {
+            model.addAttribute("lookupForm", new CandidateLookupForm());
+        }
+        return "candidate-login";
+    }
+
+    @PostMapping("/login")
+    public String login(@ModelAttribute("lookupForm") CandidateLookupForm lookupForm, Model model) {
+        model.addAttribute("lookupForm", lookupForm);
+        model.addAttribute("lookupResult", candidatePortalService.lookupResult(lookupForm));
+        return "candidate-result";
+    }
+
     @PostMapping("/lookup")
     public String lookup(@ModelAttribute("lookupForm") CandidateLookupForm lookupForm, Model model) {
         ensureDefaultForms(model);

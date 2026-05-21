@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
 <head>
@@ -210,144 +210,26 @@
                 </div>
             </section>
 
-            <section class="portal-card wide-card" id="vsat-thpt-card">
+
+            <section class="portal-card accent-card" id="vsat-thpt-card">
                 <div class="section-head">
                     <div>
-                        <p class="section-kicker">VSAT / THPT</p>
-                        <h2>Tính điểm xét tuyển theo VSAT hoặc THPT</h2>
+                        <p class="section-kicker">Tra cứu điểm</p>
+                        <h2>Tra cứu điểm xét tuyển theo phương thức V-SAT / THPT</h2>
                     </div>
-                    <span class="section-tag">Theo tổ hợp môn</span>
+                    <span class="section-tag">Mục 6</span>
                 </div>
-                <p class="section-desc">
-                    Chọn phương thức, nhập điểm từng môn và khai báo ưu tiên để đối chiếu nhiều tổ hợp trong cùng một ngành chỉ với một lần nhập liệu.
-                </p>
-
-                <form th:action="@{/candidate/calculate/vsat-thpt}" th:object="${vsatThptForm}" method="post">
-                    <div class="field">
-                        <label for="methodType">Phương thức</label>
-                        <select id="methodType" th:field="*{methodType}">
-                            <option value="VSAT">VSAT (thang 150)</option>
-                            <option value="THPT">THPT (thang 10)</option>
-                        </select>
+                <div class="cta-panel">
+                    <div class="cta-copy">
+                        <p class="section-desc">
+                            Chuyển sang màn hình tra cứu điểm chuyên biệt để nhập điểm, chọn ngành xét tuyển và xem kết quả quy đổi theo từng tổ hợp một cách đầy đủ, rõ ràng.
+                        </p>
+                        <p class="hint">
+                            Trang tra cứu điểm sử dụng cùng phong cách giao diện với cổng thí sinh và tập trung riêng cho phần nhập điểm V-SAT / THPT.
+                        </p>
                     </div>
-
-                    <div class="field">
-                        <label for="regularMajor">Ngành xét tuyển</label>
-                        <select id="regularMajor" th:field="*{majorCode}" required>
-                            <option value="">-- Chọn ngành --</option>
-                            <option th:each="item : ${majorOptions}" th:value="${item.value}" th:text="${item.label}"></option>
-                        </select>
-                    </div>
-
-                    <div class="grid-subject compact-subject-grid">
-                        <div class="field">
-                            <label for="mathScore">Toán</label>
-                            <input id="mathScore" type="number" step="0.01" min="0" th:field="*{mathScore}">
-                        </div>
-                        <div class="field">
-                            <label for="literatureScore">Ngữ văn</label>
-                            <input id="literatureScore" type="number" step="0.01" min="0" th:field="*{literatureScore}">
-                        </div>
-                        <div class="field">
-                            <label for="englishScore">Tiếng Anh</label>
-                            <input id="englishScore" type="number" step="0.01" min="0" th:field="*{englishScore}">
-                        </div>
-                        <div class="field">
-                            <label for="physicsScore">Vật lý</label>
-                            <input id="physicsScore" type="number" step="0.01" min="0" th:field="*{physicsScore}">
-                        </div>
-                        <div class="field">
-                            <label for="chemistryScore">Hóa học</label>
-                            <input id="chemistryScore" type="number" step="0.01" min="0" th:field="*{chemistryScore}">
-                        </div>
-                        <div class="field">
-                            <label for="biologyScore">Sinh học</label>
-                            <input id="biologyScore" type="number" step="0.01" min="0" th:field="*{biologyScore}">
-                        </div>
-                        <div class="field">
-                            <label for="historyScore">Lịch sử</label>
-                            <input id="historyScore" type="number" step="0.01" min="0" th:field="*{historyScore}">
-                        </div>
-                        <div class="field">
-                            <label for="geographyScore">Địa lý</label>
-                            <input id="geographyScore" type="number" step="0.01" min="0" th:field="*{geographyScore}">
-                        </div>
-                        <div class="field">
-                            <label for="civicEducationScore">GDCD</label>
-                            <input id="civicEducationScore" type="number" step="0.01" min="0" th:field="*{civicEducationScore}">
-                        </div>
-                    </div>
-
-                    <div class="field">
-                        <label for="englishConvertedScore">Điểm quy đổi Tiếng Anh</label>
-                        <input id="englishConvertedScore" type="number" step="0.01" min="0" max="10" th:field="*{englishConvertedScore}">
-                    </div>
-
-                    <div class="field">
-                        <label for="regularObject">Đối tượng ưu tiên</label>
-                        <select id="regularObject" th:field="*{priorityObjectCode}">
-                            <option th:each="item : ${priorityObjectOptions}" th:value="${item.value}" th:text="${item.label}"></option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="regularRegion">Khu vực ưu tiên</label>
-                        <select id="regularRegion" th:field="*{priorityRegionCode}">
-                            <option th:each="item : ${priorityRegionOptions}" th:value="${item.value}" th:text="${item.label}"></option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="bonusSubjectCode">Môn được cộng điểm</label>
-                        <select id="bonusSubjectCode" th:field="*{bonusSubjectCode}">
-                            <option th:each="item : ${bonusSubjectOptions}" th:value="${item.value}" th:text="${item.label}"></option>
-                        </select>
-                    </div>
-
-                    <div class="field">
-                        <label for="bonusPoint">Mức điểm cộng</label>
-                        <input id="bonusPoint" type="number" step="0.01" min="0" max="3" th:field="*{bonusPoint}" placeholder="0.00">
-                    </div>
-
-                    <div class="actions field-wide">
-                        <button class="btn" type="submit">Tính điểm xét tuyển</button>
-                        <span class="hint">Nếu chọn VSAT, hệ thống sẽ quy đổi điểm về thang 10 trước khi tính tổng điểm xét tuyển.</span>
-                    </div>
-                </form>
-
-                <div class="result-box" th:if="${vsatThptResult != null}">
-                    <span class="status status-ok" th:text="${vsatThptResult.message}"></span>
-                    <p class="meta"><strong>Phương thức:</strong> <span th:text="${vsatThptResult.methodLabel}"></span></p>
-                    <p class="small-note" th:text="${vsatThptResult.scaleNote}"></p>
-                    <p class="meta"><strong>Điểm ưu tiên:</strong> <span th:text="${vsatThptResult.priorityScore}"></span></p>
-                    <p class="meta"><strong>Điểm cộng theo môn:</strong> <span th:text="${vsatThptResult.bonusScore}"></span></p>
-                    <p class="meta"><strong>Điểm Tiếng Anh sau xử lý:</strong> <span th:text="${vsatThptResult.englishAppliedScore}"></span></p>
-
-                    <div class="table-wrap" th:if="${vsatThptResult.combinationResults != null and !vsatThptResult.combinationResults.isEmpty()}">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tổ hợp</th>
-                                    <th>Công thức</th>
-                                    <th>Điểm xét tuyển</th>
-                                    <th>Điểm ngưỡng</th>
-                                    <th>Đạt ngưỡng</th>
-                                    <th>Điểm trúng tuyển</th>
-                                    <th>Đạt trúng tuyển</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr th:each="row : ${vsatThptResult.combinationResults}">
-                                    <td th:text="${row.combinationCode}"></td>
-                                    <td th:text="${row.subjectFormula}"></td>
-                                    <td th:text="${row.totalScore}"></td>
-                                    <td th:text="${row.thresholdScore}"></td>
-                                    <td th:text="${row.passThreshold} ? 'Đạt' : 'Không đạt'"></td>
-                                    <td th:text="${row.admissionScore != null ? row.admissionScore : 'Chưa công bố'}"></td>
-                                    <td th:text="${row.admissionScore == null} ? 'Chưa công bố' : (${row.passAdmission} ? 'Đạt' : 'Không đạt')"></td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="cta-actions">
+                        <a class="btn cta-link" th:href="@{/tra-cuu-diem}" href="/tra-cuu-diem">Mở trang tra cứu điểm</a>
                     </div>
                 </div>
             </section>
@@ -364,3 +246,4 @@
 </body>
 
 </html>
+

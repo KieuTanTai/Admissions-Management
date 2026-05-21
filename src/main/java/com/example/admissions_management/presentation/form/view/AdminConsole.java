@@ -646,6 +646,14 @@ public class AdminConsole extends JFrame {
 
     private void loadCandidates() {
         candidateTableModel.setRowCount(0);
+        Integer selectedCandidateId = null;
+        int selectedRow = candidateTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            Object selectedValue = candidateTable.getValueAt(selectedRow, 0);
+            if (selectedValue instanceof Integer) {
+                selectedCandidateId = (Integer) selectedValue;
+            }
+        }
         List<XtThiSinhXetTuyen25Entity> candidates = candidateController.searchCandidates(candidateQuery, candidatePage);
 
         for (XtThiSinhXetTuyen25Entity entity : candidates) {
@@ -667,13 +675,27 @@ public class AdminConsole extends JFrame {
 
         candidatePageLabel.setText("Trang " + (candidatePage + 1));
         updateCandidateStats();
-        updateCandidateDetailPanel();
+        if (candidateTableModel.getRowCount() > 0) {
+            int rowToSelect = 0;
+            if (selectedCandidateId != null) {
+                for (int rowIndex = 0; rowIndex < candidateTableModel.getRowCount(); rowIndex++) {
+                    Object rowId = candidateTableModel.getValueAt(rowIndex, 0);
+                    if (selectedCandidateId.equals(rowId)) {
+                        rowToSelect = rowIndex;
+                        break;
+                    }
+                }
+            }
+            candidateTable.setRowSelectionInterval(rowToSelect, rowToSelect);
+        } else {
+            clearCandidateDetailPanel();
+        }
     }
 
     private void updateCandidateStats() {
         candidateTotalValue.setText(String.valueOf(candidateController.countCandidates()));
-        candidateDoiTuongValue.setText(formatStats(candidateController.countCandidatesByDoiTuong()));
-        candidateKhuVucValue.setText(formatStats(candidateController.countCandidatesByKhuVuc()));
+        candidateDoiTuongValue.setText(formatStatsHtml(candidateController.countCandidatesByDoiTuong()));
+        candidateKhuVucValue.setText(formatStatsHtml(candidateController.countCandidatesByKhuVuc()));
     }
 
     private void updateCandidateDetailPanel() {
@@ -944,6 +966,15 @@ public class AdminConsole extends JFrame {
 
     private String valueOf(Object value) {
         return value == null ? "" : value.toString();
+    }
+
+    private String formatStatsHtml(Map<String, Long> stats) {
+        if (stats == null || stats.isEmpty()) {
+            return "<html>Chưa có dữ liệu</html>";
+        }
+        return stats.entrySet().stream()
+                .map(entry -> "&bull; " + entry.getKey() + ": " + entry.getValue())
+                .collect(Collectors.joining("<br/>", "<html>", "</html>"));
     }
 
     private JScrollPane createTableScrollPane(JTable table) {
