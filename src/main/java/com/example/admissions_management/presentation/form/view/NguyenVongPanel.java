@@ -4,14 +4,36 @@ import com.example.admissions_management.domain.model.NguyenVongXetTuyen;
 import com.example.admissions_management.presentation.form.controller.NguyenVongConsoleController;
 import com.example.admissions_management.presentation.form.model.NguyenVongTableModel;
 
-import javax.swing.*;
-import java.awt.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SwingConstants;
+import javax.swing.SwingWorker;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Cursor;
+import java.awt.GridLayout;
 import java.util.ArrayList;
 import java.util.List;
 
 public class NguyenVongPanel extends JPanel {
 
     private static final int PAGE_SIZE = 50;
+    private static final Color BG_COLOR = new Color(245, 247, 244);
+    private static final Color SURFACE_COLOR = Color.WHITE;
+    private static final Color LINE_COLOR = new Color(220, 229, 223);
+    private static final Color PRIMARY_COLOR = new Color(12, 122, 99);
+    private static final Color ACCENT_COLOR = new Color(231, 150, 45);
+    private static final Color DANGER_COLOR = new Color(194, 65, 53);
+    private static final Color TEXT_COLOR = new Color(29, 46, 40);
+    private static final Color MUTED_COLOR = new Color(100, 118, 110);
 
     private final NguyenVongConsoleController controller;
     private final NguyenVongTableModel tableModel;
@@ -29,11 +51,13 @@ public class NguyenVongPanel extends JPanel {
         this.controller = controller;
         this.tableModel = new NguyenVongTableModel();
         this.table = new JTable(tableModel);
-        
-        // Chỉ cho phép chọn một dòng để tránh lỗi xử lý dữ liệu đơn dòng
-        this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 
+        this.table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        setBackground(BG_COLOR);
         setLayout(new BorderLayout(10, 10));
+
+        styleTable();
+
         add(buildTopPanel(), BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
         add(buildActionPanel(), BorderLayout.SOUTH);
@@ -41,16 +65,23 @@ public class NguyenVongPanel extends JPanel {
     }
 
     private JPanel buildTopPanel() {
-        // Tăng lên 7 cột để chứa khít form tìm kiếm và nút bấm, nhãn trang không bị vỡ bố cục
         JPanel panel = new JPanel(new GridLayout(1, 7, 8, 8));
-        panel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
+        panel.setBackground(SURFACE_COLOR);
+        panel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
 
-        panel.add(new JLabel("Tìm theo CCCD:", SwingConstants.RIGHT));
+        JLabel searchLabel = new JLabel("Tìm theo CCCD:", SwingConstants.RIGHT);
+        searchLabel.setForeground(MUTED_COLOR);
+        panel.add(searchLabel);
+
+        styleTextField(searchCccdField);
         panel.add(searchCccdField);
 
-        JButton searchButton = new JButton("Tìm");
-        JButton importButton = new JButton("Import Excel");
-        JButton refreshButton = new JButton("Refresh");
+        JButton searchButton = createButton("Tìm", ButtonType.PRIMARY);
+        JButton importButton = createButton("Import Excel", ButtonType.ACCENT);
+        JButton refreshButton = createButton("Làm mới", ButtonType.SECONDARY);
+        pageLabel.setForeground(TEXT_COLOR);
 
         panel.add(searchButton);
         panel.add(importButton);
@@ -68,14 +99,18 @@ public class NguyenVongPanel extends JPanel {
     }
 
     private JPanel buildActionPanel() {
-        // Cố định GridLayout(1, 6) ứng với chính xác 6 nút để các nút tự động co giãn đều (Auto-fit)
         JPanel btnPanel = new JPanel(new GridLayout(1, 6, 8, 8));
-        btnPanel.setBorder(BorderFactory.createEmptyBorder(6, 6, 6, 6));
-        
-        JButton addButton = new JButton("Thêm");
-        JButton editButton = new JButton("Sửa");
-        JButton deleteButton = new JButton("Xóa");
-        JButton deleteAllButton = new JButton("Xóa tất cả");
+        btnPanel.setBackground(SURFACE_COLOR);
+        btnPanel.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
+
+        JButton addButton = createButton("Thêm", ButtonType.PRIMARY);
+        JButton editButton = createButton("Sửa", ButtonType.SECONDARY);
+        JButton deleteButton = createButton("Xóa", ButtonType.DANGER);
+        JButton deleteAllButton = createButton("Xóa tất cả", ButtonType.DANGER);
+        stylePagingButton(prevButton);
+        stylePagingButton(nextButton);
 
         btnPanel.add(addButton);
         btnPanel.add(editButton);
@@ -97,8 +132,60 @@ public class NguyenVongPanel extends JPanel {
         nextButton.addActionListener(e -> goNextPage());
 
         updatePagingControls();
-
         return btnPanel;
+    }
+
+    private void styleTextField(JTextField field) {
+        field.setForeground(TEXT_COLOR);
+        field.setBackground(Color.WHITE);
+        field.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(6, 8, 6, 8)));
+    }
+
+    private JButton createButton(String text, ButtonType type) {
+        JButton button = new JButton(text);
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setOpaque(true);
+
+        if (type == ButtonType.PRIMARY) {
+            button.setBackground(PRIMARY_COLOR);
+            button.setForeground(Color.WHITE);
+            button.setBorder(BorderFactory.createLineBorder(PRIMARY_COLOR.darker()));
+        } else if (type == ButtonType.ACCENT) {
+            button.setBackground(ACCENT_COLOR);
+            button.setForeground(TEXT_COLOR);
+            button.setBorder(BorderFactory.createLineBorder(ACCENT_COLOR.darker()));
+        } else if (type == ButtonType.DANGER) {
+            button.setBackground(DANGER_COLOR);
+            button.setForeground(Color.WHITE);
+            button.setBorder(BorderFactory.createLineBorder(DANGER_COLOR.darker()));
+        } else {
+            button.setBackground(SURFACE_COLOR);
+            button.setForeground(TEXT_COLOR);
+            button.setBorder(BorderFactory.createLineBorder(LINE_COLOR));
+        }
+
+        return button;
+    }
+
+    private void stylePagingButton(JButton button) {
+        button.setFocusPainted(false);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setBackground(SURFACE_COLOR);
+        button.setForeground(TEXT_COLOR);
+        button.setOpaque(true);
+        button.setBorder(BorderFactory.createLineBorder(LINE_COLOR));
+    }
+
+    private void styleTable() {
+        table.setRowHeight(30);
+        table.getTableHeader().setBackground(new Color(236, 244, 239));
+        table.getTableHeader().setForeground(TEXT_COLOR);
+        table.setSelectionBackground(new Color(216, 235, 226));
+        table.setSelectionForeground(TEXT_COLOR);
+        table.setGridColor(LINE_COLOR);
     }
 
     private void search() {
@@ -126,12 +213,11 @@ public class NguyenVongPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Chọn một dòng để xóa.", "Delete", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        
+
         int confirm = JOptionPane.showConfirmDialog(
-                this, "Bạn có chắc chắn muốn xóa nguyện vọng này?", "Xác nhận xóa", 
-                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE
-        );
-        
+                this, "Bạn có chắc chắn muốn xóa nguyện vọng này?", "Xác nhận xóa",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
         if (confirm == JOptionPane.YES_OPTION) {
             try {
                 int modelRow = table.convertRowIndexToModel(selectedRow);
@@ -147,7 +233,7 @@ public class NguyenVongPanel extends JPanel {
     private void deleteAllData() {
         int confirm = JOptionPane.showConfirmDialog(
                 this,
-                "Bạn có chắc chắn muốn xóa tất cả dữ liệu nguyện vọng? Hành động này không thể hoàn tác!",
+                "Bạn có chắc chắn muốn xóa tất cả dữ liệu nguyện vọng? Hành động này không thể hoàn tác.",
                 "Xác nhận xóa tất cả",
                 JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE
@@ -174,23 +260,20 @@ public class NguyenVongPanel extends JPanel {
         }
 
         java.io.File selectedFile = fileChooser.getSelectedFile();
-        
-        // Hiển thị trạng thái đang đọc luồng ngầm cho người dùng biết
         pageLabel.setText("Đang đọc Excel...");
-        
-        // SỬ DỤNG SWINGWORKER ĐỂ KHÔNG BỊ ĐƠ GIAO DIỆN KHI IMPORT DỮ LIỆU LỚN
+
         SwingWorker<com.example.admissions_management.application.dto.response.NguyenVongImportSummary, Void> worker = new SwingWorker<>() {
             @Override
             protected com.example.admissions_management.application.dto.response.NguyenVongImportSummary doInBackground() throws Exception {
-                // Đẩy tác vụ xử lý tệp Excel xuống Thread nền phụ
                 return controller.importExcelFile(selectedFile);
             }
 
             @Override
             protected void done() {
                 try {
-                    com.example.admissions_management.application.dto.response.NguyenVongImportSummary summary = (com.example.admissions_management.application.dto.response.NguyenVongImportSummary) get();
-                    refreshTable(); // Cập nhật lại UI bảng hiển thị dữ liệu mới
+                    com.example.admissions_management.application.dto.response.NguyenVongImportSummary summary =
+                            (com.example.admissions_management.application.dto.response.NguyenVongImportSummary) get();
+                    refreshTable();
                     JOptionPane.showMessageDialog(NguyenVongPanel.this,
                             summary.toMessage(),
                             "Import Summary",
@@ -204,8 +287,8 @@ public class NguyenVongPanel extends JPanel {
                 }
             }
         };
-        
-        worker.execute(); // Bắt đầu chạy tiến trình
+
+        worker.execute();
     }
 
     private void openEditDialog(NguyenVongXetTuyen existing) {
@@ -228,11 +311,11 @@ public class NguyenVongPanel extends JPanel {
         JPanel form = new JPanel(new GridLayout(0, 2, 8, 8));
         form.add(new JLabel("CCCD"));
         form.add(nnCccdField);
-        form.add(new JLabel("Mã Ngành"));
+        form.add(new JLabel("Mã ngành"));
         form.add(maNganhField);
-        form.add(new JLabel("Mã Tổ Hợp"));
+        form.add(new JLabel("Mã tổ hợp"));
         form.add(maToHopField);
-        form.add(new JLabel("NV Thứ Tự"));
+        form.add(new JLabel("NV thứ tự"));
         form.add(nvThuTuField);
         form.add(new JLabel("Điểm THXT"));
         form.add(diemThxtField);
@@ -314,8 +397,6 @@ public class NguyenVongPanel extends JPanel {
         List<NguyenVongXetTuyen> slice = start < end ? currentRows.subList(start, end) : new ArrayList<>();
         tableModel.setRows(slice);
         updatePagingControls();
-        
-        // Buộc giao diện cập nhật và render lại cấu trúc dòng mới
         revalidate();
         repaint();
     }
@@ -340,5 +421,12 @@ public class NguyenVongPanel extends JPanel {
             page++;
             updateTablePage();
         }
+    }
+
+    private enum ButtonType {
+        PRIMARY,
+        SECONDARY,
+        ACCENT,
+        DANGER
     }
 }
