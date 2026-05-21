@@ -390,9 +390,9 @@ public class ToHopMonThiManagementService {
             case "NK4" -> "Trang trí";
             case "NK5" -> "Hát - Nhạc cụ";
             case "NK6" -> "Xướng âm - Thẩm âm, Tiết tấu";
-            case "KTPL" -> "KTPL";
-            case "CNCN" -> "CNCN";
-            case "CNNN" -> "CNNN";
+            case "KTPL" -> "Kinh tế pháp luật";
+            case "CNCN" -> "Công nghệ công nghiệp";
+            case "CNNN" -> "Công nghệ nông nghiệp";
             default -> code;
         };
     }

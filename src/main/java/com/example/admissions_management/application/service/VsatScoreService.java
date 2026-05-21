@@ -1,10 +1,10 @@
 package com.example.admissions_management.application.service;
 
+import java.util.List;
+
 import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
 import com.example.admissions_management.application.dto.response.ScoreResultResponse;
 import com.example.admissions_management.application.service.candidate.OptionItem;
-
-import java.util.List;
 
 public interface VsatScoreService {
 

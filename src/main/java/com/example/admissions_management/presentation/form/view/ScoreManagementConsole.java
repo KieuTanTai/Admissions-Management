@@ -74,7 +74,7 @@ public class ScoreManagementConsole extends JFrame {
         this.tableModel = new ScoreManagementTableModel();
         this.table = new JTable(tableModel);
 
-        setTitle("Admissions - Score Management Console");
+        setTitle("Bảng Điểm Quy đổi");
         setSize(1260, 700);
         setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -330,6 +330,8 @@ public class ScoreManagementConsole extends JFrame {
             ex.printStackTrace();
         }
     }
+
+    
 
     private void backToAdmin() {
         AdminConsole adminConsole = adminConsoleProvider.getObject();

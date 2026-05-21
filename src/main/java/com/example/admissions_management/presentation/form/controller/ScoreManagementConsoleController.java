@@ -63,4 +63,6 @@ public class ScoreManagementConsoleController {
     public ScoreManagementService.ImportResult importExcel(java.io.File file) {
         return scoreManagementService.importExcel(file);
     }
+
+    
 }

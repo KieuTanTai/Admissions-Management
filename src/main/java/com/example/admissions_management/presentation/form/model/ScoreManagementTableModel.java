@@ -9,7 +9,7 @@ import java.util.List;
 public class ScoreManagementTableModel extends AbstractTableModel {
 
         private final String[] columns = {
-            "ID", "CCCD", "So Bao Danh", "d_phuongthuc", "TO", "LI", "HO", "SI", "SU", "DI", "VA", "N1_THI", "N1_CC", "CNCN", "CNNN", "TI", "KTPL", "NL1", "NK1", "NK2"
+                "ID", "CCCD", "So Bao Danh", "d_phuongthuc", "TO", "LI", "HO", "SI", "SU", "DI", "VA", "N1_THI", "N1_CC", "CNCN", "CNNN", "TI", "KTPL", "NL1", "NK1", "NK2", "THPT_EQ", "VSAT_EQ", "DGNL_EQ", "BEST_METHOD", "BEST_SCORE"
         };
 
     private List<XtDiemThiXetTuyenEntity> rows = new ArrayList<>();
@@ -65,6 +65,11 @@ public class ScoreManagementTableModel extends AbstractTableModel {
             case 17 -> row.getNl1();
             case 18 -> row.getNk1();
             case 19 -> row.getNk2();
+            case 20 -> row.getThptEquivalentScore();
+            case 21 -> row.getVsatEquivalentScore();
+            case 22 -> row.getDgnlEquivalentScore();
+            case 23 -> row.getBestEquivalentMethod();
+            case 24 -> row.getBestEquivalentScore();
             default -> "";
         };
     }

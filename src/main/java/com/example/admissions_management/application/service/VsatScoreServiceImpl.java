@@ -1,19 +1,5 @@
 package com.example.admissions_management.application.service;
 
-import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
-import com.example.admissions_management.application.dto.response.CombinationResult;
-import com.example.admissions_management.application.dto.response.ScoreResultResponse;
-import com.example.admissions_management.application.service.candidate.CombinationSpec;
-import com.example.admissions_management.application.service.candidate.MajorConfig;
-import com.example.admissions_management.application.service.candidate.OptionItem;
-import com.example.admissions_management.domain.model.Combination;
-import com.example.admissions_management.domain.repository.ICombinationRepository;
-import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
-import com.example.admissions_management.application.service.BangQuyDoiService;
-import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -24,6 +10,20 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+
+import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
+import com.example.admissions_management.application.dto.response.CombinationResult;
+import com.example.admissions_management.application.dto.response.ScoreResultResponse;
+import com.example.admissions_management.application.service.candidate.CombinationSpec;
+import com.example.admissions_management.application.service.candidate.MajorConfig;
+import com.example.admissions_management.application.service.candidate.OptionItem;
+import com.example.admissions_management.domain.model.Combination;
+import com.example.admissions_management.domain.repository.ICombinationRepository;
+import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
+import com.example.admissions_management.infrastructure.persistence.repository.MajorRepository;
 
 @Service
 public class VsatScoreServiceImpl implements VsatScoreService {
@@ -55,22 +55,24 @@ public class VsatScoreServiceImpl implements VsatScoreService {
 
     @Override
     public List<String> getConvertibleSubjectCodes() {
-        // start from interval-supported subjects
         LinkedHashSet<String> codes = new LinkedHashSet<>(intervalsBySubject.keySet());
         try {
             var all = bangQuyDoiService.getAll();
             if (all != null) {
                 for (var b : all) {
-                    if (b == null) continue;
-                    if (!METHOD_VSAT.equalsIgnoreCase(normalize(b.getPhuongThuc()))) continue;
+                    if (b == null) {
+                        continue;
+                    }
+                    if (!METHOD_VSAT.equalsIgnoreCase(normalize(b.getPhuongThuc()))) {
+                        continue;
+                    }
                     String mon = b.getMon();
                     if (mon != null && !mon.isBlank()) {
                         codes.add(normalizeSubjectCode(mon));
                     }
                 }
             }
-        } catch (Exception e) {
-            // ignore and fall back to intervals-only
+        } catch (Exception ignored) {
         }
         return new ArrayList<>(codes);
     }
@@ -268,17 +270,13 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         }
 
         if (score <= 0.0d) {
-            // If user explicitly left field null or entered 0, treat as "missing" (not provided)
             if (provided) {
-                // Provided true but score <=0 (edge case) — keep the default warning
                 warnings.add(label + ": " + DEFAULT_WARNING);
                 return new SubjectConversion(subjectCode, true, score, 0.0d, label + ": " + DEFAULT_WARNING);
             }
-            // Not provided (null or 0) -> mark as missing without percentile warning
             return new SubjectConversion(subjectCode, false, score, 0.0d, label + ": không có dữ liệu (được coi là thiếu)");
         }
 
-        // Prefer database conversion rules (xt_bangquydoi) to match official lookup site
         try {
             Map<String, String> ketqua = bangQuyDoiService.quyDoiDiemKhaoThi(METHOD_VSAT, subjectCode, BigDecimal.valueOf(score));
             if (ketqua != null && ketqua.containsKey("diemQuyDoi")) {
@@ -743,21 +741,20 @@ public class VsatScoreServiceImpl implements VsatScoreService {
 
     private Map<String, String> createSubjectLabels() {
         Map<String, String> map = new LinkedHashMap<>();
-        map.put("TOAN", "Toán");
-        map.put("NGU_VAN", "Ngữ văn");
-        map.put("TIENG_ANH", "Tiếng Anh");
-        map.put("VAT_LY", "Vật lí");
-        map.put("HOA_HOC", "Hóa học");
-        map.put("SINH_HOC", "Sinh học");
-        map.put("LICH_SU", "Lịch sử");
-        map.put("DIA_LY", "Địa lí");
-        map.put("KTPL", "Kinh te va phap luat");
+        map.put("TOAN", "Toan");
+        map.put("NGU_VAN", "Ngu van");
+        map.put("TIENG_ANH", "Tieng Anh");
+        map.put("VAT_LY", "Vat ly");
+        map.put("HOA_HOC", "Hoa hoc");
+        map.put("SINH_HOC", "Sinh hoc");
+        map.put("LICH_SU", "Lich su");
+        map.put("DIA_LY", "Dia ly");
         map.put("TI", "Tin hoc");
         map.put("CNCN", "Cong nghe cong nghiep");
         map.put("CNNN", "Cong nghe nong nghiep");
+        map.put("KTPL", "Kinh te phap luat");
         return map;
     }
-
     private Map<String, MajorConfig> loadMajorConfigs() {
         Map<String, MajorConfig> databaseMajors = loadMajorConfigsFromDatabase();
         if (!databaseMajors.isEmpty()) {
@@ -849,10 +846,14 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             case "SU" -> "LICH_SU";
             case "DI" -> "DIA_LY";
             case "VA", "VAN" -> "NGU_VAN";
+            case "TI" -> "TI";
+            case "CNCN" -> "CNCN";
+            case "CNNN" -> "CNNN";
+            case "KTPL" -> "KTPL";
+            case "GD" -> "GDCD";
             default -> value;
         };
     }
-
     private String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }

@@ -1,6 +1,11 @@
 package com.example.admissions_management.domain.model;
 
 import java.math.BigDecimal;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+
 public class BangQuyDoi {
 
     private Integer id;
@@ -13,12 +18,10 @@ public class BangQuyDoi {
     private BigDecimal diemD;
     private String maQuyDoi;
     private String phanVi;
-
-    public BangQuyDoi() {}
-
-    public BangQuyDoi(Integer id, String phuongThuc, String toHop, String mon,
-                      BigDecimal diemA, BigDecimal diemB, BigDecimal diemC, BigDecimal diemD,
-                      String maQuyDoi, String phanVi) {
+    public BangQuyDoi() {
+    }
+    public BangQuyDoi(Integer id, String phuongThuc, String toHop, String mon, BigDecimal diemA, BigDecimal diemB,
+            BigDecimal diemC, BigDecimal diemD, String maQuyDoi, String phanVi) {
         this.id = id;
         this.phuongThuc = phuongThuc;
         this.toHop = toHop;

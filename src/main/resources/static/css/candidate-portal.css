@@ -406,6 +406,16 @@ form {
     background: #fff;
 }
 
+.calculationMethod {
+    color: var(--primary);
+    hover {
+        text-decoration: underline;
+        color: var(--primary-dark);
+    }
+    font-weight: 700;
+    cursor: pointer;
+}
+
 table {
     width: 100%;
     min-width: 860px;
@@ -537,3 +547,4 @@ tbody tr:hover {
         min-width: 720px;
     }
 }
+
