@@ -4,11 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bảng điều khiển tuyển sinh</title>
+    <title>Trung tâm quản trị tuyển sinh</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" th:href="@{/css/admin-form.css}" href="/css/admin-form.css">
 </head>
@@ -18,8 +18,8 @@
         <aside class="admin-sidebar">
             <div class="brand-block">
                 <p class="brand-kicker">Admissions Console</p>
-                <h1>Quản trị tuyển sinh</h1>
-                <p class="brand-note">Giao diện quản lý dữ liệu xét tuyển, điểm cộng và nguyện vọng từ file Excel.</p>
+                <h1>Trung tâm quản trị tuyển sinh</h1>
+                <p class="brand-note">Theo dõi dữ liệu đầu vào, vận hành xét tuyển và kiểm soát toàn bộ luồng xử lý trên một giao diện thống nhất.</p>
             </div>
 
             <nav class="menu-list">
@@ -31,15 +31,16 @@
             <div class="status-card">
                 <p class="status-title">Nguồn dữ liệu</p>
                 <p class="status-value">Excel / Database</p>
-                <p class="status-sub">Bảng dữ liệu được nạp qua API và file Excel, không dùng dữ liệu mô phỏng.</p>
+                <p class="status-sub">Dữ liệu hiển thị đồng bộ từ biểu mẫu nhập liệu, API quản trị và cơ sở dữ liệu hiện hành.</p>
             </div>
         </aside>
 
         <main class="admin-main">
-            <header class="topbar">
+            <header class="topbar hero-topbar">
                 <div>
-                    <p class="topbar-kicker">Mô hình phân lớp</p>
-                    <h2>Thiết kế giao diện quản lý xét tuyển</h2>
+                    <p class="topbar-kicker">Bảng điều khiển vận hành</p>
+                    <h2>Kiểm soát nhanh các nghiệp vụ tuyển sinh trọng tâm</h2>
+                    <p class="hero-summary">Đi đến đúng màn hình cần xử lý, theo dõi tình trạng dữ liệu và thao tác nhất quán giữa web và ứng dụng desktop.</p>
                 </div>
                 <div class="topbar-actions">
                     <a class="btn ghost" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">Mở phần 7</a>
@@ -53,23 +54,23 @@
             <section class="panel">
                 <div class="panel-head">
                     <div>
-                        <h3>Lối tắt nghiệp vụ</h3>
-                        <p class="muted">Hai màn hình web tương ứng với hai form Swing để thao tác cùng một nguồn dữ liệu.</p>
+                        <h3>Khu vực thao tác nhanh</h3>
+                        <p class="muted">Chọn đúng khu vực nghiệp vụ để nhập dữ liệu, rà soát kết quả hoặc chạy xét tuyển theo từng đợt.</p>
                     </div>
-                    <span class="pill">Đồng bộ web/app</span>
+                    <span class="pill">Điều hướng</span>
                 </div>
 
                 <div class="shortcut-grid">
                     <a class="shortcut-link" th:href="@{/admin/diem-cong}" href="/admin/diem-cong">
-                        <strong>Phần 7 - Quản lý điểm cộng xét tuyển</strong>
-                        <span>Nhập Excel, tìm kiếm theo CCCD/mã ngành, xem danh sách và xóa bản ghi.</span>
-                        <span class="tag success">Dữ liệu thật</span>
+                        <strong>Phần 7 - Quản lý điểm cộng</strong>
+                        <span>Nhập dữ liệu từ Excel, tìm kiếm theo CCCD hoặc mã ngành, kiểm tra nhanh từng bản ghi trước khi đối chiếu kết quả.</span>
+                        <span class="tag success">Nhập liệu và rà soát</span>
                     </a>
 
                     <a class="shortcut-link" th:href="@{/admin/nguyen-vong}" href="/admin/nguyen-vong">
-                        <strong>Phần 8 - Quản lý nguyện vọng và xét tuyển</strong>
-                        <span>Chạy xét tuyển theo ngành hoặc toàn bộ ngành, lọc kết quả và xuất Excel.</span>
-                        <span class="tag success">Dữ liệu thật</span>
+                        <strong>Phần 8 - Quản lý nguyện vọng</strong>
+                        <span>Xét tuyển theo từng ngành hoặc toàn bộ danh sách, lọc dữ liệu tức thời và xuất kết quả phục vụ tổng hợp.</span>
+                        <span class="tag success">Xử lý và xuất báo cáo</span>
                     </a>
                 </div>
             </section>
@@ -77,13 +78,17 @@
             <section class="panel">
                 <div class="panel-head">
                     <div>
-                        <h3>Nguyên tắc giao diện</h3>
-                        <p class="muted">Tập trung vào thao tác nghiệp vụ, bảng dữ liệu rõ ràng và tiếng Việt có dấu thống nhất.</p>
+                        <h3>Chuẩn hiển thị giao diện</h3>
+                        <p class="muted">Ưu tiên khả năng đọc nhanh, thao tác rõ ràng và ngôn ngữ nhất quán cho cán bộ tuyển sinh.</p>
                     </div>
-                    <span class="pill">UTF-8</span>
+                    <span class="pill">Tiếng Việt chuẩn</span>
                 </div>
 
                 <div class="metric-grid">
+                    <div class="metric">
+                        <span>Dữ liệu đầu vào</span>
+                        <strong>Excel + DB</strong>
+                    </div>
                     <div class="metric">
                         <span>Phần 7</span>
                         <strong>Điểm cộng</strong>
@@ -93,11 +98,7 @@
                         <strong>Nguyện vọng</strong>
                     </div>
                     <div class="metric">
-                        <span>Đầu vào</span>
-                        <strong>Excel</strong>
-                    </div>
-                    <div class="metric">
-                        <span>Xuất kết quả</span>
+                        <span>Đầu ra</span>
                         <strong>XLSX</strong>
                     </div>
                 </div>
