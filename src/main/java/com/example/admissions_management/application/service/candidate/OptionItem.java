@@ -1,4 +1,4 @@
-package com.example.admissions_management.application.service.dto;
+package com.example.admissions_management.application.service.candidate;
 
 public class OptionItem {
 
