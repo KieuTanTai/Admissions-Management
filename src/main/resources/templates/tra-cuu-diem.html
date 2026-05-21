@@ -5,270 +5,246 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tra cứu điểm xét tuyển V-SAT / THPT</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/candidate-portal.css}" href="/css/candidate-portal.css">
     <style>
-        :root {
-            --bg-1: #081120;
-            --bg-2: #14213d;
-            --panel: rgba(255, 255, 255, 0.08);
-            --panel-border: rgba(255, 255, 255, 0.14);
-            --accent: #fca311;
-            --accent-2: #4cc9f0;
-            --text: #eef3ff;
+        .score-shell form {
+            align-items: start;
         }
 
-        * {
-            box-sizing: border-box;
+        .score-shell .field {
+            grid-column: span 3;
         }
 
-        body {
-            margin: 0;
-            font-family: 'Be Vietnam Pro', sans-serif;
-            color: var(--text);
-            background:
-                radial-gradient(circle at top left, rgba(76, 201, 240, 0.22), transparent 26%),
-                radial-gradient(circle at top right, rgba(252, 163, 17, 0.18), transparent 28%),
-                linear-gradient(160deg, var(--bg-1), var(--bg-2));
-            min-height: 100vh;
+        .score-shell .field-half {
+            grid-column: span 6;
         }
 
-        .page-shell {
-            max-width: 1440px;
-            margin: 0 auto;
-            padding: 32px 18px 48px;
+        .score-shell .field-wide {
+            grid-column: 1 / -1;
         }
 
-        .hero {
-            border: 1px solid var(--panel-border);
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.10), rgba(255, 255, 255, 0.04));
-            backdrop-filter: blur(16px);
-            border-radius: 28px;
-            padding: 28px;
-            margin-bottom: 24px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.18);
-        }
-
-        .hero h1 {
-            font-size: clamp(2rem, 3.8vw, 3.4rem);
-            margin: 0 0 10px;
-            font-weight: 800;
-        }
-
-        .hero p {
-            margin: 0;
-            color: rgba(238, 243, 255, 0.84);
-            max-width: 980px;
-        }
-
-        .badge-soft {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.5rem 0.85rem;
-            border-radius: 999px;
-            background: rgba(255, 255, 255, 0.10);
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            color: #fff;
-            font-weight: 600;
-            font-size: 0.92rem;
-        }
-
-        .card-glass {
-            border: 1px solid var(--panel-border);
-            background: var(--panel);
-            backdrop-filter: blur(14px);
-            border-radius: 24px;
-            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.16);
-        }
-
-        .section-title {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .section-title h2 {
-            margin: 0;
-            font-size: 1.15rem;
-            font-weight: 700;
-        }
-
-        .form-label,
-        .small-muted {
-            color: rgba(238, 243, 255, 0.82);
-        }
-
-        .form-control,
-        .form-select {
-            background-color: rgba(255, 255, 255, 0.92);
-            border: 1px solid rgba(255, 255, 255, 0.18);
-            color: #0b1220;
-        }
-
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--accent-2);
-            box-shadow: 0 0 0 0.2rem rgba(76, 201, 240, 0.18);
-        }
-
-        .form-grid {
+        .score-shell .subject-grid {
+            grid-column: 1 / -1;
             display: grid;
             grid-template-columns: repeat(4, minmax(0, 1fr));
             gap: 14px;
+            padding: 18px;
+            border: 1px solid var(--line);
+            border-radius: 22px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 249, 247, 0.92) 100%);
         }
 
-        @media (max-width: 992px) {
-            .form-grid {
+        .score-shell .subject-grid .field {
+            grid-column: auto;
+        }
+
+        .score-shell .helper-box {
+            padding: 16px 18px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(246, 249, 247, 0.92) 100%);
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .score-shell .notice-box {
+            padding: 16px 18px;
+            border-radius: 20px;
+            line-height: 1.7;
+        }
+
+        .score-shell .notice-warn {
+            border: 1px solid rgba(188, 123, 43, 0.22);
+            background: rgba(188, 123, 43, 0.08);
+            color: #7b4b12;
+        }
+
+        .score-shell .notice-info {
+            border: 1px solid rgba(13, 107, 88, 0.16);
+            background: rgba(13, 107, 88, 0.08);
+            color: var(--primary-dark);
+        }
+
+        .score-shell .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .score-shell .summary-card {
+            padding: 16px;
+            border: 1px solid var(--line);
+            border-radius: 20px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.97) 0%, rgba(247, 250, 248, 0.94) 100%);
+        }
+
+        .score-shell .summary-card strong {
+            display: block;
+            margin-top: 8px;
+            font-family: "Manrope", "Be Vietnam Pro", sans-serif;
+            font-size: 1.2rem;
+            color: var(--text);
+        }
+
+        .score-shell .summary-label {
+            color: var(--muted);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .score-shell .result-table td,
+        .score-shell .result-table th {
+            white-space: normal;
+        }
+
+        .score-shell .result-table .formula-cell {
+            min-width: 320px;
+            line-height: 1.65;
+        }
+
+        .score-shell .badge-soft {
+            color: var(--text);
+            border: 1px solid rgba(24, 52, 45, 0.11);
+            background: rgba(255, 255, 255, 0.82);
+        }
+
+        .score-shell .metric-chip {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-weight: 800;
+            font-size: 0.88rem;
+        }
+
+        .score-shell .metric-chip-primary {
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+        }
+
+        .score-shell .metric-chip-warning {
+            color: #7b4b12;
+            background: rgba(188, 123, 43, 0.16);
+            border: 1px solid rgba(188, 123, 43, 0.22);
+        }
+
+        .score-shell .metric-chip-muted {
+            color: #40564f;
+            background: rgba(95, 116, 109, 0.14);
+            border: 1px solid rgba(95, 116, 109, 0.18);
+        }
+
+        .score-shell .result-status {
+            margin-top: 8px;
+            font-size: 0.88rem;
+            color: var(--muted);
+        }
+
+        @media (max-width: 1100px) {
+            .score-shell .subject-grid,
+            .score-shell .summary-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
-        @media (max-width: 576px) {
-            .form-grid {
+        @media (max-width: 860px) {
+            .score-shell .field,
+            .score-shell .field-half {
+                grid-column: auto;
+            }
+
+            .score-shell .subject-grid,
+            .score-shell .summary-grid {
                 grid-template-columns: 1fr;
             }
-
-            .section-title {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-
-        .summary-box {
-            border-left: 4px solid var(--accent);
-            background: rgba(252, 163, 17, 0.08);
-        }
-
-        .table thead th {
-            background: rgba(255, 255, 255, 0.08);
-            color: #fff;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-            white-space: nowrap;
-        }
-
-        .table tbody td {
-            vertical-align: top;
-            background: rgba(255, 255, 255, 0.035);
-            color: #fff;
-        }
-
-        .formula-cell {
-            min-width: 360px;
-            white-space: normal;
-            line-height: 1.45;
-        }
-
-        .metric-badge {
-            display: inline-block;
-            padding: 0.35rem 0.6rem;
-            border-radius: 999px;
-            background: rgba(252, 163, 17, 0.15);
-            border: 1px solid rgba(252, 163, 17, 0.35);
-            color: #fff;
-            font-weight: 700;
         }
     </style>
 </head>
 
 <body>
-    <div class="page-shell">
-        <div class="hero">
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                <span class="badge-soft">Spring MVC</span>
-                <span class="badge-soft">Tra cứu điểm xét tuyển</span>
-                <span class="badge-soft">V-SAT / THPT</span>
-            </div>
-            <h1>Tra cứu điểm xét tuyển theo phương thức V-SAT / THPT</h1>
-            <p>
-                Chọn ngành đào tạo, nhập điểm theo phương thức xét tuyển, khai báo ưu tiên và chứng chỉ tiếng Anh nếu có.
-                Hệ thống sẽ tự động quy đổi điểm, đối chiếu các tổ hợp phù hợp và hiển thị kết quả chi tiết ngay bên dưới.
-            </p>
-        </div>
-
-        <div class="card card-glass text-white p-4 mb-4">
-            <div class="section-title">
-                <h2>Thông tin tra cứu</h2>
-                <span class="badge-soft">Mục 6</span>
+    <div class="page-shell score-shell">
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Admissions Management</p>
+                <h1>Tra cứu điểm xét tuyển theo phương thức V-SAT / THPT</h1>
+                <p class="hero-text">
+                    Nhập điểm theo phương thức xét tuyển, chọn ngành đào tạo và khai báo ưu tiên để hệ thống quy đổi theo từng tổ hợp môn, đối chiếu ngưỡng sàn và hiển thị kết quả chi tiết.
+                </p>
+                <div class="hero-badges">
+                    <span>Tra cứu điểm</span>
+                    <span>Quy đổi tổ hợp</span>
+                    <span>Đối chiếu ngưỡng sàn</span>
+                </div>
             </div>
 
-            <form th:action="@{/tra-cuu-diem}" th:object="${scoreCalculationRequest}" method="post">
-                <div class="form-grid mb-3">
+            <aside class="hero-aside">
+                <div class="aside-card">
+                    <span class="aside-label">Mục 6</span>
+                    <strong>Nhập điểm một lần, xem kết quả cho nhiều tổ hợp</strong>
+                    <ol>
+                        <li>Chọn ngành xét tuyển và phương thức điểm.</li>
+                        <li>Nhập các môn có liên quan hoặc chứng chỉ tiếng Anh nếu có.</li>
+                        <li>Kiểm tra điểm quy đổi, điểm xét ngưỡng và khả năng đạt ngưỡng sàn.</li>
+                    </ol>
+                </div>
+            </aside>
+        </header>
+
+        <main class="content-grid">
+            <section class="portal-card accent-card">
+                <div class="section-head">
                     <div>
-                        <label class="form-label" for="maNganh">Ngành xét tuyển</label>
-                        <select id="maNganh" class="form-select" th:field="*{maNganh}" required>
+                        <p class="section-kicker">Tra cứu điểm</p>
+                        <h2>Thông tin đầu vào</h2>
+                    </div>
+                    <span class="section-tag">V-SAT / THPT</span>
+                </div>
+                <p class="section-desc">
+                    Hệ thống ưu tiên dùng đúng các môn có trong tổ hợp xét tuyển của ngành bạn chọn. Với môn không sử dụng, bạn có thể để trống hoặc nhập <strong>0</strong>.
+                </p>
+
+                <form th:action="@{/tra-cuu-diem}" th:object="${scoreCalculationRequest}" method="post">
+                    <div class="field">
+                        <label for="maNganh">Ngành xét tuyển</label>
+                        <select id="maNganh" th:field="*{maNganh}" required>
                             <option value="">-- Chọn ngành --</option>
                             <option th:each="item : ${majorOptions}" th:value="${item.value}" th:text="${item.label}"></option>
                         </select>
                     </div>
 
-                    <div>
-                        <label class="form-label d-block">Loại điểm</label>
-                        <div class="d-grid gap-2">
-                            <label class="form-check border rounded-4 px-3 py-2 bg-white text-dark">
-                                <input class="form-check-input me-2" type="radio" th:field="*{loaiDiem}" value="VSAT">
-                                Điểm V-SAT (thang 150)
-                            </label>
-                            <label class="form-check border rounded-4 px-3 py-2 bg-white text-dark">
-                                <input class="form-check-input me-2" type="radio" th:field="*{loaiDiem}" value="THPT">
-                                Điểm tốt nghiệp THPT (thang 10)
-                            </label>
-                        </div>
+                    <div class="field">
+                        <label for="loaiDiem">Loại điểm</label>
+                        <select id="loaiDiem" th:field="*{loaiDiem}">
+                            <option value="VSAT">Điểm V-SAT (thang 150)</option>
+                            <option value="THPT">Điểm tốt nghiệp THPT (thang 10)</option>
+                        </select>
                     </div>
 
-                    <div>
-                        <label class="form-label" for="khuVuc">Khu vực ưu tiên</label>
-                        <select id="khuVuc" class="form-select" th:field="*{khuVuc}">
+                    <div class="field">
+                        <label for="khuVuc">Khu vực ưu tiên</label>
+                        <select id="khuVuc" th:field="*{khuVuc}">
                             <option th:each="item : ${priorityRegionOptions}" th:value="${item.value}" th:text="${item.label}"></option>
                         </select>
                     </div>
 
-                    <div>
-                        <label class="form-label" for="doiTuong">Đối tượng ưu tiên</label>
-                        <select id="doiTuong" class="form-select" th:field="*{doiTuong}">
+                    <div class="field">
+                        <label for="doiTuong">Đối tượng ưu tiên</label>
+                        <select id="doiTuong" th:field="*{doiTuong}">
                             <option th:each="item : ${priorityObjectOptions}" th:value="${item.value}" th:text="${item.label}"></option>
                         </select>
                     </div>
-                </div>
 
-                <div class="form-grid mb-3">
-                    <div th:if="${convertibleCodes.contains('TOAN')}">
-                        <label class="form-label" for="diemToan">Toán</label>
-                        <input id="diemToan" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemToan}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('NGU_VAN')}">
-                        <label class="form-label" for="diemVan">Ngữ văn</label>
-                        <input id="diemVan" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemVan}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('TIENG_ANH')}">
-                        <label class="form-label" for="diemAnh">Tiếng Anh</label>
-                        <input id="diemAnh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemAnh}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('KTPL')}">
-                        <label class="form-label" for="diemKtpl">Kinh tế pháp luật</label>
-                        <input id="diemKtpl" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemKtpl}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('TI')}">
-                        <label class="form-label" for="diemTi">Tin học</label>
-                        <input id="diemTi" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemTi}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('CNCN')}">
-                        <label class="form-label" for="diemCncn">Công nghệ công nghiệp</label>
-                        <input id="diemCncn" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemCncn}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('CNNN')}">
-                        <label class="form-label" for="diemCnnn">Công nghệ nông nghiệp</label>
-                        <input id="diemCnnn" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemCnnn}">
-                    </div>
-                </div>
-
-                <div class="form-grid mb-3">
-                    <div>
-                        <label class="form-label" for="loaiChungChiAnh">Chứng chỉ tiếng Anh quy đổi</label>
-                        <select id="loaiChungChiAnh" class="form-select" th:field="*{loaiChungChiAnh}" onchange="updateCertificateFields()">
+                    <div class="field-half">
+                        <label for="loaiChungChiAnh">Chứng chỉ tiếng Anh quy đổi</label>
+                        <select id="loaiChungChiAnh" th:field="*{loaiChungChiAnh}" onchange="updateCertificateFields()">
                             <option value="">-- Không sử dụng chứng chỉ --</option>
                             <option value="IELTS">IELTS</option>
                             <option value="TOEFL_ITP">TOEFL ITP</option>
@@ -281,379 +257,301 @@
                             <option value="VSTEP">VSTEP (3 bậc)</option>
                         </select>
                     </div>
-                </div>
 
-                <div id="ielts-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemIelts">Điểm IELTS (0.0 - 9.0)</label>
-                        <input id="diemIelts" class="form-control" type="number" step="0.5" min="0" max="9" placeholder="Tối đa 9.0" onchange="validateScore(this, 9)">
+                    <div class="field-half helper-box">
+                        Điểm tiếng Anh có thể nhập trực tiếp theo môn hoặc dùng chứng chỉ để quy đổi. Với TOEIC 4 kỹ năng, nhập đủ cả 4 thành phần để hệ thống xử lý chính xác.
                     </div>
-                </div>
 
-                <div id="toefl-itp-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemToeflItp">Điểm TOEFL ITP (310 - 677)</label>
-                        <input id="diemToeflItp" class="form-control" type="number" step="1" min="310" max="677" placeholder="Tối đa 677" onchange="validateScore(this, 677)">
+                    <div id="ielts-section" class="field" style="display: none;">
+                        <label for="diemIelts">Điểm IELTS</label>
+                        <input id="diemIelts" type="number" step="0.5" min="0" max="9" placeholder="0.0 - 9.0"
+                            onchange="syncCertificateScore(this)">
                     </div>
-                </div>
 
-                <div id="toefl-ibt-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemToeflIbt">Điểm TOEFL iBT (0 - 120)</label>
-                        <input id="diemToeflIbt" class="form-control" type="number" step="1" min="0" max="120" placeholder="Tối đa 120" onchange="validateScore(this, 120)">
+                    <div id="toefl-itp-section" class="field" style="display: none;">
+                        <label for="diemToeflItp">Điểm TOEFL ITP</label>
+                        <input id="diemToeflItp" type="number" step="1" min="310" max="677" placeholder="310 - 677"
+                            onchange="syncCertificateScore(this)">
                     </div>
-                </div>
 
-                <div id="toeic-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemToeicNghe">Nghe (Listening) - tối đa 495</label>
-                        <input id="diemToeicNghe" class="form-control" type="number" step="5" min="0" max="495" placeholder="0 - 495" onchange="validateScore(this, 495)">
+                    <div id="toefl-ibt-section" class="field" style="display: none;">
+                        <label for="diemToeflIbt">Điểm TOEFL iBT</label>
+                        <input id="diemToeflIbt" type="number" step="1" min="0" max="120" placeholder="0 - 120"
+                            onchange="syncCertificateScore(this)">
                     </div>
-                    <div>
-                        <label class="form-label" for="diemToeicDoc">Đọc (Reading) - tối đa 495</label>
-                        <input id="diemToeicDoc" class="form-control" type="number" step="5" min="0" max="495" placeholder="0 - 495" onchange="validateScore(this, 495)">
-                    </div>
-                    <div>
-                        <label class="form-label" for="diemToeicNoi">Nói (Speaking) - tối đa 200</label>
-                        <input id="diemToeicNoi" class="form-control" type="number" step="5" min="0" max="200" placeholder="0 - 200" onchange="validateScore(this, 200)">
-                    </div>
-                    <div>
-                        <label class="form-label" for="diemToeicViet">Viết (Writing) - tối đa 200</label>
-                        <input id="diemToeicViet" class="form-control" type="number" step="5" min="0" max="200" placeholder="0 - 200" onchange="validateScore(this, 200)">
-                    </div>
-                </div>
 
-                <div id="pte-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemPte">Điểm PTE Academic (10 - 90)</label>
-                        <input id="diemPte" class="form-control" type="number" step="1" min="10" max="90" placeholder="Tối đa 90" onchange="validateScore(this, 90)">
+                    <div id="pte-section" class="field" style="display: none;">
+                        <label for="diemPte">Điểm PTE Academic</label>
+                        <input id="diemPte" type="number" step="1" min="10" max="90" placeholder="10 - 90"
+                            onchange="syncCertificateScore(this)">
                     </div>
-                </div>
 
-                <div id="linguaskill-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemLinguaskill">Điểm Linguaskill (0 - 200)</label>
-                        <input id="diemLinguaskill" class="form-control" type="number" step="1" min="0" max="200" placeholder="Tối đa 200" onchange="validateScore(this, 200)">
+                    <div id="linguaskill-section" class="field" style="display: none;">
+                        <label for="diemLinguaskill">Điểm Linguaskill</label>
+                        <input id="diemLinguaskill" type="number" step="1" min="0" max="200" placeholder="0 - 200"
+                            onchange="syncCertificateScore(this)">
                     </div>
-                </div>
 
-                <div id="aptis-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="aptisLevel">Mức chứng chỉ Aptis</label>
-                        <select id="aptisLevel" class="form-select" onchange="updateAptisLevel()">
+                    <div id="aptis-section" class="field" style="display: none;">
+                        <label for="aptisLevel">Mức chứng chỉ Aptis</label>
+                        <select id="aptisLevel" onchange="updateAptisLevel()">
                             <option value="">-- Chọn mức --</option>
                             <option value="B1">B1</option>
                             <option value="B2">B2</option>
                             <option value="C1">C1</option>
                         </select>
-                        <input id="diemAptis" type="hidden" th:field="*{diemChungChiAnh}" value="">
                     </div>
-                </div>
 
-                <div id="vstep-section" class="form-grid mb-3" style="display: none;">
-                    <div>
-                        <label class="form-label" for="diemVstep">Mức chứng chỉ VSTEP</label>
-                        <select id="diemVstep" class="form-select" onchange="updateVstepLevel()">
+                    <div id="vstep-section" class="field" style="display: none;">
+                        <label for="diemVstep">Mức chứng chỉ VSTEP</label>
+                        <select id="diemVstep" onchange="updateVstepLevel()">
                             <option value="">-- Chọn bậc --</option>
                             <option value="3">Bậc 3</option>
                             <option value="4">Bậc 4</option>
                             <option value="5">Bậc 5</option>
                         </select>
                     </div>
-                </div>
 
-                <input id="diemChungChiAnh" type="hidden" th:field="*{diemChungChiAnh}">
+                    <div id="toeic-section" class="subject-grid" style="display: none;">
+                        <div class="field">
+                            <label for="diemToeicNghe">TOEIC Nghe</label>
+                            <input id="diemToeicNghe" type="number" step="5" min="0" max="495" placeholder="0 - 495"
+                                th:field="*{diemToeicNghe}">
+                        </div>
+                        <div class="field">
+                            <label for="diemToeicDoc">TOEIC Đọc</label>
+                            <input id="diemToeicDoc" type="number" step="5" min="0" max="495" placeholder="0 - 495"
+                                th:field="*{diemToeicDoc}">
+                        </div>
+                        <div class="field">
+                            <label for="diemToeicNoi">TOEIC Nói</label>
+                            <input id="diemToeicNoi" type="number" step="5" min="0" max="200" placeholder="0 - 200"
+                                th:field="*{diemToeicNoi}">
+                        </div>
+                        <div class="field">
+                            <label for="diemToeicViet">TOEIC Viết</label>
+                            <input id="diemToeicViet" type="number" step="5" min="0" max="200" placeholder="0 - 200"
+                                th:field="*{diemToeicViet}">
+                        </div>
+                    </div>
 
-                <div class="form-grid mb-3">
-                    <div th:if="${convertibleCodes.contains('VAT_LY')}">
-                        <label class="form-label" for="diemLy">Vật lý</label>
-                        <input id="diemLy" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemLy}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('HOA_HOC')}">
-                        <label class="form-label" for="diemHoa">Hóa học</label>
-                        <input id="diemHoa" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemHoa}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('SINH_HOC')}">
-                        <label class="form-label" for="diemSinh">Sinh học</label>
-                        <input id="diemSinh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemSinh}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('LICH_SU')}">
-                        <label class="form-label" for="diemSu">Lịch sử</label>
-                        <input id="diemSu" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemSu}">
-                    </div>
-                    <div th:if="${convertibleCodes.contains('DIA_LY')}">
-                        <label class="form-label" for="diemDia">Địa lý</label>
-                        <input id="diemDia" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemDia}">
-                    </div>
-                </div>
+                    <input id="diemChungChiAnh" type="hidden" th:field="*{diemChungChiAnh}">
 
-                <div class="form-grid mb-3">
-                    <div>
-                        <label class="form-label" for="monCongDiem">Môn cộng điểm</label>
-                        <select id="monCongDiem" class="form-select" th:field="*{monCongDiem}">
+                    <div class="subject-grid">
+                        <div class="field" th:if="${convertibleCodes.contains('TOAN')}">
+                            <label for="diemToan">Toán</label>
+                            <input id="diemToan" type="number" step="0.01" min="0" max="150" th:field="*{diemToan}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('NGU_VAN')}">
+                            <label for="diemVan">Ngữ văn</label>
+                            <input id="diemVan" type="number" step="0.01" min="0" max="150" th:field="*{diemVan}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('TIENG_ANH')}">
+                            <label for="diemAnh">Tiếng Anh</label>
+                            <input id="diemAnh" type="number" step="0.01" min="0" max="150" th:field="*{diemAnh}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('VAT_LY')}">
+                            <label for="diemLy">Vật lý</label>
+                            <input id="diemLy" type="number" step="0.01" min="0" max="150" th:field="*{diemLy}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('HOA_HOC')}">
+                            <label for="diemHoa">Hóa học</label>
+                            <input id="diemHoa" type="number" step="0.01" min="0" max="150" th:field="*{diemHoa}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('SINH_HOC')}">
+                            <label for="diemSinh">Sinh học</label>
+                            <input id="diemSinh" type="number" step="0.01" min="0" max="150" th:field="*{diemSinh}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('LICH_SU')}">
+                            <label for="diemSu">Lịch sử</label>
+                            <input id="diemSu" type="number" step="0.01" min="0" max="150" th:field="*{diemSu}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('DIA_LY')}">
+                            <label for="diemDia">Địa lý</label>
+                            <input id="diemDia" type="number" step="0.01" min="0" max="150" th:field="*{diemDia}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('KTPL')}">
+                            <label for="diemKtpl">Kinh tế pháp luật</label>
+                            <input id="diemKtpl" type="number" step="0.01" min="0" max="150" th:field="*{diemKtpl}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('TI')}">
+                            <label for="diemTi">Tin học</label>
+                            <input id="diemTi" type="number" step="0.01" min="0" max="150" th:field="*{diemTi}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('CNCN')}">
+                            <label for="diemCncn">Công nghệ công nghiệp</label>
+                            <input id="diemCncn" type="number" step="0.01" min="0" max="150" th:field="*{diemCncn}">
+                        </div>
+                        <div class="field" th:if="${convertibleCodes.contains('CNNN')}">
+                            <label for="diemCnnn">Công nghệ nông nghiệp</label>
+                            <input id="diemCnnn" type="number" step="0.01" min="0" max="150" th:field="*{diemCnnn}">
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label for="monCongDiem">Môn cộng điểm</label>
+                        <select id="monCongDiem" th:field="*{monCongDiem}">
                             <option th:each="item : ${bonusSubjectOptions}" th:value="${item.value}" th:text="${item.label}"></option>
                         </select>
                     </div>
+
+                    <div class="field">
+                        <label for="diemCong">Điểm cộng thêm</label>
+                        <input id="diemCong" type="number" step="0.01" min="0" max="3" th:field="*{diemCong}">
+                    </div>
+
+                    <div class="field-wide actions">
+                        <button class="btn" type="submit">Tra cứu kết quả</button>
+                        <a class="btn cta-link" th:href="@{/candidate}" href="/candidate"
+                            style="background: linear-gradient(135deg, #bc7b2b 0%, #8b5d1f 100%); box-shadow: 0 12px 22px rgba(188, 123, 43, 0.18);">
+                            Về cổng thí sinh
+                        </a>
+                    </div>
+                </form>
+            </section>
+
+            <section class="portal-card" th:if="${scoreResultResponse != null and scoreResultResponse.calculated}">
+                <div class="section-head">
                     <div>
-                        <label class="form-label" for="diemCong">Điểm cộng thêm</label>
-                        <input id="diemCong" class="form-control" type="number" step="0.01" min="0" max="3" th:field="*{diemCong}">
+                        <p class="section-kicker">Kết quả</p>
+                        <h2>Kết quả tra cứu điểm xét tuyển</h2>
                     </div>
-                    <div class="d-flex align-items-end">
-                        <button class="btn btn-warning fw-bold px-4 w-100" type="submit">Tra cứu kết quả</button>
-                    </div>
-                    <div class="d-flex align-items-end">
-                        <div class="small-muted">
-                            Với môn không sử dụng, vui lòng nhập <strong>0</strong>. Nếu chọn V-SAT, hệ thống sẽ quy đổi từng môn về thang 10 trước khi tính điểm xét tuyển.
-                        </div>
-                    </div>
+                    <span class="section-tag" th:text="${scoreResultResponse.loaiDiemLabel}"></span>
                 </div>
-            </form>
-        </div>
 
-        <div class="card card-glass text-white p-4" th:if="${scoreResultResponse != null and scoreResultResponse.calculated}">
-            <div class="section-title">
-                <h2>Kết quả tra cứu</h2>
-                <span class="badge-soft" th:text="${scoreResultResponse.message}"></span>
-            </div>
+                <div class="result-box">
+                    <span class="status status-ok" th:text="${scoreResultResponse.message}"></span>
+                </div>
 
-            <div class="summary-box p-3 rounded-4 mb-4">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="small-muted">Ngành</div>
-                        <div class="fw-bold" th:text="${scoreResultResponse.tenNganh}"></div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="summary-label">Ngành</div>
+                        <strong th:text="${scoreResultResponse.tenNganh}"></strong>
                     </div>
-                    <div class="col-md-3">
-                        <div class="small-muted">Loại điểm</div>
-                        <div class="fw-bold" th:text="${scoreResultResponse.loaiDiemLabel}"></div>
+                    <div class="summary-card">
+                        <div class="summary-label">Loại điểm</div>
+                        <strong th:text="${scoreResultResponse.loaiDiemLabel}"></strong>
                     </div>
-                    <div class="col-md-2">
-                        <div class="small-muted">Khu vực ưu tiên</div>
-                        <div class="fw-bold" th:text="${scoreCalculationRequest.khuVuc}"></div>
+                    <div class="summary-card">
+                        <div class="summary-label">Điểm ưu tiên</div>
+                        <strong th:text="${scoreResultResponse.diemUuTien}"></strong>
                     </div>
-                    <div class="col-md-2">
-                        <div class="small-muted">Đối tượng ưu tiên</div>
-                        <div class="fw-bold" th:text="${scoreCalculationRequest.doiTuong}"></div>
+                    <div class="summary-card">
+                        <div class="summary-label">Điểm cộng môn</div>
+                        <strong th:text="${scoreResultResponse.diemCongMon}"></strong>
                     </div>
-                    <div class="col-md-2">
-                        <div class="small-muted">Môn cộng điểm</div>
-                        <div class="fw-bold" th:text="${scoreResultResponse.monCongDiemLabel}"></div>
+                    <div class="summary-card">
+                        <div class="summary-label">Tổng điểm cộng</div>
+                        <strong th:text="${scoreResultResponse.tongDiemCong}"></strong>
                     </div>
                 </div>
 
-                <hr class="border-light opacity-25 my-3">
-
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="small-muted">Điểm ưu tiên</div>
-                        <div class="fs-4 fw-bold text-warning" th:text="${scoreResultResponse.diemUuTien}"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="small-muted">Điểm cộng môn</div>
-                        <div class="fs-4 fw-bold text-warning" th:text="${scoreResultResponse.diemCongMon}"></div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="small-muted">Tổng điểm cộng</div>
-                        <div class="fs-4 fw-bold text-warning" th:text="${scoreResultResponse.tongDiemCong}"></div>
-                    </div>
+                <div class="notice-box notice-warn" th:if="${scoreResultResponse.warnings != null and !scoreResultResponse.warnings.isEmpty()}">
+                    <strong>Lưu ý khi quy đổi</strong>
+                    <ul style="margin: 10px 0 0; padding-left: 18px;">
+                        <li th:each="warning : ${scoreResultResponse.warnings}" th:text="${warning}"></li>
+                    </ul>
                 </div>
-            </div>
 
-            <div class="alert alert-warning border-0" th:if="${scoreResultResponse.warnings != null and !scoreResultResponse.warnings.isEmpty()}">
-                <div class="fw-bold mb-1">Lưu ý khi quy đổi</div>
-                <ul class="mb-0 ps-3">
-                    <li th:each="warning : ${scoreResultResponse.warnings}" th:text="${warning}"></li>
-                </ul>
-            </div>
+                <div class="notice-box notice-info" th:if="${scoreResultResponse.combinationResults == null or scoreResultResponse.combinationResults.isEmpty()}">
+                    Chưa có tổ hợp đủ dữ liệu để hiển thị kết quả tính điểm.
+                </div>
 
-            <div class="alert alert-info border-0" th:if="${scoreResultResponse.combinationResults == null or scoreResultResponse.combinationResults.isEmpty()}">
-                Chưa có tổ hợp đủ dữ liệu để hiển thị kết quả tính điểm.
-            </div>
-
-            <div class="table-responsive" th:if="${scoreResultResponse.combinationResults != null and !scoreResultResponse.combinationResults.isEmpty()}">
-                <table class="table table-dark table-striped align-middle">
-                    <thead>
-                        <tr>
-                            <th>Tổ hợp</th>
-                            <th>Chi tiết công thức quy đổi</th>
-                            <th>Tổng điểm 3 môn</th>
-                            <th>Điểm xét ngưỡng</th>
-                            <th>Điểm tổ hợp xét tuyển</th>
-                            <th>Độ lệch tổ hợp gốc</th>
-                            <th>Điểm xét tuyển cuối cùng</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="row : ${scoreResultResponse.combinationResults}">
-                            <td>
-                                <div class="fw-bold" th:text="${row.maToHop}"></div>
-                                <div class="text-info small" th:text="${row.tenToHop}"></div>
-                            </td>
-                            <td class="formula-cell" th:text="${row.chuoiCongThucChiTiet}"></td>
-                            <td><span class="metric-badge" th:text="${row.diemQuyDoiToHop}"></span></td>
-                            <td>
-                                <span class="metric-badge bg-warning text-dark" th:text="${row.diemXetNguong}"></span>
-                                <div class="small mt-1" th:text="${row.datNguong ? 'Đạt ngưỡng' : 'Chưa đạt ngưỡng'}"></div>
-                            </td>
-                            <td><span class="metric-badge bg-info text-dark" th:text="${row.diemToHopXetTuyen}"></span></td>
-                            <td><span class="metric-badge bg-secondary" th:text="${row.doLechToHopGoc}"></span></td>
-                            <td>
-                                <span class="metric-badge bg-danger" th:text="${row.diemXetTuyenCuoiCung}"></span>
-                                <div class="small mt-1" th:text="${row.datDiemXetTuyen ? 'Đạt xét tuyển' : 'Chưa đạt xét tuyển'}"></div>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                <div class="table-wrap"
+                    th:if="${scoreResultResponse.combinationResults != null and !scoreResultResponse.combinationResults.isEmpty()}">
+                    <table class="result-table">
+                        <thead>
+                            <tr>
+                                <th>Tổ hợp</th>
+                                <th>Chi tiết công thức quy đổi</th>
+                                <th>Tổng điểm 3 môn</th>
+                                <th>Điểm xét ngưỡng</th>
+                                <th>Điểm tổ hợp xét tuyển</th>
+                                <th>Độ lệch tổ hợp gốc</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row : ${scoreResultResponse.combinationResults}">
+                                <td>
+                                    <strong th:text="${row.maToHop}"></strong>
+                                    <div class="result-status" th:text="${row.tenToHop}"></div>
+                                </td>
+                                <td class="formula-cell" th:text="${row.chuoiCongThucChiTiet}"></td>
+                                <td>
+                                    <span class="metric-chip metric-chip-primary" th:text="${row.diemQuyDoiToHop}"></span>
+                                </td>
+                                <td>
+                                    <span class="metric-chip metric-chip-warning" th:text="${row.diemXetNguong}"></span>
+                                    <div class="result-status"
+                                        th:text="${row.datNguong} ? 'Đạt ngưỡng sàn' : 'Chưa đạt ngưỡng sàn'"></div>
+                                </td>
+                                <td>
+                                    <span class="metric-chip metric-chip-primary" th:text="${row.diemToHopXetTuyen}"></span>
+                                </td>
+                                <td>
+                                    <span class="metric-chip metric-chip-muted" th:text="${row.doLechToHopGoc}"></span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
     </div>
 
     <script>
-        const certificateScores = {
-            IELTS: { min: 0, max: 9, step: 0.5 },
-            TOEFL_ITP: { min: 310, max: 677, step: 1 },
-            TOEFL_IBT: { min: 0, max: 120, step: 1 },
-            TOEIC_NGHE: { min: 0, max: 495, step: 5 },
-            TOEIC_DOC: { min: 0, max: 495, step: 5 },
-            TOEIC_NOI: { min: 0, max: 200, step: 5 },
-            TOEIC_VIET: { min: 0, max: 200, step: 5 },
-            PTE_ACADEMIC: { min: 10, max: 90, step: 1 },
-            LINGUASKILL: { min: 0, max: 200, step: 1 },
-            VSTEP: { min: 3, max: 5, step: 1 }
-        };
-
         function updateCertificateFields() {
             const certificateType = document.getElementById('loaiChungChiAnh').value;
+            const sections = [
+                'ielts-section',
+                'toefl-itp-section',
+                'toefl-ibt-section',
+                'toeic-section',
+                'pte-section',
+                'linguaskill-section',
+                'aptis-section',
+                'vstep-section'
+            ];
 
-            document.getElementById('ielts-section').style.display = 'none';
-            document.getElementById('toefl-itp-section').style.display = 'none';
-            document.getElementById('toefl-ibt-section').style.display = 'none';
-            document.getElementById('toeic-section').style.display = 'none';
-            document.getElementById('pte-section').style.display = 'none';
-            document.getElementById('linguaskill-section').style.display = 'none';
-            document.getElementById('aptis-section').style.display = 'none';
-            document.getElementById('vstep-section').style.display = 'none';
+            sections.forEach(id => {
+                document.getElementById(id).style.display = 'none';
+            });
 
-            switch (certificateType) {
-                case 'IELTS':
-                    document.getElementById('ielts-section').style.display = 'grid';
-                    break;
-                case 'TOEFL_ITP':
-                    document.getElementById('toefl-itp-section').style.display = 'grid';
-                    break;
-                case 'TOEFL_IBT':
-                    document.getElementById('toefl-ibt-section').style.display = 'grid';
-                    break;
-                case 'TOEIC':
-                    document.getElementById('toeic-section').style.display = 'grid';
-                    break;
-                case 'PTE_ACADEMIC':
-                    document.getElementById('pte-section').style.display = 'grid';
-                    break;
-                case 'LINGUASKILL':
-                    document.getElementById('linguaskill-section').style.display = 'grid';
-                    break;
-                case 'APTIS_ESOL_GENERAL':
-                case 'APTIS_ESOL_ADVANCED':
-                    document.getElementById('aptis-section').style.display = 'grid';
-                    break;
-                case 'VSTEP':
-                    document.getElementById('vstep-section').style.display = 'grid';
-                    break;
+            if (certificateType === 'IELTS') {
+                document.getElementById('ielts-section').style.display = 'block';
+            } else if (certificateType === 'TOEFL_ITP') {
+                document.getElementById('toefl-itp-section').style.display = 'block';
+            } else if (certificateType === 'TOEFL_IBT') {
+                document.getElementById('toefl-ibt-section').style.display = 'block';
+            } else if (certificateType === 'TOEIC') {
+                document.getElementById('toeic-section').style.display = 'grid';
+            } else if (certificateType === 'PTE_ACADEMIC') {
+                document.getElementById('pte-section').style.display = 'block';
+            } else if (certificateType === 'LINGUASKILL') {
+                document.getElementById('linguaskill-section').style.display = 'block';
+            } else if (certificateType === 'APTIS_ESOL_GENERAL' || certificateType === 'APTIS_ESOL_ADVANCED') {
+                document.getElementById('aptis-section').style.display = 'block';
+            } else if (certificateType === 'VSTEP') {
+                document.getElementById('vstep-section').style.display = 'block';
             }
         }
 
-        function validateScore(inputElement, maxScore) {
-            let value = parseFloat(inputElement.value);
-            if (isNaN(value)) {
-                inputElement.value = '';
-                return;
-            }
-            if (value > maxScore) {
-                inputElement.value = maxScore;
-            }
-            if (value < 0) {
-                inputElement.value = 0;
-            }
+        function syncCertificateScore(inputElement) {
+            const hiddenField = document.getElementById('diemChungChiAnh');
+            hiddenField.value = inputElement.value || '';
         }
 
         function updateAptisLevel() {
-            const aptisLevel = document.getElementById('aptisLevel').value;
-            const hiddenField = document.getElementById('diemChungChiAnh');
-            const certificateType = document.getElementById('loaiChungChiAnh').value;
-
-            if (aptisLevel) {
-                hiddenField.value = aptisLevel;
-                const kyNangField = document.createElement('input');
-                kyNangField.type = 'hidden';
-                kyNangField.id = 'kyNangToeicAptis';
-                kyNangField.value = certificateType;
-            }
+            const selected = document.getElementById('aptisLevel').value;
+            document.getElementById('diemChungChiAnh').value = selected;
         }
 
         function updateVstepLevel() {
-            const vstepLevel = document.getElementById('diemVstep').value;
-            const hiddenField = document.getElementById('diemChungChiAnh');
-
-            if (vstepLevel) {
-                hiddenField.value = vstepLevel;
-            }
+            const selected = document.getElementById('diemVstep').value;
+            document.getElementById('diemChungChiAnh').value = selected;
         }
 
-        document.addEventListener('DOMContentLoaded', function () {
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function (e) {
-                    const certificateType = document.getElementById('loaiChungChiAnh').value;
-                    const hiddenDiemField = document.getElementById('diemChungChiAnh');
-
-                    if (certificateType === 'TOEIC') {
-                        const nghe = parseFloat(document.getElementById('diemToeicNghe').value) || 0;
-                        const doc = parseFloat(document.getElementById('diemToeicDoc').value) || 0;
-                        const noi = parseFloat(document.getElementById('diemToeicNoi').value) || 0;
-                        const viet = parseFloat(document.getElementById('diemToeicViet').value) || 0;
-
-                        if (nghe === 0 && doc === 0 && noi === 0 && viet === 0) {
-                            hiddenDiemField.value = '';
-                        } else {
-                            hiddenDiemField.value = JSON.stringify({
-                                nghe: nghe,
-                                doc: doc,
-                                noi: noi,
-                                viet: viet
-                            });
-                        }
-                    } else if (certificateType === 'IELTS') {
-                        hiddenDiemField.value = document.getElementById('diemIelts').value || '';
-                    } else if (certificateType === 'TOEFL_ITP') {
-                        hiddenDiemField.value = document.getElementById('diemToeflItp').value || '';
-                    } else if (certificateType === 'TOEFL_IBT') {
-                        hiddenDiemField.value = document.getElementById('diemToeflIbt').value || '';
-                    } else if (certificateType === 'PTE_ACADEMIC') {
-                        hiddenDiemField.value = document.getElementById('diemPte').value || '';
-                    } else if (certificateType === 'LINGUASKILL') {
-                        hiddenDiemField.value = document.getElementById('diemLinguaskill').value || '';
-                    } else if (certificateType === 'APTIS_ESOL_GENERAL' || certificateType === 'APTIS_ESOL_ADVANCED') {
-                        const aptisLevel = document.getElementById('aptisLevel').value;
-                        if (!aptisLevel) {
-                            alert('Vui lòng chọn mức chứng chỉ Aptis.');
-                            e.preventDefault();
-                            return false;
-                        }
-                        hiddenDiemField.value = aptisLevel;
-                    } else if (certificateType === 'VSTEP') {
-                        const vstepLevel = document.getElementById('diemVstep').value;
-                        if (!vstepLevel) {
-                            alert('Vui lòng chọn bậc chứng chỉ VSTEP.');
-                            e.preventDefault();
-                            return false;
-                        }
-                        hiddenDiemField.value = vstepLevel;
-                    }
-                });
-            }
-
-            updateCertificateFields();
-        });
+        updateCertificateFields();
     </script>
 </body>
 

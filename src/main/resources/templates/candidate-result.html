@@ -1,25 +1,129 @@
-<h2>Kết quả xét tuyển</h2>
-<p>Thí sinh: <span th:text="${lookupResult.fullName}"></span> - <span th:text="${lookupResult.cccd}"></span></p>
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
 
-<table class="table table-bordered mt-3">
-    <thead>
-        <tr>
-            <th>Thứ tự NV</th>
-            <th>Ngành</th>
-            <th>Điểm</th>
-            <th>Tổ hợp</th>
-            <th>Phương thức</th>
-            <th>Kết quả</th>
-        </tr>
-    </thead>
-    <tbody>
-        <tr th:each="asp : ${lookupResult.aspirationResults}">
-            <td th:text="${asp.nvThuTu}">1</td>
-            <td th:text="${asp.majorName}">Ngành</td>
-            <td th:text="${asp.score}">Điểm</td>
-            <td th:text="${asp.combination}">Tổ hợp</td>
-            <td th:text="${asp.method}">Phương thức</td>
-            <td th:text="${asp.resultNote}">Kết quả</td>
-        </tr>
-    </tbody>
-</table>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kết quả xét tuyển</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" th:href="@{/css/candidate-portal.css}" href="/css/candidate-portal.css">
+</head>
+
+<body>
+    <div class="page-shell">
+        <header class="hero-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">Admissions Management</p>
+                <h1>Kết quả xét tuyển của thí sinh</h1>
+                <p class="hero-text">
+                    Theo dõi trạng thái trúng tuyển, ngành đã đạt, điểm xét tuyển và toàn bộ danh sách nguyện vọng đã được hệ thống xử lý.
+                </p>
+                <div class="hero-badges">
+                    <span th:if="${lookupResult != null and lookupResult.found}" th:text="${lookupResult.cccd}"></span>
+                    <span th:if="${lookupResult != null and lookupResult.found}"
+                        th:text="${lookupResult.admitted} ? 'Trúng tuyển' : 'Chưa trúng tuyển'"></span>
+                    <span th:if="${lookupResult == null or !lookupResult.found}">Không tìm thấy hồ sơ phù hợp</span>
+                </div>
+            </div>
+
+            <aside class="hero-aside">
+                <div class="aside-card">
+                    <span class="aside-label">Tổng quan</span>
+                    <strong th:text="${lookupResult != null and lookupResult.found ? lookupResult.fullName : 'Kết quả tra cứu thí sinh'}"></strong>
+                    <ol th:if="${lookupResult != null and lookupResult.found}">
+                        <li>CCCD: <span th:text="${lookupResult.cccd}"></span></li>
+                        <li>Trạng thái: <span th:text="${lookupResult.admitted} ? 'Trúng tuyển' : 'Chưa trúng tuyển'"></span></li>
+                        <li th:if="${lookupResult.admitted}">Ngành trúng tuyển: <span th:text="${lookupResult.majorName}"></span></li>
+                    </ol>
+                    <ol th:if="${lookupResult == null or !lookupResult.found}">
+                        <li>Vui lòng kiểm tra lại CCCD và ngày sinh.</li>
+                        <li>Đảm bảo nhập ngày sinh theo định dạng <strong>ddMMyyyy</strong>.</li>
+                    </ol>
+                </div>
+            </aside>
+        </header>
+
+        <main class="content-grid">
+            <section class="portal-card accent-card">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Kết quả</p>
+                        <h2>Thông tin xét tuyển</h2>
+                    </div>
+                    <span class="section-tag">Chi tiết hồ sơ</span>
+                </div>
+
+                <div class="result-box" th:if="${lookupResult != null}">
+                    <span class="status"
+                        th:classappend="${lookupResult.found} ? (${lookupResult.admitted} ? ' status-ok' : ' status-warn') : ' status-danger'"
+                        th:text="${lookupResult.message}"></span>
+
+                    <div th:if="${lookupResult.found}">
+                        <p class="meta"><strong>Thí sinh:</strong> <span th:text="${lookupResult.fullName}"></span></p>
+                        <p class="meta"><strong>CCCD:</strong> <span th:text="${lookupResult.cccd}"></span></p>
+                        <p class="meta"><strong>Trạng thái:</strong> <span
+                                th:text="${lookupResult.admitted} ? 'Trúng tuyển' : 'Chưa trúng tuyển'"></span></p>
+                    </div>
+
+                    <div th:if="${lookupResult.found and lookupResult.admitted}">
+                        <p class="meta"><strong>Ngành trúng tuyển:</strong> <span th:text="${lookupResult.majorName}"></span></p>
+                        <p class="meta"><strong>Điểm xét tuyển:</strong> <span th:text="${lookupResult.score}"></span></p>
+                        <p class="meta"><strong>Tổ hợp:</strong> <span th:text="${lookupResult.combination}"></span></p>
+                        <p class="meta"><strong>Phương thức:</strong> <span th:text="${lookupResult.method}"></span></p>
+                    </div>
+
+                    <div class="actions" style="margin-top: 14px;">
+                        <a class="btn cta-link" th:href="@{/candidate/login}" href="/candidate/login">Tra cứu lại</a>
+                        <a class="btn cta-link" th:href="@{/candidate}" href="/candidate"
+                            style="background: linear-gradient(135deg, #bc7b2b 0%, #8b5d1f 100%); box-shadow: 0 12px 22px rgba(188, 123, 43, 0.18);">
+                            Về cổng thí sinh
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <section class="portal-card" th:if="${lookupResult != null and lookupResult.aspirationResults != null and !lookupResult.aspirationResults.isEmpty()}">
+                <div class="section-head">
+                    <div>
+                        <p class="section-kicker">Nguyện vọng</p>
+                        <h2>Danh sách nguyện vọng đã xét</h2>
+                    </div>
+                    <span class="section-tag" th:text="${#lists.size(lookupResult.aspirationResults)} + ' nguyện vọng'"></span>
+                </div>
+
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>NV</th>
+                                <th>Mã ngành</th>
+                                <th>Tên ngành</th>
+                                <th>Điểm xét tuyển</th>
+                                <th>Tổ hợp</th>
+                                <th>Phương thức</th>
+                                <th>Kết quả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="row : ${lookupResult.aspirationResults}">
+                                <td th:text="${row.nvThuTu}"></td>
+                                <td th:text="${row.majorCode}"></td>
+                                <td th:text="${row.majorName}"></td>
+                                <td th:text="${row.score}"></td>
+                                <td th:text="${row.combination}"></td>
+                                <td th:text="${row.method}"></td>
+                                <td th:text="${row.resultNote}"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </main>
+    </div>
+</body>
+
+</html>

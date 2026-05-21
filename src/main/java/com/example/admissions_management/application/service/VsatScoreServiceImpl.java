@@ -161,6 +161,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             double diemCongMon = appliedBonusForCombination(bonusSubject, bonusScore, combination);
             double diemXetNguong = round2(tongDiem3Mon + priorityScore);
             double diemXetTuyenCuoiCung = round2(diemToHopXetTuyen + priorityScore + diemCongMon - doLechToHopGoc);
+            double diemNguongSan = major.regularThreshold() == null ? 0.0d : major.regularThreshold().doubleValue();
 
             CombinationResult result = new CombinationResult();
             result.setMaToHop(combination.code());
@@ -176,7 +177,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             result.setDiemXetTuyenCuoiCung(diemXetTuyenCuoiCung);
             result.setDiemUuTien(priorityScore);
             result.setDiemCongMon(diemCongMon);
-            result.setDatNguong(diemXetNguong >= (major.regularThreshold() == null ? 0.0d : major.regularThreshold().doubleValue()));
+            result.setDatNguong(Double.compare(diemXetNguong, diemNguongSan) >= 0);
             result.setDatDiemXetTuyen(major.regularAdmission() != null && diemXetTuyenCuoiCung >= major.regularAdmission().doubleValue());
             combinationResults.add(result);
         }

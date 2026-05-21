@@ -330,6 +330,26 @@ form {
     grid-column: span 3;
 }
 
+.cta-panel {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.6fr);
+    gap: 18px;
+    align-items: center;
+    padding: 20px 22px;
+    border: 1px solid var(--line);
+    border-radius: 22px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 248, 245, 0.96) 100%);
+}
+
+.cta-copy .section-desc {
+    margin-bottom: 8px;
+}
+
+.cta-actions {
+    display: flex;
+    justify-content: flex-end;
+}
+
 .btn {
     min-height: 52px;
     padding: 14px 22px;
@@ -342,6 +362,13 @@ form {
     letter-spacing: 0.01em;
     cursor: pointer;
     transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.cta-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
 }
 
 .btn:hover {
@@ -474,6 +501,14 @@ tbody tr:hover {
     .hero-aside {
         width: 100%;
     }
+
+    .cta-panel {
+        grid-template-columns: 1fr;
+    }
+
+    .cta-actions {
+        justify-content: flex-start;
+    }
 }
 
 @media (max-width: 860px) {
@@ -514,7 +549,8 @@ tbody tr:hover {
         align-items: stretch;
     }
 
-    .btn {
+    .btn,
+    .cta-link {
         width: 100%;
     }
 }
