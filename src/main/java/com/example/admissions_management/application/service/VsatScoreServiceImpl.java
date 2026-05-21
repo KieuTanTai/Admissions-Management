@@ -249,6 +249,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", convertSubject("SINH_HOC", request.getDiemSinh(), isVsat, warnings));
         map.put("LICH_SU", convertSubject("LICH_SU", request.getDiemSu(), isVsat, warnings));
         map.put("DIA_LY", convertSubject("DIA_LY", request.getDiemDia(), isVsat, warnings));
+        map.put("KTPL", convertSubject("KTPL", request.getDiemKtpl(), isVsat, warnings));
+        map.put("TI", convertSubject("TI", request.getDiemTi(), isVsat, warnings));
+        map.put("CNCN", convertSubject("CNCN", request.getDiemCncn(), isVsat, warnings));
+        map.put("CNNN", convertSubject("CNNN", request.getDiemCnnn(), isVsat, warnings));
         return map;
     }
 
@@ -692,6 +696,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", genericIntervals());
         map.put("LICH_SU", genericIntervals());
         map.put("DIA_LY", genericIntervals());
+        map.put("KTPL", genericIntervals());
+        map.put("TI", genericIntervals());
+        map.put("CNCN", genericIntervals());
+        map.put("CNNN", genericIntervals());
         return map;
     }
 
@@ -743,6 +751,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", "Sinh học");
         map.put("LICH_SU", "Lịch sử");
         map.put("DIA_LY", "Địa lí");
+        map.put("KTPL", "Kinh te va phap luat");
+        map.put("TI", "Tin hoc");
+        map.put("CNCN", "Cong nghe cong nghiep");
+        map.put("CNNN", "Cong nghe nong nghiep");
         return map;
     }
 
@@ -829,14 +841,13 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private String normalizeSubjectCode(String subjectCode) {
         String value = normalize(subjectCode);
         return switch (value) {
-            case "N1" -> "NGU_VAN";
+            case "N1", "N1_THI", "N1_CC" -> "TIENG_ANH";
             case "TO" -> "TOAN";
             case "LI" -> "VAT_LY";
             case "HO" -> "HOA_HOC";
             case "SI" -> "SINH_HOC";
             case "SU" -> "LICH_SU";
             case "DI" -> "DIA_LY";
-            case "TI" -> "TIENG_ANH";
             case "VA", "VAN" -> "NGU_VAN";
             default -> value;
         };
@@ -871,3 +882,4 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private record SubjectConversion(String subjectCode, boolean provided, double rawScore, double convertedScore, String formulaText) {
     }
 }
+

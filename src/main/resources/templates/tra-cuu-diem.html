@@ -247,6 +247,22 @@
                         <label class="form-label" for="diemAnh">Tiếng Anh</label>
                         <input id="diemAnh" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemAnh}">
                     </div>
+                    <div th:if="${convertibleCodes.contains('KTPL')}">
+                        <label class="form-label" for="diemKtpl">Kinh tế pháp luật</label>
+                        <input id="diemKtpl" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemKtpl}">
+                    </div>
+                    <div th:if="${convertibleCodes.contains('TI')}">
+                        <label class="form-label" for="diemTi">Tin học</label>
+                        <input id="diemTi" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemTi}">
+                    </div>
+                    <div th:if="${convertibleCodes.contains('CNCN')}">
+                        <label class="form-label" for="diemCncn">Công nghệ công nghiệp</label>
+                        <input id="diemCncn" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemCncn}">
+                    </div>
+                    <div th:if="${convertibleCodes.contains('CNNN')}">
+                        <label class="form-label" for="diemCnnn">Công nghệ nông nghiệp</label>
+                        <input id="diemCnnn" class="form-control" type="number" step="0.01" min="0" max="150" th:field="*{diemCnnn}">
+                    </div>
                 </div>
 
                 <div class="form-grid mb-3">
