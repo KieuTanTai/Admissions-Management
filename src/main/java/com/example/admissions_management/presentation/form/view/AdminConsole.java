@@ -796,4 +796,3 @@ public class AdminConsole extends JFrame {
         DANGER
     }
 }
-

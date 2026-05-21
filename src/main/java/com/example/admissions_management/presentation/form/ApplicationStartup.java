@@ -5,6 +5,7 @@ import com.example.admissions_management.presentation.form.view.AdminConsole;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import javax.swing.SwingUtilities;
@@ -17,18 +18,25 @@ public class ApplicationStartup {
 
     private final ObjectProvider<AdminConsole> adminConsoleProvider;
     private final ApplicationConfig applicationConfig;
+    private final Environment environment;
 
     public ApplicationStartup(ObjectProvider<AdminConsole> adminConsoleProvider,
-            ApplicationConfig applicationConfig) {
+            ApplicationConfig applicationConfig,
+            Environment environment) {
         this.adminConsoleProvider = adminConsoleProvider;
         this.applicationConfig = applicationConfig;
+        this.environment = environment;
     }
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady() {
         logger.info("================================");
         logger.info("Spring Boot application da khoi dong thanh cong!");
-        logger.info("Web Server: http://localhost:8080/admissions");
+        String port = environment.getProperty("local.server.port");
+        if (port == null || port.isBlank()) {
+            port = environment.getProperty("server.port", "8081");
+        }
+        logger.info("Web Server: http://localhost:" + port + "/admissions");
         logger.info("================================");
 
         if (!applicationConfig.getSwing().isEnabled()) {

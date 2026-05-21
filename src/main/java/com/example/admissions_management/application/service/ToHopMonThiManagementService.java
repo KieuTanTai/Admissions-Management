@@ -190,6 +190,7 @@ public class ToHopMonThiManagementService {
         return -1;
     }
 
+
     private XtToHopMonThiEntity parseRow(Row row, Map<String, Integer> headerIndex, DataFormatter formatter) {
         String rawMaToHop = getValue(row, headerIndex, formatter,
                 "matohop",
@@ -206,6 +207,7 @@ public class ToHopMonThiManagementService {
                 "tb_keys"
         );
 
+        // Chuẩn hóa mã tổ hợp
         String maToHop = defaultIfBlank(extractToHopCode(rawMaToHop), extractToHopCode(rawTenToHop));
         if (isBlank(maToHop)) {
             return null;
@@ -232,7 +234,17 @@ public class ToHopMonThiManagementService {
         entity.setMon1(safe(mons[0], 10));
         entity.setMon2(safe(mons[1], 10));
         entity.setMon3(safe(mons[2], 10));
-        entity.setTenToHop(safe(defaultIfBlank(rawTenToHop, buildTenToHop(mons[0], mons[1], mons[2])), 100));
+
+        // --- TỰ ĐỘNG ĐIỀN TÊN TỔ HỢP ---
+        // Optional<XtToHopMonThiEntity> dbEntity = repository.findByMaToHop(maToHop.trim().toUpperCase());
+        // if (dbEntity.isPresent()) {
+        //     entity.setTenToHop(dbEntity.get().getTenToHop());
+        // } else {
+        //     // Fallback: tạo tên từ 3 môn
+            entity.setTenToHop(buildTenToHop(mons[0], mons[1], mons[2]));
+        // }
+        // ----------------------------------
+
         return entity;
     }
 
@@ -390,9 +402,9 @@ public class ToHopMonThiManagementService {
             case "NK4" -> "Trang trí";
             case "NK5" -> "Hát - Nhạc cụ";
             case "NK6" -> "Xướng âm - Thẩm âm, Tiết tấu";
-            case "KTPL" -> "KTPL";
-            case "CNCN" -> "CNCN";
-            case "CNNN" -> "CNNN";
+            case "KTPL" -> "Kinh tế pháp luật";
+            case "CNCN" -> "Công nghệ công nghiệp";
+            case "CNNN" -> "Công nghệ nông nghiệp";
             default -> code;
         };
     }
