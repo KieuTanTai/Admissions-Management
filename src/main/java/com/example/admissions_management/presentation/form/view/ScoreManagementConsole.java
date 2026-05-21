@@ -331,6 +331,8 @@ public class ScoreManagementConsole extends JFrame {
         }
     }
 
+    
+
     private void backToAdmin() {
         AdminConsole adminConsole = adminConsoleProvider.getObject();
         adminConsole.setVisible(true);

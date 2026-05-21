@@ -63,4 +63,8 @@ public class ScoreManagementConsoleController {
     public ScoreManagementService.ImportResult importExcel(java.io.File file) {
         return scoreManagementService.importExcel(file);
     }
+
+    public byte[] exportExcel(String methodType) throws Exception {
+        return scoreManagementService.exportEquivalentScores(loadByType(methodType));
+    }
 }

@@ -3,15 +3,22 @@ package com.example.admissions_management.application.service;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtDiemThiXetTuyenEntity;
 import com.example.admissions_management.infrastructure.persistence.repository.SpringDataXtDiemThiXetTuyenRepository;
 import com.example.admissions_management.presentation.web.model.ScoreManagementForm;
+import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.FillPatternType;
+import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.DataFormatter;
+import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.ss.usermodel.WorkbookFactory;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -112,6 +119,56 @@ public class ScoreManagementService {
             return importWorkbook(workbook);
         } catch (IOException exception) {
             return new ImportResult(0, 0, 0, "Khong the doc file Excel: " + exception.getMessage());
+        }
+    }
+
+    public byte[] exportEquivalentScores(List<XtDiemThiXetTuyenEntity> rows) throws Exception {
+        try (Workbook workbook = new XSSFWorkbook(); ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
+            List<XtDiemThiXetTuyenEntity> exportRows = rows == null ? List.of() : rows;
+            Sheet sheet = workbook.createSheet("BangDiemQuyDoi");
+            CellStyle headerStyle = createHeaderStyle(workbook);
+            CellStyle textStyle = createTextStyle(workbook);
+            CellStyle numberStyle = createNumberStyle(workbook);
+
+            String[] headers = {
+                    "CCCD",
+                    "THPT_COMBINATION",
+                    "THPT_EQ",
+                    "VSAT_EQ",
+                    "DGNL_EQ",
+                    "BEST_METHOD",
+                    "BEST_SCORE"
+            };
+
+            Row headerRow = sheet.createRow(0);
+            for (int i = 0; i < headers.length; i++) {
+                Cell cell = headerRow.createCell(i);
+                cell.setCellValue(headers[i]);
+                cell.setCellStyle(headerStyle);
+            }
+
+            int rowIndex = 1;
+            for (XtDiemThiXetTuyenEntity source : exportRows) {
+                XtDiemThiXetTuyenEntity snapshot = snapshotForExport(source);
+                Row row = sheet.createRow(rowIndex++);
+
+                writeTextCell(row, 0, snapshot.getCccd(), textStyle);
+                writeTextCell(row, 1, resolveThptCombination(snapshot.getdPhuongThuc()), textStyle);
+                writeNumberCell(row, 2, snapshot.getThptEquivalentScore(), numberStyle);
+                writeNumberCell(row, 3, snapshot.getVsatEquivalentScore(), numberStyle);
+                writeNumberCell(row, 4, snapshot.getDgnlEquivalentScore(), numberStyle);
+                writeTextCell(row, 5, snapshot.getBestEquivalentMethod(), textStyle);
+                writeNumberCell(row, 6, snapshot.getBestEquivalentScore(), numberStyle);
+            }
+
+            for (int i = 0; i < headers.length; i++) {
+                sheet.autoSizeColumn(i);
+                int currentWidth = sheet.getColumnWidth(i);
+                sheet.setColumnWidth(i, Math.min(currentWidth + 1024, 18_000));
+            }
+
+            workbook.write(bos);
+            return bos.toByteArray();
         }
     }
 
@@ -751,6 +808,90 @@ entity.setTo(zeroIfNull(to));
 
     private String safeTrim(String value) {
         return value == null ? "" : value.trim();
+    }
+
+    private XtDiemThiXetTuyenEntity snapshotForExport(XtDiemThiXetTuyenEntity source) {
+        XtDiemThiXetTuyenEntity snapshot = new XtDiemThiXetTuyenEntity();
+        snapshot.setCccd(source.getCccd());
+        snapshot.setdPhuongThuc(source.getdPhuongThuc());
+        snapshot.setTo(source.getTo());
+        snapshot.setLi(source.getLi());
+        snapshot.setHo(source.getHo());
+        snapshot.setSi(source.getSi());
+        snapshot.setSu(source.getSu());
+        snapshot.setDi(source.getDi());
+        snapshot.setVa(source.getVa());
+        snapshot.setN1Thi(source.getN1Thi());
+        snapshot.setN1Cc(source.getN1Cc());
+        snapshot.setCncn(source.getCncn());
+        snapshot.setCnnn(source.getCnnn());
+        snapshot.setTi(source.getTi());
+        snapshot.setKtpl(source.getKtpl());
+        snapshot.setNl1(source.getNl1());
+        snapshot.setNk1(source.getNk1());
+        snapshot.setNk2(source.getNk2());
+        scoreEquivalenceService.refreshEquivalence(snapshot);
+        return snapshot;
+    }
+
+    private String resolveThptCombination(String dPhuongThuc) {
+        String value = safeTrim(dPhuongThuc).toUpperCase(Locale.ROOT);
+        if (!value.startsWith("THPT")) {
+            return "";
+        }
+
+        int separatorIndex = value.indexOf('_');
+        if (separatorIndex >= 0 && separatorIndex + 1 < value.length()) {
+            return value.substring(separatorIndex + 1);
+        }
+
+        return value.equals("THPT") ? "" : value.replace("THPT", "").replace("_", "").trim();
+    }
+
+    private CellStyle createHeaderStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        Font font = workbook.createFont();
+        font.setBold(true);
+        style.setFont(font);
+        style.setAlignment(HorizontalAlignment.CENTER);
+        style.setFillForegroundColor((short) 42);
+        style.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
+    private CellStyle createTextStyle(Workbook workbook) {
+        CellStyle style = workbook.createCellStyle();
+        style.setBorderBottom(BorderStyle.THIN);
+        style.setBorderTop(BorderStyle.THIN);
+        style.setBorderLeft(BorderStyle.THIN);
+        style.setBorderRight(BorderStyle.THIN);
+        return style;
+    }
+
+    private CellStyle createNumberStyle(Workbook workbook) {
+        CellStyle style = createTextStyle(workbook);
+        style.setDataFormat(workbook.createDataFormat().getFormat("0.00"));
+        return style;
+    }
+
+    private void writeTextCell(Row row, int column, String value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        cell.setCellValue(safeTrim(value));
+        cell.setCellStyle(style);
+    }
+
+    private void writeNumberCell(Row row, int column, BigDecimal value, CellStyle style) {
+        Cell cell = row.createCell(column);
+        if (value != null) {
+            cell.setCellValue(value.doubleValue());
+        } else {
+            cell.setBlank();
+        }
+        cell.setCellStyle(style);
     }
 
     public ScoreMethodType inferType(String dPhuongThuc) {

@@ -191,7 +191,6 @@ public class AdminConsole extends JFrame {
                 createLauncherButton("Quản lý ngành", this::openMajorManagementForm),
                 createLauncherButton("Quản lý tổ hợp môn", this::openToHopManagementForm),
                 createLauncherButton("Bảng quy đổi", this::openBangQuyDoiForm),
-            createLauncherButton("Bảng Điểm Quy đổi", this::openScoreManagementForm),
                 createLauncherButton("Tổ hợp", this::openCombinationManager),
                 createLauncherButton("Điểm cộng", this::openDiemCongForm),
                 createLauncherButton("Nguyện vọng", this::openNguyenVongForm),
