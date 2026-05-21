@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
+
 @Service
 public class VsatScoreServiceImpl implements VsatScoreService {
 
@@ -251,6 +252,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", convertSubject("SINH_HOC", request.getDiemSinh(), isVsat, warnings));
         map.put("LICH_SU", convertSubject("LICH_SU", request.getDiemSu(), isVsat, warnings));
         map.put("DIA_LY", convertSubject("DIA_LY", request.getDiemDia(), isVsat, warnings));
+        map.put("KTPL", convertSubject("KTPL", request.getDiemKtpl(), isVsat, warnings));
+        map.put("TI", convertSubject("TI", request.getDiemTi(), isVsat, warnings));
+        map.put("CNCN", convertSubject("CNCN", request.getDiemCncn(), isVsat, warnings));
+        map.put("CNNN", convertSubject("CNNN", request.getDiemCnnn(), isVsat, warnings));
         return map;
     }
 
@@ -690,6 +695,10 @@ public class VsatScoreServiceImpl implements VsatScoreService {
         map.put("SINH_HOC", genericIntervals());
         map.put("LICH_SU", genericIntervals());
         map.put("DIA_LY", genericIntervals());
+        map.put("KTPL", genericIntervals());
+        map.put("TI", genericIntervals());
+        map.put("CNCN", genericIntervals());
+        map.put("CNNN", genericIntervals());
         return map;
     }
 
@@ -733,21 +742,20 @@ public class VsatScoreServiceImpl implements VsatScoreService {
 
     private Map<String, String> createSubjectLabels() {
         Map<String, String> map = new LinkedHashMap<>();
-        map.put("TOAN", "Toán");
-        map.put("NGU_VAN", "Ngữ văn");
-        map.put("TIENG_ANH", "Tiếng Anh");
-        map.put("VAT_LY", "Vật lí");
-        map.put("HOA_HOC", "Hóa học");
-        map.put("SINH_HOC", "Sinh học");
-        map.put("LICH_SU", "Lịch sử");
-        map.put("DIA_LY", "Địa lí");
-        map.put("TI", "Tin học");
-        map.put("CNCN", "Công nghệ công nghiệp");
-        map.put("CNNN", "Công nghệ nông nghiệp");
-        map.put("KTPL", "Kinh tế pháp luật");
+        map.put("TOAN", "Toan");
+        map.put("NGU_VAN", "Ngu van");
+        map.put("TIENG_ANH", "Tieng Anh");
+        map.put("VAT_LY", "Vat ly");
+        map.put("HOA_HOC", "Hoa hoc");
+        map.put("SINH_HOC", "Sinh hoc");
+        map.put("LICH_SU", "Lich su");
+        map.put("DIA_LY", "Dia ly");
+        map.put("TI", "Tin hoc");
+        map.put("CNCN", "Cong nghe cong nghiep");
+        map.put("CNNN", "Cong nghe nong nghiep");
+        map.put("KTPL", "Kinh te phap luat");
         return map;
     }
-
     private Map<String, MajorConfig> loadMajorConfigs() {
         Map<String, MajorConfig> databaseMajors = loadMajorConfigsFromDatabase();
         if (!databaseMajors.isEmpty()) {
@@ -831,7 +839,7 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private String normalizeSubjectCode(String subjectCode) {
         String value = normalize(subjectCode);
         return switch (value) {
-            case "N1" -> "TIENG_ANH";
+            case "N1", "N1_THI", "N1_CC" -> "TIENG_ANH";
             case "TO" -> "TOAN";
             case "LI" -> "VAT_LY";
             case "HO" -> "HOA_HOC";
@@ -847,7 +855,6 @@ public class VsatScoreServiceImpl implements VsatScoreService {
             default -> value;
         };
     }
-
     private String normalize(String value) {
         return value == null ? "" : value.trim().toUpperCase(Locale.ROOT);
     }
@@ -877,3 +884,4 @@ public class VsatScoreServiceImpl implements VsatScoreService {
     private record SubjectConversion(String subjectCode, boolean provided, double rawScore, double convertedScore, String formulaText) {
     }
 }
+

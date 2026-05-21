@@ -9,6 +9,7 @@ import com.example.admissions_management.presentation.web.model.ScoreManagementF
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JComboBox;
+import javax.swing.JComponent;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -22,8 +23,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
+import java.awt.FlowLayout;
 import java.awt.Font;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.io.File;
 import java.math.BigDecimal;
 
@@ -31,15 +35,19 @@ public class ScoreManagementPanel extends JPanel {
 
     private static final Color BG_COLOR = new Color(245, 247, 244);
     private static final Color SURFACE_COLOR = Color.WHITE;
+    private static final Color SOFT_COLOR = new Color(248, 251, 248);
     private static final Color LINE_COLOR = new Color(220, 229, 223);
     private static final Color PRIMARY_COLOR = new Color(12, 122, 99);
     private static final Color ACCENT_COLOR = new Color(231, 150, 45);
     private static final Color DANGER_COLOR = new Color(194, 65, 53);
     private static final Color TEXT_COLOR = new Color(29, 46, 40);
     private static final Color MUTED_COLOR = new Color(100, 118, 110);
+    private static final Font SECTION_TITLE_FONT = new Font("Segoe UI", Font.BOLD, 13);
     private static final Font LABEL_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font FIELD_FONT = new Font("Segoe UI", Font.PLAIN, 12);
     private static final Font BUTTON_FONT = new Font("Segoe UI", Font.BOLD, 12);
+    private static final Dimension FIELD_SIZE = new Dimension(250, 32);
+    private static final Dimension LABEL_SIZE = new Dimension(112, 24);
 
     private final ScoreManagementConsoleController controller;
     private final ScoreManagementTableModel tableModel;
@@ -80,8 +88,8 @@ public class ScoreManagementPanel extends JPanel {
         styleTable();
 
         add(buildHeaderPanel(), BorderLayout.NORTH);
-        add(new JScrollPane(table), BorderLayout.CENTER);
-        add(buildFormPanel(), BorderLayout.SOUTH);
+        add(createTableScrollPane(), BorderLayout.CENTER);
+        add(buildFormPanel(), BorderLayout.EAST);
 
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         table.getSelectionModel().addListSelectionListener(event -> {
@@ -94,9 +102,9 @@ public class ScoreManagementPanel extends JPanel {
     }
 
     private JPanel buildHeaderPanel() {
-        JPanel panel = createCardPanel(new BorderLayout(8, 8));
+        JPanel panel = createCardPanel(new BorderLayout(10, 10));
 
-        JPanel left = new JPanel(new GridLayout(1, 4, 10, 10));
+        JPanel left = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         left.setOpaque(false);
         JButton refreshButton = createButton("Làm mới", ButtonType.SECONDARY);
         JButton clearButton = createButton("Xóa biểu mẫu", ButtonType.SECONDARY);
@@ -113,12 +121,13 @@ public class ScoreManagementPanel extends JPanel {
         left.add(deleteButton);
         left.add(importButton);
 
-        JPanel right = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
         JLabel filterLabel = new JLabel("Lọc theo loại điểm");
         filterLabel.setForeground(MUTED_COLOR);
         filterLabel.setFont(LABEL_FONT);
         styleComboBox(filterType);
+        filterType.setPreferredSize(new Dimension(170, 34));
         JButton filterButton = createButton("Áp dụng", ButtonType.PRIMARY);
         filterButton.addActionListener(e -> refreshTable());
 
@@ -132,42 +141,73 @@ public class ScoreManagementPanel extends JPanel {
     }
 
     private JPanel buildFormPanel() {
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setOpaque(false);
+        JPanel outer = new JPanel(new BorderLayout(10, 10));
+        outer.setPreferredSize(new Dimension(470, 0));
+        outer.setBackground(BG_COLOR);
 
-        JPanel fields = createCardPanel(new BorderLayout(12, 12));
         idField.setEditable(false);
 
-        JPanel metaGrid = new JPanel(new GridLayout(1, 4, 10, 10));
-        metaGrid.setOpaque(false);
-        addFieldBlock(metaGrid, "ID", idField);
-        addFieldBlock(metaGrid, "CCCD", cccdField);
-        addFieldBlock(metaGrid, "Số báo danh", soBaoDanhField);
-        addFieldBlock(metaGrid, "Phương thức", phuongThucField);
+        JPanel contentPanel = new JPanel(new GridBagLayout());
+        contentPanel.setBackground(BG_COLOR);
 
-        JPanel subjectGrid = new JPanel(new GridLayout(6, 3, 10, 10));
-        subjectGrid.setOpaque(false);
-        addFieldBlock(subjectGrid, "Toán", toField);
-        addFieldBlock(subjectGrid, "Vật lý", liField);
-        addFieldBlock(subjectGrid, "Hóa học", hoField);
-        addFieldBlock(subjectGrid, "Sinh học", siField);
-        addFieldBlock(subjectGrid, "Lịch sử", suField);
-        addFieldBlock(subjectGrid, "Địa lý", diField);
-        addFieldBlock(subjectGrid, "Ngữ văn", vaField);
-        addFieldBlock(subjectGrid, "N1 thi", n1ThiField);
-        addFieldBlock(subjectGrid, "N1 chứng chỉ", n1CcField);
-        addFieldBlock(subjectGrid, "CNCN", cncnField);
-        addFieldBlock(subjectGrid, "CNNN", cnnnField);
-        addFieldBlock(subjectGrid, "Tin học", tiField);
-        addFieldBlock(subjectGrid, "KTPL", ktplField);
-        addFieldBlock(subjectGrid, "ĐGNL", nl1Field);
-        addFieldBlock(subjectGrid, "NK1", nk1Field);
-        addFieldBlock(subjectGrid, "NK2", nk2Field);
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.gridx = 0;
+        gc.weightx = 1.0;
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.anchor = GridBagConstraints.NORTHWEST;
+        gc.insets = new Insets(0, 0, 10, 0);
 
-        fields.add(metaGrid, BorderLayout.NORTH);
-        fields.add(subjectGrid, BorderLayout.CENTER);
+        gc.gridy = 0;
+        contentPanel.add(createFieldSection("Thông tin chính", new Object[][] {
+                { "ID", idField },
+                { "CCCD", cccdField },
+                { "Số báo danh", soBaoDanhField },
+                { "Phương thức", phuongThucField }
+        }), gc);
 
-        JPanel actions = createCardPanel(new GridLayout(1, 4, 10, 10));
+        gc.gridy = 1;
+        contentPanel.add(createFieldSection("Khối điểm THPT / V-SAT", new Object[][] {
+                { "Toán", toField },
+                { "Vật lý", liField },
+                { "Hóa học", hoField },
+                { "Sinh học", siField },
+                { "Lịch sử", suField },
+                { "Địa lý", diField },
+                { "Ngữ văn", vaField },
+                { "N1 thi", n1ThiField },
+                { "N1 chứng chỉ", n1CcField }
+        }), gc);
+
+        gc.gridy = 2;
+        contentPanel.add(createFieldSection("Môn bổ sung", new Object[][] {
+                { "CNCN", cncnField },
+                { "CNNN", cnnnField },
+                { "Tin học", tiField },
+                { "KTPL", ktplField }
+        }), gc);
+
+        gc.gridy = 3;
+        contentPanel.add(createFieldSection("Điểm đánh giá năng lực", new Object[][] {
+                { "ĐGNL", nl1Field },
+                { "NK1", nk1Field },
+                { "NK2", nk2Field }
+        }), gc);
+
+        gc.gridy = 4;
+        gc.weighty = 1.0;
+        gc.insets = new Insets(0, 0, 0, 0);
+        JPanel filler = new JPanel();
+        filler.setOpaque(false);
+        contentPanel.add(filler, gc);
+
+        JScrollPane scrollPane = new JScrollPane(
+                contentPanel,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scrollPane.setBorder(null);
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+
+        JPanel actions = createCardPanel(new FlowLayout(FlowLayout.RIGHT, 8, 8));
         JButton saveButton = createButton("Lưu / Cập nhật", ButtonType.PRIMARY);
         JButton clearButton = createButton("Xóa biểu mẫu", ButtonType.SECONDARY);
         JButton refreshButton = createButton("Làm mới", ButtonType.SECONDARY);
@@ -181,10 +221,11 @@ public class ScoreManagementPanel extends JPanel {
         actions.add(refreshButton);
         actions.add(deleteButton);
 
-        panel.add(fields, BorderLayout.CENTER);
-        panel.add(actions, BorderLayout.SOUTH);
-        return panel;
+        outer.add(scrollPane, BorderLayout.CENTER);
+        outer.add(actions, BorderLayout.SOUTH);
+        return outer;
     }
+
     private JPanel createCardPanel(java.awt.LayoutManager layout) {
         JPanel panel = new JPanel(layout);
         panel.setBackground(SURFACE_COLOR);
@@ -194,35 +235,61 @@ public class ScoreManagementPanel extends JPanel {
         return panel;
     }
 
-    private void addField(JPanel panel, String label, JTextField field) {
-        JLabel jLabel = new JLabel(label);
-        jLabel.setForeground(TEXT_COLOR);
-        jLabel.setFont(LABEL_FONT);
-        panel.add(jLabel);
-        styleTextField(field);
-        panel.add(field);
+    private JPanel createFieldSection(String title, Object[][] fields) {
+        JPanel panel = new JPanel(new GridBagLayout());
+        panel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createLineBorder(LINE_COLOR, 1),
+                title,
+                javax.swing.border.TitledBorder.DEFAULT_JUSTIFICATION,
+                javax.swing.border.TitledBorder.DEFAULT_POSITION,
+                SECTION_TITLE_FONT,
+                TEXT_COLOR));
+        panel.setBackground(SOFT_COLOR);
+
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.fill = GridBagConstraints.HORIZONTAL;
+        gc.insets = new Insets(8, 10, 8, 10);
+        gc.gridy = 0;
+
+        for (Object[] row : fields) {
+            JLabel label = new JLabel((String) row[0]);
+            label.setFont(LABEL_FONT);
+            label.setForeground(MUTED_COLOR);
+            label.setPreferredSize(LABEL_SIZE);
+            label.setMinimumSize(LABEL_SIZE);
+            label.setMaximumSize(LABEL_SIZE);
+
+            gc.gridx = 0;
+            gc.weightx = 0.0;
+            gc.gridwidth = 1;
+            panel.add(label, gc);
+
+            gc.gridx = 1;
+            gc.weightx = 1.0;
+            gc.gridwidth = GridBagConstraints.REMAINDER;
+
+            JComponent component = (JComponent) row[1];
+            if (component instanceof JTextField field) {
+                styleTextField(field);
+                field.setPreferredSize(FIELD_SIZE);
+                field.setMinimumSize(new Dimension(0, FIELD_SIZE.height));
+                field.setMaximumSize(new Dimension(Integer.MAX_VALUE, FIELD_SIZE.height));
+            }
+            panel.add(component, gc);
+            gc.gridy++;
+        }
+
+        return panel;
     }
 
-    private void addFieldBlock(JPanel panel, String label, JTextField field) {
-        JPanel block = new JPanel(new BorderLayout(0, 6));
-        block.setOpaque(false);
-
-        JLabel jLabel = new JLabel(label);
-        jLabel.setForeground(TEXT_COLOR);
-        jLabel.setFont(LABEL_FONT);
-
-        styleTextField(field);
-        block.add(jLabel, BorderLayout.NORTH);
-        block.add(field, BorderLayout.CENTER);
-        panel.add(block);
-    }
     private void styleTextField(JTextField field) {
         field.setFont(FIELD_FONT);
         field.setForeground(TEXT_COLOR);
         field.setBackground(Color.WHITE);
+        field.setCaretColor(PRIMARY_COLOR);
         field.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(LINE_COLOR),
-                BorderFactory.createEmptyBorder(10, 12, 10, 12)));
+                BorderFactory.createEmptyBorder(8, 10, 8, 10)));
     }
 
     private void styleComboBox(JComboBox<String> comboBox) {
@@ -238,8 +305,8 @@ public class ScoreManagementPanel extends JPanel {
         button.setFocusPainted(false);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
         button.setOpaque(true);
-        button.setPreferredSize(new Dimension(150, 42));
-        button.setMinimumSize(new Dimension(150, 42));
+        button.setPreferredSize(new Dimension(150, 36));
+        button.setMinimumSize(new Dimension(150, 36));
 
         if (type == ButtonType.PRIMARY) {
             button.setBackground(PRIMARY_COLOR);
@@ -256,7 +323,7 @@ public class ScoreManagementPanel extends JPanel {
         }
         button.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(LINE_COLOR),
-                BorderFactory.createEmptyBorder(10, 14, 10, 14)));
+                BorderFactory.createEmptyBorder(8, 14, 8, 14)));
 
         return button;
     }
@@ -270,6 +337,16 @@ public class ScoreManagementPanel extends JPanel {
         table.setSelectionBackground(new Color(216, 235, 226));
         table.setSelectionForeground(TEXT_COLOR);
         table.setGridColor(LINE_COLOR);
+        table.setFillsViewportHeight(true);
+    }
+
+    private JScrollPane createTableScrollPane() {
+        JScrollPane scrollPane = new JScrollPane(table);
+        scrollPane.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(LINE_COLOR),
+                BorderFactory.createEmptyBorder(0, 0, 0, 0)));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        return scrollPane;
     }
 
     private void refreshTable() {

@@ -12,6 +12,10 @@ public class ScoreCalculationRequest {
     private Double diemSinh;
     private Double diemSu;
     private Double diemDia;
+    private Double diemKtpl;
+    private Double diemTi;
+    private Double diemCncn;
+    private Double diemCnnn;
     private String khuVuc;
     private String doiTuong;
     private String monCongDiem;
@@ -104,6 +108,38 @@ public class ScoreCalculationRequest {
 
     public void setDiemDia(Double diemDia) {
         this.diemDia = diemDia;
+    }
+
+    public Double getDiemKtpl() {
+        return diemKtpl;
+    }
+
+    public void setDiemKtpl(Double diemKtpl) {
+        this.diemKtpl = diemKtpl;
+    }
+
+    public Double getDiemTi() {
+        return diemTi;
+    }
+
+    public void setDiemTi(Double diemTi) {
+        this.diemTi = diemTi;
+    }
+
+    public Double getDiemCncn() {
+        return diemCncn;
+    }
+
+    public void setDiemCncn(Double diemCncn) {
+        this.diemCncn = diemCncn;
+    }
+
+    public Double getDiemCnnn() {
+        return diemCnnn;
+    }
+
+    public void setDiemCnnn(Double diemCnnn) {
+        this.diemCnnn = diemCnnn;
     }
 
     public String getKhuVuc() {

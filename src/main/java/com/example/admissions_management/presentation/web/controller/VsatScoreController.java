@@ -4,15 +4,15 @@ import com.example.admissions_management.application.dto.request.ScoreCalculatio
 import com.example.admissions_management.application.dto.response.ScoreResultResponse;
 import com.example.admissions_management.application.service.VsatScoreService;
 import com.example.admissions_management.application.service.candidate.OptionItem;
+
+import java.util.List;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-
-import java.util.List;
-
 @Controller
 @RequestMapping("/tra-cuu-diem")
 public class VsatScoreController {

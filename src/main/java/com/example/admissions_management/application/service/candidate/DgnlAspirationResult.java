@@ -1,4 +1,3 @@
-
 package com.example.admissions_management.application.service.candidate;
 
 import java.math.BigDecimal;
@@ -8,11 +7,21 @@ public class DgnlAspirationResult {
     private String aspirationName;
     private String majorName;
     private String originalCombination;
+    private String calculationMethod;
     private BigDecimal convertedScore;
+    private String fractile;
     private BigDecimal priorityScore;
     private BigDecimal bonusScore;
     private BigDecimal totalScore;
     private BigDecimal thresholdScore;
+    public String getCalculationMethod() {
+        return calculationMethod;
+    }
+
+    public void setCalculationMethod(String calculationMethod) {
+        this.calculationMethod = calculationMethod;
+    }
+
     private BigDecimal admissionScore;
     private boolean passThreshold;
     private boolean passAdmission;
@@ -47,6 +56,14 @@ public class DgnlAspirationResult {
 
     public void setConvertedScore(BigDecimal convertedScore) {
         this.convertedScore = convertedScore;
+    }
+
+    public String getFractile() {
+        return fractile;
+    }
+
+    public void setFractile(String fractile) {
+        this.fractile = fractile;
     }
 
     public BigDecimal getPriorityScore() {

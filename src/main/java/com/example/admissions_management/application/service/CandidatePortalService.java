@@ -21,6 +21,8 @@ import com.example.admissions_management.application.service.candidate.DgnlCalcu
 import com.example.admissions_management.application.service.candidate.MajorConfig;
 import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.application.service.candidate.VsatThptCalculationResult;
+import com.example.admissions_management.domain.model.Combination;
+import com.example.admissions_management.domain.repository.ICombinationRepository;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNganhEntity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtNguyenVongXetTuyenEntity;
 import com.example.admissions_management.infrastructure.persistence.entity.xettuyen2026.XtThiSinhXetTuyen25Entity;
@@ -43,6 +45,7 @@ public class CandidatePortalService {
     private final CandidateRepository candidateRepository;
     private final SpringDataXtNguyenVongXetTuyenRepository aspirationRepository;
     private final MajorRepository majorRepository;
+    private final ICombinationRepository combinationRepository;
     private final BangQuyDoiService bangQuyDoiService;
     private final Map<String, MajorConfig> majorByCode;
     private final Map<String, BigDecimal> priorityObjectPoint;
@@ -52,10 +55,12 @@ public class CandidatePortalService {
     public CandidatePortalService(CandidateRepository candidateRepository,
             SpringDataXtNguyenVongXetTuyenRepository aspirationRepository,
             MajorRepository majorRepository,
+            ICombinationRepository combinationRepository,
             BangQuyDoiService bangQuyDoiService) {
         this.candidateRepository = candidateRepository;
         this.aspirationRepository = aspirationRepository;
         this.majorRepository = majorRepository;
+        this.combinationRepository = combinationRepository;
         this.bangQuyDoiService = bangQuyDoiService;
         this.majorByCode = createMajors();
         this.priorityObjectPoint = createPriorityObjectPointMap();
@@ -164,7 +169,7 @@ public class CandidatePortalService {
             CandidateAspirationResult row = new CandidateAspirationResult();
             row.setMajorCode(aspiration.getNvMaNganh());
             row.setMajorName(majorRepository.findByMaNganh(aspiration.getNvMaNganh())
-                    .map(major -> major.getTenNganh())
+                    .map(XtNganhEntity::getTenNganh)
                     .orElse(aspiration.getNvMaNganh()));
             row.setScore(round(aspiration.getDiemXetTuyen()));
             row.setCombination(normalizeDisplayValue(aspiration.getTtThm(), "Chưa cập nhật"));
@@ -203,60 +208,67 @@ public class CandidatePortalService {
         DgnlCalculationResult result = new DgnlCalculationResult();
         result.setCalculated(true);
 
-        MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
+        MajorConfig major = resolveMajorConfig(form.getMajorCode());
         if (major == null) {
-            result.setMessage("Vui long chon nganh xet tuyen.");
+            result.setMessage("Vui lòng chọn ngành xét tuyển.");
             return result;
         }
+
         BigDecimal originalScore = clamp(nonNull(form.getDgnlScore()), BigDecimal.ZERO, DGNL_MAX_SCORE);
-        String majorCode = form.getMajorCode();
-        Optional<XtNganhEntity> nganh = majorRepository.findByMaNganh(majorCode);
-        String toHop =  nganh.get().getToHopGoc();
-        if(toHop == null || toHop.isBlank()) {
-            result.setMessage("Khong tim thay to hop goc cho nganh da chon.");
+        String majorCode = normalize(form.getMajorCode());
+        Optional<XtNganhEntity> majorEntity = majorRepository.findByMaNganh(majorCode);
+
+        String toHop = majorEntity.map(XtNganhEntity::getToHopGoc).orElse(major.originalCombination());
+        if (toHop == null || toHop.isBlank()) {
+            result.setMessage("Không tìm thấy tổ hợp gốc cho ngành đã chọn.");
             return result;
         }
-        if(toHop.equals("A00"))
-        {
+
+        if ("A00".equalsIgnoreCase(toHop)) {
             toHop = "A01";
         }
-        if(toHop.equals("C00"))
-        {
+        if ("C00".equalsIgnoreCase(toHop)) {
             toHop = "C01";
         }
-        BigDecimal converted30;
-        
+
+        BigDecimal converted30 = BigDecimal.ZERO;
+        String congThuc = "";
+        String phanVi = "";
+
         try {
             Map<String, String> quyDoiMap = bangQuyDoiService.quyDoiDiemKhaoThi("DGNL", toHop, originalScore);
-            String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
-            converted30 = new BigDecimal(diemQuyDoiStr);
+            if (quyDoiMap != null) {
+                String diemQuyDoiStr = quyDoiMap.get("diemQuyDoi");
+                congThuc = quyDoiMap.getOrDefault("congThuc", "");
+                phanVi = quyDoiMap.getOrDefault("phanVi", "");
+                if (diemQuyDoiStr != null && !diemQuyDoiStr.isBlank()) {
+                    converted30 = new BigDecimal(diemQuyDoiStr);
+                }
+            }
         } catch (Exception e) {
-
-            // Xử lý lỗi an toàn nếu có vấn đề trong quá trình quy đổi điểm
             System.err.println("Lỗi trong quá trình quy đổi điểm DGNL: " + e.getMessage());
-            converted30 = BigDecimal.ZERO;
         }
-        
+
         BigDecimal priorityScore = calculatePriorityScore(form.getPriorityObjectCode(), form.getPriorityRegionCode());
         BigDecimal bonusScore = round(clamp(nonNull(form.getBonusPoint()), BigDecimal.ZERO, BONUS_MAX_SCORE));
-        BigDecimal totalScore = round(converted30.add(priorityScore).add(bonusScore));
-        if(totalScore.compareTo(new BigDecimal("30.00")) >= 0){
-            totalScore = new BigDecimal("30.00");
-        }
+        BigDecimal totalBonusScore = round(clamp(bonusScore.add(priorityScore), BigDecimal.ZERO, BONUS_MAX_SCORE));
+        BigDecimal totalScore = round(converted30.add(totalBonusScore));
 
         DgnlAspirationResult aspirationResult = new DgnlAspirationResult();
         aspirationResult.setAspirationName("NV1");
         aspirationResult.setMajorName(major.name());
         aspirationResult.setOriginalCombination(major.originalCombination());
+        aspirationResult.setCalculationMethod(congThuc);
         aspirationResult.setConvertedScore(converted30);
+        aspirationResult.setFractile(phanVi);
         aspirationResult.setPriorityScore(priorityScore);
         aspirationResult.setBonusScore(bonusScore);
         aspirationResult.setTotalScore(totalScore);
         aspirationResult.setThresholdScore(major.dgnlThreshold());
         aspirationResult.setAdmissionScore(major.dgnlAdmission());
         aspirationResult.setPassThreshold(totalScore.compareTo(major.dgnlThreshold()) >= 0);
-        aspirationResult
-                .setPassAdmission(major.dgnlAdmission() != null && totalScore.compareTo(major.dgnlAdmission()) >= 0);
+        aspirationResult.setPassAdmission(
+                major.dgnlAdmission() != null && totalScore.compareTo(major.dgnlAdmission()) >= 0);
 
         result.setMajorName(major.name());
         result.setRows(List.of(aspirationResult));
@@ -268,7 +280,7 @@ public class CandidatePortalService {
         VsatThptCalculationResult result = new VsatThptCalculationResult();
         result.setCalculated(true);
 
-        MajorConfig major = majorByCode.get(normalize(form.getMajorCode()));
+        MajorConfig major = resolveMajorConfig(form.getMajorCode());
         if (major == null) {
             result.setMessage("Vui lòng chọn ngành xét tuyển.");
             return result;
@@ -427,6 +439,90 @@ public class CandidatePortalService {
         return value;
     }
 
+    private MajorConfig resolveMajorConfig(String majorCode) {
+        String normalizedCode = normalize(majorCode);
+        if (normalizedCode.isBlank()) {
+            return null;
+        }
+
+        return majorRepository.findByMaNganh(normalizedCode)
+                .map(this::toMajorConfig)
+                .orElseGet(() -> majorByCode.get(normalizedCode));
+    }
+
+    private MajorConfig toMajorConfig(XtNganhEntity major) {
+        String majorCode = normalize(major.getMaNganh());
+        MajorConfig fallback = majorByCode.get(majorCode);
+        List<CombinationSpec> combinations = loadCombinationSpecs(majorCode, fallback);
+
+        return new MajorConfig(
+                majorCode,
+                major.getTenNganh() == null || major.getTenNganh().isBlank()
+                        ? (fallback != null ? fallback.name() : majorCode)
+                        : major.getTenNganh().trim(),
+                resolveOriginalCombination(major, fallback, combinations),
+                defaultIfNull(major.getDiemSan(), fallback != null ? fallback.dgnlThreshold() : BigDecimal.ZERO),
+                defaultIfNull(major.getDiemTrungTuyen(), fallback != null ? fallback.dgnlAdmission() : null),
+                defaultIfNull(major.getDiemSan(), fallback != null ? fallback.regularThreshold() : BigDecimal.ZERO),
+                defaultIfNull(major.getDiemTrungTuyen(), fallback != null ? fallback.regularAdmission() : null),
+                combinations);
+    }
+
+    private List<CombinationSpec> loadCombinationSpecs(String majorCode, MajorConfig fallback) {
+        List<Combination> combinations = combinationRepository.findByMajorCode(majorCode);
+        if (combinations != null && !combinations.isEmpty()) {
+            return combinations.stream()
+                    .map(this::toCombinationSpec)
+                    .toList();
+        }
+        if (fallback != null && fallback.combinations() != null && !fallback.combinations().isEmpty()) {
+            return fallback.combinations();
+        }
+        return getSpecsFromCode(fallback != null ? fallback.originalCombination() : "");
+    }
+
+    private CombinationSpec toCombinationSpec(Combination combination) {
+        return new CombinationSpec(
+                normalize(combination.getMaToHop()).toUpperCase(Locale.ROOT),
+                normalizeSubjectCode(combination.getThMon1()),
+                normalizeSubjectCode(combination.getThMon2()),
+                normalizeSubjectCode(combination.getThMon3()),
+                combination.getHsMon1() == null ? 1.0d : combination.getHsMon1().doubleValue(),
+                combination.getHsMon2() == null ? 1.0d : combination.getHsMon2().doubleValue(),
+                combination.getHsMon3() == null ? 1.0d : combination.getHsMon3().doubleValue(),
+                combination.getDoLech());
+    }
+
+    private String resolveOriginalCombination(XtNganhEntity major, MajorConfig fallback, List<CombinationSpec> combinations) {
+        String originalCombination = normalize(major.getToHopGoc()).toUpperCase(Locale.ROOT);
+        if (!originalCombination.isBlank()) {
+            return originalCombination;
+        }
+        if (combinations != null && !combinations.isEmpty()) {
+            return combinations.get(0).code();
+        }
+        return fallback != null ? fallback.originalCombination() : "";
+    }
+
+    private BigDecimal defaultIfNull(BigDecimal value, BigDecimal fallback) {
+        return value != null ? value : fallback;
+    }
+
+    private String normalizeSubjectCode(String value) {
+        String normalized = normalize(value).toUpperCase(Locale.ROOT);
+        return switch (normalized) {
+            case "TO" -> "TOAN";
+            case "LI" -> "VAT_LY";
+            case "HO" -> "HOA_HOC";
+            case "SI" -> "SINH_HOC";
+            case "SU" -> "LICH_SU";
+            case "DI" -> "DIA_LY";
+            case "VA", "VAN" -> "NGU_VAN";
+            case "N1", "N1_THI", "N1_CC" -> "TIENG_ANH";
+            default -> normalized;
+        };
+    }
+
     private Map<String, BigDecimal> createPriorityRegionPointMap() {
         Map<String, BigDecimal> map = new LinkedHashMap<>();
         map.put("KV3", BigDecimal.ZERO);
@@ -438,40 +534,30 @@ public class CandidatePortalService {
 
     private Map<String, MajorConfig> createMajors() {
         Map<String, MajorConfig> map = new LinkedHashMap<>();
-        
-        // 1. Lấy toàn bộ danh sách ngành từ Repository
+
         List<XtNganhEntity> entities = majorRepository.findAll();
-
         for (XtNganhEntity entity : entities) {
-            // 2. Chuyển đổi mã tổ hợp gốc sang danh sách CombinationSpec
-            // Vì Entity chỉ có 1 cột toHopGoc, ta sẽ tạo danh sách chứa tổ hợp đó
             List<CombinationSpec> combinations = getSpecsFromCode(entity.getToHopGoc());
-
-            // 3. Tạo record MajorConfig từ dữ liệu Entity
             MajorConfig config = new MajorConfig(
-                entity.getMaNganh(),        // code
-                entity.getTenNganh(),       // name
-                entity.getToHopGoc(),       // originalCombination
-                entity.getDiemSan(),        // dgnlThreshold (Ánh xạ từ n_diemsan)
-                entity.getDiemTrungTuyen(), // dgnlAdmission (Ánh xạ từ n_diemtrungtuyen)
-                entity.getDiemSan(),        // regularThreshold
-                entity.getDiemTrungTuyen(), // regularAdmission
-                combinations                // List<CombinationSpec>
-            );
-
+                    entity.getMaNganh(),
+                    entity.getTenNganh(),
+                    entity.getToHopGoc(),
+                    entity.getDiemSan(),
+                    entity.getDiemTrungTuyen(),
+                    entity.getDiemSan(),
+                    entity.getDiemTrungTuyen(),
+                    combinations);
             map.put(entity.getMaNganh(), config);
         }
         return map;
     }
 
-    
-
     private Map<String, BigDecimal> createPriorityObjectPointMap() {
         Map<String, BigDecimal> map = new LinkedHashMap<>();
         map.put("NONE", BigDecimal.ZERO);
         map.put("UT1", new BigDecimal("2.00"));
-        map.put("UT2", new BigDecimal("1.00"));
-        map.put("UT3", new BigDecimal("0.50"));
+        map.put("UT2", new BigDecimal("1.5"));
+        map.put("UT3", new BigDecimal("1.00"));
         return map;
     }
 
