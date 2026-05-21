@@ -1,4 +1,4 @@
-package com.example.admissions_management.application.service.dto;
+package com.example.admissions_management.application.service.candidate;
 
 import java.math.BigDecimal;
 import java.util.List;

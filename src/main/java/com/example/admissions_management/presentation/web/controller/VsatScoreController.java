@@ -3,7 +3,8 @@ package com.example.admissions_management.presentation.web.controller;
 import com.example.admissions_management.application.dto.request.ScoreCalculationRequest;
 import com.example.admissions_management.application.dto.response.ScoreResultResponse;
 import com.example.admissions_management.application.service.VsatScoreService;
-import com.example.admissions_management.application.service.dto.OptionItem;
+import com.example.admissions_management.application.service.candidate.OptionItem;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -1,7 +1,7 @@
 package com.example.admissions_management.presentation.web.controller;
 
 import com.example.admissions_management.application.service.CandidatePortalService;
-import com.example.admissions_management.application.service.dto.OptionItem;
+import com.example.admissions_management.application.service.candidate.OptionItem;
 import com.example.admissions_management.presentation.web.model.CandidateLookupForm;
 import com.example.admissions_management.presentation.web.model.DgnlCalculatorForm;
 import com.example.admissions_management.presentation.web.model.VsatThptCalculatorForm;
